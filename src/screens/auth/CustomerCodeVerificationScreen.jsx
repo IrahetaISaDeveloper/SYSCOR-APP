@@ -2,11 +2,10 @@ import React from 'react';
 import { View, Text, Image, Alert, TouchableOpacity } from 'react-native';
 import InputText from '../../components/commons/InputText';
 import Button from '../../components/commons/Button';
-import { useCustomerVerification } from '../../hooks/useCustomerVerification';
-import styles from '../../styles/CustomerCodeVerification'; // Importamos los estilos desde su carpeta correspondiente
+import { useCustomerAuth } from '../../hooks/useCustomerAuth'; // <-- CORREGIDO
+import styles from '../../styles/CustomerCodeVerification';
 
 export default function CustomerCodeVerificationScreen({ navigation, route }) {
-  // Me traigo los estados y funciones del hook de verificación
   const {
     email,
     code,
@@ -16,9 +15,8 @@ export default function CustomerCodeVerificationScreen({ navigation, route }) {
     timer,
     handleVerifyCode,
     handleResendCode,
-  } = useCustomerVerification(route);
+  } = useCustomerAuth(route); // <-- CORREGIDO
 
-  // Función al presionar verificar para confirmar que el código es correcto
   const onPressVerify = async () => {
     const success = await handleVerifyCode(navigation);
     if (success) {
@@ -28,12 +26,10 @@ export default function CustomerCodeVerificationScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      {/* Fondos decorativos */}
       <View style={styles.circleLeft} />
       <View style={styles.circleRight} />
 
       <View style={styles.card}>
-        {/* Logo de la app */}
         <View style={styles.logoContainer}>
           <Image
             source={require('../../../assets/logo png horizontal claro.png')}
@@ -48,7 +44,6 @@ export default function CustomerCodeVerificationScreen({ navigation, route }) {
           <Text style={{ fontWeight: 'bold' }}>{email}</Text>
         </Text>
 
-        {/* Formulario de código */}
         <View style={styles.form}>
           <InputText
             label="Código de verificación"
@@ -59,7 +54,6 @@ export default function CustomerCodeVerificationScreen({ navigation, route }) {
             maxLength={6}
           />
 
-          {/* Contenedor de errores si el código falla */}
           {error && (
             <View style={styles.errorContainer}>
               {error.title ? (
@@ -73,7 +67,6 @@ export default function CustomerCodeVerificationScreen({ navigation, route }) {
             </View>
           )}
 
-          {/* Botón principal para verificar */}
           <Button
             title={loading ? 'Verificando...' : 'Verificar código'}
             onPress={onPressVerify}
@@ -82,7 +75,6 @@ export default function CustomerCodeVerificationScreen({ navigation, route }) {
             style={{ backgroundColor: '#D32F2F' }}
           />
 
-          {/* Opción para pedir otro código con el temporizador */}
           <TouchableOpacity
             onPress={handleResendCode}
             disabled={timer > 0}

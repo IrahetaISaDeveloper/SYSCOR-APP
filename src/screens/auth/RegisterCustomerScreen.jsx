@@ -2,11 +2,10 @@ import React from 'react';
 import { View, Text, Image, Alert, TouchableOpacity } from 'react-native';
 import InputText from '../../components/commons/InputText';
 import Button from '../../components/commons/Button';
-import { useRegisterCustomer } from '../../hooks/useRegisterCustomer';
-import styles from '../../styles/RegisterCustomer'; // Importamos los estilos desde su carpeta correspondiente
+import { useCustomerAuth } from '../../hooks/useCustomerAuth'; // <-- CORREGIDO
+import styles from '../../styles/RegisterCustomer';
 
 export default function RegisterCustomerScreen({ navigation }) {
-  // Me traigo toda la lógica del hook para manejar los estados del registro
   const {
     name,
     setName,
@@ -19,9 +18,8 @@ export default function RegisterCustomerScreen({ navigation }) {
     loading,
     error,
     handleRegister,
-  } = useRegisterCustomer();
+  } = useCustomerAuth(); // <-- CORREGIDO
 
-  // Función al presionar registrarse para mostrar la alerta de éxito si todo sale bien
   const onPressRegister = async () => {
     const success = await handleRegister(navigation);
     if (success) {
@@ -31,12 +29,10 @@ export default function RegisterCustomerScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Círculos decorativos de fondo */}
       <View style={styles.circleLeft} />
       <View style={styles.circleRight} />
 
       <View style={styles.card}>
-        {/* Logo del proyecto */}
         <View style={styles.logoContainer}>
           <Image
             source={require('../../../assets/logo png horizontal claro.png')}
@@ -48,7 +44,6 @@ export default function RegisterCustomerScreen({ navigation }) {
         <Text style={styles.title}>Crea tu cuenta</Text>
         <Text style={styles.subtitle}>Regístrate para comenzar</Text>
 
-        {/* Formulario con los inputs reutilizables */}
         <View style={styles.form}>
           <InputText
             label="Nombre"
@@ -79,7 +74,6 @@ export default function RegisterCustomerScreen({ navigation }) {
             secureTextEntry
           />
 
-          {/* Sección para mostrar los errores si fallan las validaciones */}
           {error && (
             <View style={styles.errorContainer}>
               {error.title ? (
@@ -93,7 +87,6 @@ export default function RegisterCustomerScreen({ navigation }) {
             </View>
           )}
 
-          {/* Botón de registrarse con su color respectivo (sin disabled para que lance el mensaje de error al hacer clic si falta algo) */}
           <Button
             title={loading ? 'Registrando...' : 'Registrarse'}
             onPress={onPressRegister}
@@ -101,7 +94,6 @@ export default function RegisterCustomerScreen({ navigation }) {
             style={{ backgroundColor: '#D32F2F' }}
           />
 
-          {/* Enlace inferior para redirigir al login si ya tengo cuenta */}
           <TouchableOpacity
             style={styles.loginLinkContainer}
             onPress={() => navigation.navigate('Login')}
