@@ -6,12 +6,19 @@ export const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
+    paddingHorizontal: 16,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 16,
+    padding: 4,
   },
   headerTitle: {
     fontSize: 18,
@@ -90,62 +97,46 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-  // Tarjetas Stats (Puntos / Vales)
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
+  // Card de Información Personal
+  infoCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 18,
     marginBottom: 16,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
   },
-  statCard: {
-    flex: 1,
-    borderRadius: 18,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pointsCard: {
-    backgroundColor: '#F0FDF4',
-    borderWidth: 1,
-    borderColor: '#DCFCE7',
-  },
-  vouchersCard: {
-    backgroundColor: '#FFF7ED',
-    borderWidth: 1,
-    borderColor: '#FFEDD5',
-  },
-  statHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
-  },
-  statIconContainer: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pointsIconBg: {
-    backgroundColor: '#16A34A',
-  },
-  vouchersIconBg: {
-    backgroundColor: '#EA580C',
-  },
-  statValue: {
-    fontSize: 18,
+  infoTitle: {
+    fontSize: 14,
     fontWeight: '800',
+    color: '#111827',
+    marginBottom: 12,
   },
-  pointsValue: {
-    color: '#15803D',
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
-  vouchersValue: {
-    color: '#C2410C',
+  infoRowLast: {
+    borderBottomWidth: 0,
   },
-  statLabel: {
-    fontSize: 11,
-    fontWeight: '600',
+  infoLabel: {
+    fontSize: 13,
     color: '#6B7280',
+  },
+  infoValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#111827',
+    flexShrink: 1,
+    marginLeft: 12,
+    textAlign: 'right',
   },
   // Menú de Opciones
   menuCard: {

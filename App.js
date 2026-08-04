@@ -3,11 +3,12 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 
 import ProductDetails from './src/screens/ProductDetails';
+import ProfileScreen from './src/screens/Profile';
 import Cart from './src/screens/Cart';
 import PaymentScreen from './src/screens/PaymentVerfication';
 
 export default function App() {
-  const [screen, setScreen] = useState('product');
+  const [screen, setScreen] = useState('profile');
   const [cartItems, setCartItems] = useState([]);
 
   const { subtotal, tip, total } = useMemo(() => {
@@ -45,6 +46,8 @@ export default function App() {
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
+
+      {screen === 'profile' && <ProfileScreen />}
 
       {screen === 'product' && (
         <ProductDetails
