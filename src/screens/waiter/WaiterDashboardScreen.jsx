@@ -10,7 +10,7 @@ import TableActionsModal from "../../components/waiterDashboard/TableActionsModa
 import TableManagementModal from "../../components/waiterDashboard/TableManagementModal";
 import waiterDashboardScreenStyles from "../../styles/waiterDashboardScreenStyles";
 
-export default function WaiterDashboardScreen() {
+export default function WaiterDashboardScreen({ onOpenProfile }) {
   const { logout } = useAuth();
 
   const {
@@ -57,6 +57,9 @@ export default function WaiterDashboardScreen() {
         <View style={waiterDashboardScreenStyles.headerTopRow}>
           <Text style={waiterDashboardScreenStyles.title}>Mis mesas</Text>
           <View style={waiterDashboardScreenStyles.headerActions}>
+            <TouchableOpacity onPress={onOpenProfile}>
+              <Text style={waiterDashboardScreenStyles.headerActionText}>Mi perfil</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={tableManagement.openManagement}>
               <Text style={waiterDashboardScreenStyles.headerActionText}>Gestionar mesas</Text>
             </TouchableOpacity>
