@@ -1,213 +1,145 @@
 import { StyleSheet } from 'react-native';
+import { colors } from './Orders';
 
-export const styles = StyleSheet.create({
-  safeArea: {
+const profileStyles = StyleSheet.create({
+  container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.border,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#B91C1C',
+    fontWeight: '700',
+    color: colors.primary,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 16,
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 100,
   },
-  // Card del Perfil del Usuario
-  profileCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingVertical: 24,
+  avatarSection: {
     alignItems: 'center',
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    marginBottom: 20,
   },
-  avatarContainer: {
+  avatarWrapper: {
     position: 'relative',
-    marginBottom: 12,
   },
-  avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    borderWidth: 3,
-    borderColor: '#B91C1C',
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: colors.border,
   },
-  avatarPlaceholder: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: '#B91C1C',
-  },
-  cameraButton: {
+  editBadge: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#B91C1C',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  cameraIcon: {
-    fontSize: 12,
+    borderColor: colors.white,
   },
   userName: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 12,
-  },
-  editButton: {
-    backgroundColor: '#B91C1C',
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  editButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 18,
     fontWeight: '700',
+    color: colors.textDark,
+    marginTop: 12,
   },
-  // Tarjetas Stats (Puntos / Vales)
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
+  infoCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 18,
+    marginBottom: 20,
+  },
+  infoBlock: {
     marginBottom: 16,
   },
-  statCard: {
-    flex: 1,
-    borderRadius: 18,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pointsCard: {
-    backgroundColor: '#F0FDF4',
-    borderWidth: 1,
-    borderColor: '#DCFCE7',
-  },
-  vouchersCard: {
-    backgroundColor: '#FFF7ED',
-    borderWidth: 1,
-    borderColor: '#FFEDD5',
-  },
-  statHeader: {
+  infoBlockRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  statIconContainer: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
+  infoBlockHalf: {
+    flex: 1,
   },
-  pointsIconBg: {
-    backgroundColor: '#16A34A',
-  },
-  vouchersIconBg: {
-    backgroundColor: '#EA580C',
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  pointsValue: {
-    color: '#15803D',
-  },
-  vouchersValue: {
-    color: '#C2410C',
-  },
-  statLabel: {
+  infoLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#6B7280',
+    color: colors.textGray,
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
-  // Menú de Opciones
-  menuCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    marginBottom: 20,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-  },
-  menuItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  menuLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  menuIconBg: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: '#FEF2F2',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  menuText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  menuArrow: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    fontWeight: 'bold',
-  },
-  // Botón Cerrar Sesión
-  logoutButton: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FEE2E2',
-    borderRadius: 16,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 24,
-  },
-  logoutText: {
-    color: '#B91C1C',
+  infoValue: {
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '700',
+    color: colors.textDark,
+  },
+  infoValueLink: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#2E5FA3',
+  },
+  logoutButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutButtonText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: '700',
+    marginLeft: 8,
+  },
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: colors.white,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingVertical: 8,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  bottomNavItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomNavItemActive: {
+    backgroundColor: colors.primary,
+    marginHorizontal: 12,
+    borderRadius: 8,
+    paddingVertical: 8,
+  },
+  bottomNavText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textGray,
+    marginTop: 2,
+  },
+  bottomNavTextActive: {
+    color: colors.white,
   },
 });
+
+export default profileStyles;

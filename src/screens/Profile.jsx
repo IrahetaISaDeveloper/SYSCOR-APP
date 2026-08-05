@@ -1,161 +1,100 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  Image, 
-  ScrollView, 
-  SafeAreaView 
-} from 'react-native';
-import { styles } from '../styles/Profile';
+import { View, Text, Image, ScrollView, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import { Ionicons as Icon } from '@expo/vector-icons';
+import profileStyles from '../styles/Profile';
+import { colors } from '../styles/Orders';
+import useProfile from '../hooks/useProfile';
 
-export const ProfileScreen = ({ 
-  user = {
-    name: 'Juan Pérez',
-    avatarUrl: null, // Puedes pasar la URL de la imagen registrada
-    points: 450,
-    vouchers: 3
-  },
-  onChangeAvatar,
-  onEditProfile,
-  onNavigateToOrders,
-  onNavigateToPaymentMethods,
-  onNavigateToSupport,
-  onLogout 
-}) => {
+/**
+ * Pantalla 'Profile' (Perfil del Empleado)
+ * Muestra los datos del empleado activo (foto, nombre, ID, cargo, email) y gestiona la salida/logout de la aplicación.
+ */
+const Profile = ({ navigation }) => {
+  // Extraemos la información del empleado y la función de logout del hook useProfile
+  const { employee, handleLogout } = useProfile();
+
+  // Muestra un diálogo de alerta de confirmación antes de cerrar sesión
+  const onLogoutPress = () => {
+    Alert.alert('Cerrar sesión', '¿Seguro que deseas cerrar sesión?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Cerrar sesión',
+        style: 'destructive',
+        onPress: () => handleLogout(() => {
+          // Aquí se puede redirigir al Login o reiniciar los tokens de autenticación
+        }),
+      },
+    ]);
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mi Perfil</Text>
+    <SafeAreaView style={profileStyles.container}>
+      {/* ── ENCABEZADO SUPERIOR ── */}
+      <View style={profileStyles.header}>
+        <Icon name="menu" size={22} color={colors.primary} />
+        <Text style={profileStyles.headerTitle}>Mi Perfil</Text>
+        <Icon name="notifications-outline" size={22} color={colors.primary} />
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        
-        {/* Card Principal de Usuario */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatarContainer}>
-            {user?.avatarUrl ? (
-              <Image 
-                source={{ uri: user.avatarUrl }} 
-                style={styles.avatar} 
-              />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={{ fontSize: 32 }}>👤</Text>
-              </View>
-            )}
-
-            {/* Botón Flotante Cámara */}
-            <TouchableOpacity 
-              style={styles.cameraButton} 
-              onPress={onChangeAvatar}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.cameraIcon}>📷</Text>
+      <ScrollView contentContainerStyle={profileStyles.scrollContent}>
+        {/* ── SECCIÓN DE AVATAR / FOTO Y NOMBRE ── */}
+        <View style={profileStyles.avatarSection}>
+          <View style={profileStyles.avatarWrapper}>
+            <Image source={{ uri: employee.avatarUrl }} style={profileStyles.avatarImage} />
+            <TouchableOpacity style={profileStyles.editBadge}>
+              <Icon name="pencil" size={14} color={colors.white} />
             </TouchableOpacity>
           </View>
-
-          <Text style={styles.userName}>{user?.name || 'Usuario'}</Text>
-
-          <TouchableOpacity 
-            style={styles.editButton} 
-            onPress={onEditProfile}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.editButtonText}>Editar Perfil</Text>
-          </TouchableOpacity>
+          <Text style={profileStyles.userName}>{employee.fullName}</Text>
         </View>
 
-        {/* Tarjetas Stats (Puntos y Vales) */}
-        <View style={styles.statsRow}>
-          {/* Card Lealtad */}
-          <View style={[styles.statCard, styles.pointsCard]}>
-            <View style={styles.statHeader}>
-              <View style={[styles.statIconContainer, styles.pointsIconBg]}>
-                <Text style={{ fontSize: 10, color: '#FFFFFF' }}>★</Text>
-              </View>
-              <Text style={[styles.statValue, styles.pointsValue]}>
-                {user?.points || 0} pts
-              </Text>
-            </View>
-            <Text style={styles.statLabel}>Lealtad</Text>
+        {/* ── TARJETA DE INFORMACIÓN DETALLADA ── */}
+        <View style={profileStyles.infoCard}>
+          <View style={profileStyles.infoBlock}>
+            <Text style={profileStyles.infoLabel}>NOMBRE COMPLETO</Text>
+            <Text style={profileStyles.infoValue}>{employee.fullName}</Text>
           </View>
 
-          {/* Card Vales */}
-          <View style={[styles.statCard, styles.vouchersCard]}>
-            <View style={styles.statHeader}>
-              <View style={[styles.statIconContainer, styles.vouchersIconBg]}>
-                <Text style={{ fontSize: 10, color: '#FFFFFF' }}>🎟️</Text>
-              </View>
-              <Text style={[styles.statValue, styles.vouchersValue]}>
-                {user?.vouchers || 0} Vales
-              </Text>
+          <View style={profileStyles.infoBlockRow}>
+            <View style={profileStyles.infoBlockHalf}>
+              <Text style={profileStyles.infoLabel}>ID DE EMPLEADO</Text>
+              <Text style={profileStyles.infoValue}>{employee.employeeId}</Text>
             </View>
-            <Text style={styles.statLabel}>Disponibles</Text>
+            <View style={profileStyles.infoBlockHalf}>
+              <Text style={profileStyles.infoLabel}>CARGO</Text>
+              <Text style={profileStyles.infoValueLink}>{employee.position}</Text>
+            </View>
+          </View>
+
+          <View>
+            <Text style={profileStyles.infoLabel}>EMAIL</Text>
+            <Text style={profileStyles.infoValueLink}>{employee.email}</Text>
           </View>
         </View>
 
-        {/* Menú de Opciones */}
-        <View style={styles.menuCard}>
-          {/* Mis Pedidos */}
-          <TouchableOpacity 
-            style={[styles.menuItem, styles.menuItemBorder]} 
-            onPress={onNavigateToOrders}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuLeft}>
-              <View style={styles.menuIconBg}>
-                <Text style={{ fontSize: 16 }}>🕒</Text>
-              </View>
-              <Text style={styles.menuText}>Mis Pedidos</Text>
-            </View>
-            <Text style={styles.menuArrow}>›</Text>
-          </TouchableOpacity>
-
-          {/* Métodos de Pago */}
-          <TouchableOpacity 
-            style={[styles.menuItem, styles.menuItemBorder]} 
-            onPress={onNavigateToPaymentMethods}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuLeft}>
-              <View style={styles.menuIconBg}>
-                <Text style={{ fontSize: 16 }}>💳</Text>
-              </View>
-              <Text style={styles.menuText}>Métodos de Pago</Text>
-            </View>
-            <Text style={styles.menuArrow}>›</Text>
-          </TouchableOpacity>
-
-          {/* Ayuda y Soporte */}
-          <TouchableOpacity 
-            style={styles.menuItem} 
-            onPress={onNavigateToSupport}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuLeft}>
-              <View style={styles.menuIconBg}>
-                <Text style={{ fontSize: 16 }}>❓</Text>
-              </View>
-              <Text style={styles.menuText}>Ayuda y Soporte</Text>
-            </View>
-            <Text style={styles.menuArrow}>›</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Botón Cerrar Sesión */}
-        <TouchableOpacity 
-          style={styles.logoutButton} 
-          onPress={onLogout}
-          activeOpacity={0.8}
-        >
-          <Text style={{ fontSize: 16 }}>🚪</Text>
-          <Text style={styles.logoutText}>Cerrar Sesión</Text>
+        {/* ── BOTÓN CERRAR SESIÓN ── */}
+        <TouchableOpacity style={profileStyles.logoutButton} onPress={onLogoutPress}>
+          <Icon name="log-out-outline" size={18} color={colors.white} />
+          <Text style={profileStyles.logoutButtonText}>Cerrar Sesión</Text>
         </TouchableOpacity>
-
       </ScrollView>
+
+      {/* ── BARRA DE NAVEGACIÓN INFERIOR ── */}
+      <View style={profileStyles.bottomNav}>
+        <TouchableOpacity
+          style={profileStyles.bottomNavItem}
+          onPress={() => navigation.navigate('Dashboard')}
+        >
+          <Icon name="grid-outline" size={20} color={colors.textGray} />
+          <Text style={profileStyles.bottomNavText}>Dashboard</Text>
+        </TouchableOpacity>
+        <View style={[profileStyles.bottomNavItem, profileStyles.bottomNavItemActive]}>
+          <Icon name="person" size={20} color={colors.white} />
+          <Text style={[profileStyles.bottomNavText, profileStyles.bottomNavTextActive]}>Profile</Text>
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
-export default ProfileScreen;
+
+export default Profile;
