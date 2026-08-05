@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -9,73 +9,24 @@ import {
 } from 'react-native';
 import { InputText } from '../components/commons/InputText';
 import Toast from '../components/commons/Toast';
+import { useProfile } from '../hooks/useProfile';
 import { styles } from '../styles/Profile';
 
-const DEFAULT_USER = {
-  name: 'Juan',
-  lastname: 'Pérez',
-  avatarUrl: null,
-  email: 'juan.perez@example.com',
-  phone: '',
-  birthdate: '',
-};
-
-export const ProfileScreen = ({
-  user = DEFAULT_USER,
-  onChangeAvatar,
-  onSaveProfile,
-  onNavigateToOrders,
-  onNavigateToPaymentMethods,
-  onNavigateToSupport,
-  onLogout,
-  onBack,
-}) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
-  const notify = (message, type = 'success') => setToast({ visible: true, message, type });
-
-  const [form, setForm] = useState({
-    name: user.name || '',
-    lastname: user.lastname || '',
-    email: user.email || '',
-    phone: user.phone || '',
-    birthdate: user.birthdate || '',
-  });
-
-  const updateField = (field) => (value) => setForm((prev) => ({ ...prev, [field]: value }));
-
-  const handleEditPress = () => {
-    if (isEditing) {
-      if (!form.name.trim() || !form.lastname.trim()) {
-        notify('El nombre y apellido no pueden quedar vacíos.', 'error');
-        return;
-      }
-      onSaveProfile?.(form);
-      notify('Perfil actualizado correctamente.');
-    }
-    setIsEditing((prev) => !prev);
-  };
-
-  const handleAvatarPress = () => {
-    if (onChangeAvatar) {
-      onChangeAvatar();
-    } else {
-      notify('La selección de foto estará disponible próximamente.');
-    }
-  };
-
-  const goTo = (handler, label) => () => {
-    if (handler) {
-      handler();
-    } else {
-      notify(`${label} estará disponible próximamente.`);
-    }
-  };
-
-  const handleLogout = () => {
-    notify('Sesión cerrada.');
-    onLogout?.();
-  };
+export const ProfileScreen = (props) => {
+  const { user, onBack } = props;
+  const {
+    isEditing,
+    toast,
+    hideToast,
+    form,
+    updateField,
+    handleEditPress,
+    handleAvatarPress,
+    handleLogoutPress,
+    goToOrders,
+    goToPaymentMethods,
+    goToSupport,
+  } = useProfile(props);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -83,7 +34,7 @@ export const ProfileScreen = ({
         visible={toast.visible}
         message={toast.message}
         type={toast.type}
-        onHide={() => setToast((t) => ({ ...t, visible: false }))}
+        onHide={hideToast}
       />
 
       {/* Header */}
@@ -122,7 +73,7 @@ export const ProfileScreen = ({
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.userName}>{`${user?.name || ''} ${user?.lastname || ''}`.trim() || 'Usuario'}</Text>
+          <Text style={styles.userName}>{`${form.name || ''} ${form.lastname || ''}`.trim() || 'Usuario'}</Text>
 
           <TouchableOpacity
             style={styles.editButton}
@@ -183,7 +134,7 @@ export const ProfileScreen = ({
           {/* Mis Pedidos */}
           <TouchableOpacity
             style={[styles.menuItem, styles.menuItemBorder]}
-            onPress={goTo(onNavigateToOrders, 'Mis Pedidos')}
+            onPress={goToOrders}
             activeOpacity={0.7}
           >
             <View style={styles.menuLeft}>
@@ -198,7 +149,7 @@ export const ProfileScreen = ({
           {/* Métodos de Pago */}
           <TouchableOpacity
             style={[styles.menuItem, styles.menuItemBorder]}
-            onPress={goTo(onNavigateToPaymentMethods, 'Métodos de Pago')}
+            onPress={goToPaymentMethods}
             activeOpacity={0.7}
           >
             <View style={styles.menuLeft}>
@@ -213,7 +164,7 @@ export const ProfileScreen = ({
           {/* Ayuda y Soporte */}
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={goTo(onNavigateToSupport, 'Ayuda y Soporte')}
+            onPress={goToSupport}
             activeOpacity={0.7}
           >
             <View style={styles.menuLeft}>
@@ -229,7 +180,7 @@ export const ProfileScreen = ({
         {/* Botón Cerrar Sesión */}
         <TouchableOpacity
           style={styles.logoutButton}
-          onPress={handleLogout}
+          onPress={handleLogoutPress}
           activeOpacity={0.8}
         >
           <Text style={{ fontSize: 16 }}>🚪</Text>
