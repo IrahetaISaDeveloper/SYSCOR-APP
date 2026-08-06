@@ -1,32 +1,32 @@
 import React from "react";
 import { View, Text, ScrollView, RefreshControl, TouchableOpacity, SafeAreaView } from "react-native";
 import { useAuth } from "../../context/AuthContext";
-import useWaiterProfile from "../../hooks/useWaiterProfile";
+import useKitchenProfile from "../../hooks/useKitchenProfile";
 import ProfileHeader from "../../components/commons/ProfileHeader";
 import InfoSection from "../../components/commons/InfoSection";
 import InfoRow from "../../components/commons/InfoRow";
-import waiterProfileScreenStyles from "../../styles/waiterProfileScreenStyles";
+import kitchenProfileScreenStyles from "../../styles/kitchenProfileScreenStyles";
 
-export default function WaiterProfileScreen({ navigation  }) {
+export default function KitchenProfileScreen({ navigation }) {
   const { logout } = useAuth();
-  const { user, fullName, typeLabel, statusLabel, refreshing, onRefresh } = useWaiterProfile();
+  const { user, fullName, typeLabel, statusLabel, refreshing, onRefresh } = useKitchenProfile();
 
   const personalInfo = user?.personalInfo || {};
   const workInfo = user?.workInfo || {};
 
   return (
-    <SafeAreaView style={waiterProfileScreenStyles.container}>
-      <View style={waiterProfileScreenStyles.header}>
+    <SafeAreaView style={kitchenProfileScreenStyles.container}>
+      <View style={kitchenProfileScreenStyles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-      <Text style={waiterProfileScreenStyles.backText}>‹ Volver</Text>
-    </TouchableOpacity>
-        <Text style={waiterProfileScreenStyles.title}>Mi perfil</Text>
+          <Text style={kitchenProfileScreenStyles.backText}>‹ Volver</Text>
+        </TouchableOpacity>
+        <Text style={kitchenProfileScreenStyles.title}>Mi perfil</Text>
         <View style={{ width: 50 }} />
       </View>
 
       <ScrollView
-        contentContainerStyle={waiterProfileScreenStyles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E74C3C" />}
+        contentContainerStyle={kitchenProfileScreenStyles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3498DB" />}
       >
         <ProfileHeader
           image={personalInfo.image}
@@ -65,6 +65,10 @@ export default function WaiterProfileScreen({ navigation  }) {
             ))}
           </InfoSection>
         )}
+
+        <TouchableOpacity onPress={logout} style={kitchenProfileScreenStyles.logoutButton}>
+          <Text style={kitchenProfileScreenStyles.logoutText}>Cerrar sesión</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

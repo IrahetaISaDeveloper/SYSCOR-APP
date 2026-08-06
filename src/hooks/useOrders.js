@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  fetchCartOrders,
+  fetchApiOrders,
+  updateCartOrderStatus,
+  updateApiOrderStatusRequest,
+} from '../services/kitchenOrdersApi';
 
-// En emulador Android, 10.0.2.2 apunta al localhost del PC host
-const baseUrl = 'https://syscor.onrender.com/api';
 
 // ── ESTADOS ──────────────────────────────────────────────────────────
 // Normaliza los distintos nombres de estado que puede devolver el backend de carts
@@ -292,79 +296,66 @@ const useOrders = () => {
   const [apiOrdersLoading, setApiOrdersLoading] = useState(false);
   const [apiOrdersError, setApiOrdersError]     = useState(null);
 
-  const loadOrders = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+const loadOrders = useCallback(async () => {
+  try {
+    setIsLoading(true);
+    setError(null);
 
-      // Endpoint correcto del backend de carts
-      const response = await fetch(`${baseUrl}/orders/carts`);
+    const data = await fetchCartOrders();
+    const raw = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : Array.isArray(data?.carts) ? data.carts : [];
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+    const kitchenOrders = raw
+      .filter((c) => KITCHEN_RELEVANT_STATUSES.includes(c.status))
+      .map(mapCartToKitchen)
+      .filter((o) => o.items.length > 0);
 
-      const data = await response.json();
+    setOrders(kitchenOrders);
+  } catch (err) {
+    console.error('[useOrders] Error cargando comandas:', err);
+    setError('No se pudieron cargar las comandas. Verifica tu conexión.');
+  } finally {
+    setIsLoading(false);
+  }
+}, []);
 
-      // El backend devuelve el array directo o envuelto en {data:[...]} / {carts:[...]}
-      const raw = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.data)
-          ? data.data
-          : Array.isArray(data?.carts)
-            ? data.carts
-            : [];
+const loadOrdersFromAPI = useCallback(async () => {
+  try {
+    setApiOrdersLoading(true);
+    setApiOrdersError(null);
 
-      const kitchenOrders = raw
-        .filter((c) => KITCHEN_RELEVANT_STATUSES.includes(c.status))
-        .map(mapCartToKitchen)
-        .filter((o) => o.items.length > 0);
+    const data = await fetchApiOrders();
+    const raw = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
 
-      setOrders(kitchenOrders);
-    } catch (err) {
-      console.error('[useOrders] Error cargando comandas:', err);
-      setError('No se pudieron cargar las comandas. Verifica tu conexión.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    setApiOrders(raw);
+    setApiOrdersMapped(raw.map(mapOrderToKitchen));
+  } catch (err) {
+    console.error('[useOrders] Error cargando /api/orders:', err);
+    setApiOrdersError('No se pudieron cargar las órdenes. Verifica tu conexión.');
+  } finally {
+    setApiOrdersLoading(false);
+  }
+}, []);
 
-  useEffect(() => {
-    loadOrders();
-  }, [loadOrders]);
+const updateOrderStatus = async (orderId, newStatus) => {
+  setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
 
-  // ── GET /api/orders ───────────────────────────────────────────────
-  // Nuevo fetch independiente. No modifica nada del flujo anterior.
-  const loadOrdersFromAPI = useCallback(async () => {
-    try {
-      setApiOrdersLoading(true);
-      setApiOrdersError(null);
+  try {
+    const backendStatusMap = { pending: 'pending', preparing: 'cooking', ready: 'ready', late: 'cooking' };
+    await updateCartOrderStatus(orderId, backendStatusMap[newStatus] || newStatus);
+  } catch (err) {
+    console.log('[useOrders] No se pudo sincronizar estado:', err.message);
+  }
+};
 
-      const response = await fetch(`${baseUrl}/orders`);
+const updateApiOrderStatus = async (orderId, newStatus) => {
+  setApiOrdersMapped((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-
-      // El backend puede devolver array directo o envuelto en {data:[...]}
-      const raw = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.data)
-          ? data.data
-          : [];
-
-      // Guardamos el raw Y el mapeado listo para UI
-      setApiOrders(raw);
-      setApiOrdersMapped(raw.map(mapOrderToKitchen));
-    } catch (err) {
-      console.error('[useOrders] Error cargando /api/orders:', err);
-      setApiOrdersError('No se pudieron cargar las órdenes. Verifica tu conexión.');
-    } finally {
-      setApiOrdersLoading(false);
-    }
-  }, []);
+  try {
+    await updateApiOrderStatusRequest(orderId, newStatus);
+  } catch (err) {
+    console.log('[updateApiOrderStatus] Error:', err.message);
+  }
+};
 
   useEffect(() => {
     loadOrdersFromAPI();
@@ -382,55 +373,13 @@ const useOrders = () => {
     return orders.filter((o) => o.status === activeFilter);
   }, [orders, activeFilter]);
 
-  // Actualización optimista: cambia el estado en UI y luego sincroniza con el backend
-  const updateOrderStatus = async (orderId, newStatus) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
-    );
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
 
-    try {
-      // Traducimos el estado interno al que espera el backend de carts
-      const backendStatusMap = {
-        pending:   'pending',
-        preparing: 'cooking',
-        ready:     'ready',
-        late:      'cooking',
-      };
-
-      await fetch(`${baseUrl}/orders/carts/${orderId}`, {
-        method:  'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ status: backendStatusMap[newStatus] || newStatus }),
-      });
-    } catch (err) {
-      console.log('[useOrders] No se pudo sincronizar estado:', err.message);
-    }
-  };
-
-  // Actualización optimista para órdenes de /api/orders
-  // El nuevo endpoint acepta los estados nativos directamente: pending, preparing, ready, delivered, cancelled
-  const updateApiOrderStatus = async (orderId, newStatus) => {
-    // Actualiza el estado en UI de forma inmediata
-    setApiOrdersMapped((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
-    );
-
-    try {
-      const res = await fetch(`${baseUrl}/orders/${orderId}/status`, {
-        method:  'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ status: newStatus }),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        console.warn('[updateApiOrderStatus] HTTP', res.status, JSON.stringify(body));
-      } else {
-        console.log('[updateApiOrderStatus] OK ->', newStatus, JSON.stringify(body));
-      }
-    } catch (err) {
-      console.log('[updateApiOrderStatus] Error de red:', err.message);
-    }
-  };
+  useEffect(() => {
+    loadOrdersFromAPI();
+  }, [loadOrdersFromAPI]);
 
   return {
     orders:           filteredOrders,
