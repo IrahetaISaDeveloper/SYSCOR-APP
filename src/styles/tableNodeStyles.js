@@ -8,7 +8,7 @@ export default StyleSheet.create({
   wrapper: {
     width: WRAPPER_SIZE,
     height: WRAPPER_SIZE,
-    margin: 10,
+    margin: 18, // antes: 10 — más aire entre mesas para que las sillas no se toquen
     alignItems: "center",
     justifyContent: "center",
   },
