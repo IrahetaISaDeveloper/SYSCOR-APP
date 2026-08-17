@@ -68,14 +68,14 @@ const PromoCard = ({ item }) => (
 );
 
 // Componente para la tarjeta individual de un platillo del menú
-const DishCard = ({ item, index, onAdd }) => {
+const DishCard = ({ item, index, onPress }) => {
   // Si el platillo tiene URL de imagen provista por la API la usamos; si no, usamos la imagen local de fallback
   const imageSource = item.imageUrl
     ? { uri: item.imageUrl }
     : FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
 
   return (
-    <TouchableOpacity style={menuStyles.dishCard} activeOpacity={0.85}>
+    <TouchableOpacity style={menuStyles.dishCard} activeOpacity={0.85} onPress={() => onPress(item)}>
       <Image source={imageSource} style={menuStyles.dishImage} resizeMode="cover" />
       <View style={menuStyles.dishInfo}>
         <Text style={menuStyles.dishName}>{item.name}</Text>
@@ -89,8 +89,8 @@ const DishCard = ({ item, index, onAdd }) => {
           )}
         </View>
       </View>
-      {/* Botón "+" para agregar el producto al carrito */}
-      <TouchableOpacity style={menuStyles.addButton} onPress={() => onAdd(item)} activeOpacity={0.8}>
+      {/* Botón "+" para configurar el producto (bebida/salsas/extras) antes de agregarlo al carrito */}
+      <TouchableOpacity style={menuStyles.addButton} onPress={() => onPress(item)} activeOpacity={0.8}>
         <Icon name="add" size={20} color={colors.white} />
       </TouchableOpacity>
     </TouchableOpacity>
@@ -121,20 +121,18 @@ const PopularSkeleton = () => (
 );
 
 // ── PANTALLA PRINCIPAL DEL MENÚ DEL CLIENTE ─────────────────────────────
-const CustomerMenu = () => {
+const CustomerMenu = ({ navigation }) => {
   // Estado para controlar la categoría activa seleccionada
   const [activeCategory, setActiveCategory] = useState('all');
   // Estado para el texto escrito en la barra de búsqueda
   const [searchText, setSearchText] = useState('');
-  // Estado para llevar el conteo de ítems agregados al carrito
-  const [cartCount, setCartCount] = useState(0);
 
   // Hook que consume la API del menú (obtiene los platillos más vendidos)
   const { popularDishes, isLoading, error, refetch } = useMenu();
 
-  // Función para incrementar el contador del carrito al presionar "+"
-  const handleAddToCart = (item) => {
-    setCartCount((prev) => prev + 1);
+  // Abre ProductDetails para configurar el platillo (bebida/salsas/extras) antes de agregarlo
+  const handleDishPress = (item) => {
+    navigation.navigate('ProductDetails', { saucerId: item.id, itemType: 'saucer' });
   };
 
   // Filtrado reactivo por texto sobre los platillos recibidos de la API
@@ -266,56 +264,12 @@ const CustomerMenu = () => {
               <Text style={menuStyles.emptyText}>No se encontraron platillos.</Text>
             ) : (
               filteredDishes.map((dish, index) => (
-                <DishCard key={dish.id} item={dish} index={index} onAdd={handleAddToCart} />
+                <DishCard key={dish.id} item={dish} index={index} onPress={handleDishPress} />
               ))
             )}
           </View>
         )}
       </ScrollView>
-
-      {/* ── BARRA NAVEGADORA INFERIOR (Menú, Pedidos, Carrito, Perfil) ── */}
-      <View style={menuStyles.bottomNav}>
-        <TouchableOpacity style={[menuStyles.navItem, menuStyles.navItemActive]}>
-          <Icon name="restaurant" size={20} color={colors.white} />
-          <Text style={[menuStyles.navText, menuStyles.navTextActive]}>MENÚ</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={menuStyles.navItem}>
-          <Icon name="receipt-outline" size={20} color={colors.textGray} />
-          <Text style={menuStyles.navText}>Pedidos</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={menuStyles.navItem}>
-          <View>
-            <Icon name="cart-outline" size={20} color={colors.textGray} />
-            {cartCount > 0 && (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: -4,
-                  right: -6,
-                  backgroundColor: colors.primary,
-                  borderRadius: 8,
-                  minWidth: 16,
-                  height: 16,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text style={{ color: colors.white, fontSize: 10, fontWeight: '700' }}>
-                  {cartCount}
-                </Text>
-              </View>
-            )}
-          </View>
-          <Text style={menuStyles.navText}>Carrito</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={menuStyles.navItem}>
-          <Icon name="person-outline" size={20} color={colors.textGray} />
-          <Text style={menuStyles.navText}>Perfil</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 };

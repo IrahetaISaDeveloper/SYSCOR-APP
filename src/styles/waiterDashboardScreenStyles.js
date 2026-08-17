@@ -28,4 +28,12 @@ export default StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
+  tablesButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#FDEDEA",
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

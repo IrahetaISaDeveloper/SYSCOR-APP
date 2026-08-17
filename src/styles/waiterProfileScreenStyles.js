@@ -27,4 +27,15 @@ export default StyleSheet.create({
   scrollContent: {
     paddingBottom: 40,
   },
+  logoutButton: {
+    marginTop: 8,
+    marginHorizontal: 20,
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  logoutText: {
+    color: "#E74C3C",
+    fontWeight: "600",
+    fontSize: 14,
+  },
 });

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { Ionicons as Icon } from '@expo/vector-icons';
 import { useCustomerAuth } from '../../hooks/useCustomerAuth';
 import styles from '../../styles/CustomerCodeVerification';
 
@@ -28,10 +29,7 @@ export default function CustomerCodeVerificationScreen({ navigation, route }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.shieldContainer}>
-          <Image
-            source={require('../../../assets/shield-icon.png')} //icono de escudo
-            style={styles.shieldIcon}
-          />
+          <Icon name="shield-checkmark" size={40} color="#C62828" />
         </View>
         <Text style={styles.title}>Ingresa el código</Text>
         <Text style={styles.subtitle}>

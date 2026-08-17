@@ -1,10 +1,9 @@
 import React from "react";
-import { View, Text, ActivityIndicator, SafeAreaView, Alert } from "react-native";
-import { useAuth } from "../../context/AuthContext";
+import { View, Text, ActivityIndicator, SafeAreaView, TouchableOpacity } from "react-native";
+import { Ionicons as Icon } from "@expo/vector-icons";
 import useWaiterDashboard from "../../hooks/useWaiterDashboard";
 import useTableManagement from "../../hooks/useTableManagement";
 import AppHeader from "../../components/commons/AppHeader";
-import BottomNavBar from "../../components/commons/BottomNavBar";
 import TableMap from "../../components/waiterDashboard/TableMap";
 import AssignCustomerModal from "../../components/waiterDashboard/AssignCustomerModal";
 import OrderModal from "../../components/waiterDashboard/OrderModal";
@@ -12,9 +11,7 @@ import TableActionsModal from "../../components/waiterDashboard/TableActionsModa
 import TableManagementModal from "../../components/waiterDashboard/TableManagementModal";
 import waiterDashboardScreenStyles from "../../styles/waiterDashboardScreenStyles";
 
-export default function WaiterDashboardScreen({ navigation }) {
-  const { logout } = useAuth();
-
+export default function WaiterDashboardScreen() {
   const {
     tables,
     loading,
@@ -44,19 +41,6 @@ export default function WaiterDashboardScreen({ navigation }) {
 
   const tableManagement = useTableManagement();
 
-  const handleLogout = () => {
-    Alert.alert("Cerrar sesión", "¿Seguro que quieres salir?", [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Cerrar sesión", style: "destructive", onPress: logout },
-    ]);
-  };
-
-  const navItems = [
-  { key: "profile", icon: "person-outline", label: "Mi perfil", active: false, onPress: () => navigation.navigate("Profile") },
-  { key: "tables", icon: "restaurant-outline", label: "Mesas", active: false, onPress: tableManagement.openManagement },
-  { key: "logout", icon: "log-out-outline", label: "Salir", active: false, onPress: handleLogout },
-];
-
   if (loading) {
     return (
       <SafeAreaView style={waiterDashboardScreenStyles.centered}>
@@ -68,7 +52,19 @@ export default function WaiterDashboardScreen({ navigation }) {
 
   return (
     <SafeAreaView style={waiterDashboardScreenStyles.container}>
-      <AppHeader title="Mis mesas" subtitle="Toca una mesa para asignar clientes o gestionar la comanda" />
+      <AppHeader
+        title="Mis mesas"
+        subtitle="Toca una mesa para asignar clientes o gestionar la comanda"
+        accessory={
+          <TouchableOpacity
+            onPress={tableManagement.openManagement}
+            style={waiterDashboardScreenStyles.tablesButton}
+            activeOpacity={0.8}
+          >
+            <Icon name="restaurant-outline" size={20} color="#E74C3C" />
+          </TouchableOpacity>
+        }
+      />
 
       {error && (
         <View style={waiterDashboardScreenStyles.errorBanner}>
@@ -82,8 +78,6 @@ export default function WaiterDashboardScreen({ navigation }) {
         refreshing={refreshing}
         onRefresh={onRefresh}
       />
-
-      <BottomNavBar items={navItems} accentColor="#E74C3C" />
 
       <AssignCustomerModal
         visible={isAssignModalVisible}

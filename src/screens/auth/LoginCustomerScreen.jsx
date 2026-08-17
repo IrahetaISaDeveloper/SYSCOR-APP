@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useCustomerLogin } from '../../hooks/useCustomerLogin';
-import styles from '../../styles/LoginCustomer';
+import styles from '../../styles/loginCustomer';
 
 // Componentes comunes del proyecto
 import InputText from '../../components/commons/InputText';
@@ -14,14 +14,19 @@ export default function LoginCustomerScreen({ navigation }) {
   return (
     <View style={styles.container}>
       
-      {/* Logo / Título de marca */}
-      <View style={styles.logoContainer}>
-        <Image 
+      {/* Logo / Título de marca — mantener presionado da acceso al login de empleados */}
+      <TouchableOpacity
+        style={styles.logoContainer}
+        activeOpacity={1}
+        onLongPress={() => navigation.navigate('EmployeeLogin')}
+        delayLongPress={1800}
+      >
+        <Image
           source={require('../../../assets/logo png horizontal claro.png')}
           style={styles.logoImage}
           resizeMode="contain"
         />
-      </View>
+      </TouchableOpacity>
 
       <Text style={styles.title}>Bienvenido, Cliente</Text>
 

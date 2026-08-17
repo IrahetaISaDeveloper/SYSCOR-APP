@@ -211,22 +211,6 @@ const Orders = ({ navigation }) => {
           )}
         />
       )}
-
-      {/* ── BARRA INFERIOR DE NAVEGACIÓN ── */}
-      <View style={ordersStyles.bottomNav}>
-        <View style={[ordersStyles.bottomNavItem, ordersStyles.bottomNavItemActive]}>
-          <Icon name="grid" size={20} color={colors.white} />
-          <Text style={[ordersStyles.bottomNavText, ordersStyles.bottomNavTextActive]}>Dashboard</Text>
-        </View>
-        <TouchableOpacity
-          style={ordersStyles.bottomNavItem}
-          onPress={() => navigation.navigate('Profile')}
-        >
-          <Icon name="person-outline" size={20} color={colors.textGray} />
-          <Text style={ordersStyles.bottomNavText}>Perfil</Text>
-        </TouchableOpacity>
-      </View>
-
     </SafeAreaView>
   );
 };

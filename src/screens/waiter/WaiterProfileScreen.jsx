@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity, SafeAreaView } from "react-native";
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, SafeAreaView, Alert } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import useWaiterProfile from "../../hooks/useWaiterProfile";
 import ProfileHeader from "../../components/commons/ProfileHeader";
@@ -10,6 +10,13 @@ import waiterProfileScreenStyles from "../../styles/waiterProfileScreenStyles";
 export default function WaiterProfileScreen({ navigation  }) {
   const { logout } = useAuth();
   const { user, fullName, typeLabel, statusLabel, refreshing, onRefresh } = useWaiterProfile();
+
+  const handleLogout = () => {
+    Alert.alert("Cerrar sesión", "¿Seguro que quieres salir?", [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Cerrar sesión", style: "destructive", onPress: logout },
+    ]);
+  };
 
   const personalInfo = user?.personalInfo || {};
   const workInfo = user?.workInfo || {};
@@ -65,6 +72,10 @@ export default function WaiterProfileScreen({ navigation  }) {
             ))}
           </InfoSection>
         )}
+
+        <TouchableOpacity onPress={handleLogout} style={waiterProfileScreenStyles.logoutButton}>
+          <Text style={waiterProfileScreenStyles.logoutText}>Cerrar sesión</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
