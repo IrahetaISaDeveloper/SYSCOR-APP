@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { CartProvider } from './src/context/CartContext';
 import { ROLES, EMPLOYEE_TYPES } from './src/constants/roles';
 import AppTabBar from './src/navigation/AppTabBar';
+import BootGate from './src/navigation/BootGate';
 
 // Auth
 import LoginCustomerScreen from './src/screens/auth/LoginCustomerScreen';
@@ -163,10 +164,12 @@ function RootNavigator() {
 export default function App() {
   return (
     <AuthProvider>
-      <NavigationContainer>
-        <StatusBar style="dark" />
-        <RootNavigator />
-      </NavigationContainer>
+      <BootGate>
+        <NavigationContainer>
+          <StatusBar style="dark" />
+          <RootNavigator />
+        </NavigationContainer>
+      </BootGate>
     </AuthProvider>
   );
 }

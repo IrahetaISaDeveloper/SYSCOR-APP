@@ -1,6 +1,8 @@
 import React from "react";
 import { View, Text, ActivityIndicator, SafeAreaView, TouchableOpacity } from "react-native";
 import { Ionicons as Icon } from "@expo/vector-icons";
+import { useAuth } from "../../context/AuthContext";
+import { getFirstName } from "../../utils/userDisplay";
 import useWaiterDashboard from "../../hooks/useWaiterDashboard";
 import useTableManagement from "../../hooks/useTableManagement";
 import AppHeader from "../../components/commons/AppHeader";
@@ -12,6 +14,9 @@ import TableManagementModal from "../../components/waiterDashboard/TableManageme
 import waiterDashboardScreenStyles from "../../styles/waiterDashboardScreenStyles";
 
 export default function WaiterDashboardScreen() {
+  const { user } = useAuth();
+  const firstName = getFirstName(user);
+
   const {
     tables,
     loading,
@@ -52,6 +57,10 @@ export default function WaiterDashboardScreen() {
 
   return (
     <SafeAreaView style={waiterDashboardScreenStyles.container}>
+      {firstName ? (
+        <Text style={waiterDashboardScreenStyles.welcomeText}>Hola, {firstName} 👋</Text>
+      ) : null}
+
       <AppHeader
         title="Mis mesas"
         subtitle="Toca una mesa para asignar clientes o gestionar la comanda"

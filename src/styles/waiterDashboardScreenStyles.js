@@ -28,6 +28,13 @@ export default StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
+  welcomeText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#E74C3C",
+    paddingHorizontal: 20,
+    paddingTop: 10,
+  },
   tablesButton: {
     width: 38,
     height: 38,

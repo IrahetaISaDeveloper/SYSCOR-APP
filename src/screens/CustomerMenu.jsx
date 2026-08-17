@@ -13,6 +13,8 @@ import {
 import { Ionicons as Icon } from '@expo/vector-icons';
 import menuStyles, { colors } from '../styles/CustomerMenu';
 import useMenu from '../hooks/useMenu';
+import { useAuth } from '../context/AuthContext';
+import { getFirstName } from '../utils/userDisplay';
 
 // Categorías de productos estáticas para filtrar en el menú del cliente
 const CATEGORIES = [
@@ -129,6 +131,8 @@ const CustomerMenu = ({ navigation }) => {
 
   // Hook que consume la API del menú (obtiene los platillos más vendidos)
   const { popularDishes, isLoading, error, refetch } = useMenu();
+  const { user } = useAuth();
+  const firstName = getFirstName(user);
 
   // Abre ProductDetails para configurar el platillo (bebida/salsas/extras) antes de agregarlo
   const handleDishPress = (item) => {
@@ -172,6 +176,12 @@ const CustomerMenu = ({ navigation }) => {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
+        {firstName ? (
+          <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textDark, paddingHorizontal: 16, paddingTop: 12 }}>
+            Hola, {firstName} 👋
+          </Text>
+        ) : null}
+
         {/* ── BARRA DE BÚSQUEDA ── */}
         <View style={menuStyles.searchContainer}>
           <Icon name="search-outline" size={18} color={colors.textLight} />

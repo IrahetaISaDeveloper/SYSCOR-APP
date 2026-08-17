@@ -13,6 +13,8 @@ import { Ionicons as Icon } from '@expo/vector-icons';
 import ordersStyles, { colors } from '../styles/Orders';
 import useOrders from '../hooks/useOrders';
 import OrderCard from '../components/commons/OrderCard';
+import { useAuth } from '../context/AuthContext';
+import { getFirstName } from '../utils/userDisplay';
 
 // Pestañas de filtrado. Los conteos se muestran entre paréntesis (excepto "Todas")
 const filterOptions = [
@@ -35,6 +37,9 @@ const nextStatusMap = {
  * con sus especificaciones, y botones para avanzar el estado de cada orden.
  */
 const Orders = ({ navigation }) => {
+  const { user } = useAuth();
+  const firstName = getFirstName(user);
+
   const {
     orders:               cartOrders,
     isLoading:            cartLoading,
@@ -140,6 +145,12 @@ const Orders = ({ navigation }) => {
           <Icon name="notifications-outline" size={22} color={colors.textDark} />
         </View>
       </View>
+
+      {firstName ? (
+        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textDark, paddingHorizontal: 16, paddingTop: 10 }}>
+          Hola, {firstName} 👋
+        </Text>
+      ) : null}
 
       {/* ── FILTROS POR ESTADO ── */}
       <View style={ordersStyles.filtersContainer}>
