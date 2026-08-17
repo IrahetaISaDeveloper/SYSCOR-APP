@@ -1,9 +1,10 @@
 import { StyleSheet } from 'react-native';
+import { colors } from './Orders';
 
-export const styles = StyleSheet.create({
-  safeArea: {
+const profileStyles = StyleSheet.create({
+  container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -22,63 +23,39 @@ export const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#B91C1C',
+    fontWeight: '700',
+    color: colors.primary,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 16,
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 100,
   },
-  // Card del Perfil del Usuario
-  profileCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingVertical: 24,
+  avatarSection: {
     alignItems: 'center',
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    marginBottom: 20,
   },
-  avatarContainer: {
+  avatarWrapper: {
     position: 'relative',
-    marginBottom: 12,
   },
-  avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    borderWidth: 3,
-    borderColor: '#B91C1C',
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: colors.border,
   },
-  avatarPlaceholder: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: '#B91C1C',
-  },
-  cameraButton: {
+  editBadge: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#B91C1C',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  cameraIcon: {
-    fontSize: 12,
+    borderColor: colors.white,
   },
   userName: {
     fontSize: 20,
@@ -163,42 +140,43 @@ export const styles = StyleSheet.create({
   menuLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-  },
-  menuIconBg: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: '#FEF2F2',
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  menuText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  menuArrow: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    fontWeight: 'bold',
-  },
-  // Botón Cerrar Sesión
-  logoutButton: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FEE2E2',
-    borderRadius: 16,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 24,
-  },
-  logoutText: {
-    color: '#B91C1C',
+  logoutButtonText: {
+    color: colors.white,
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '700',
+    marginLeft: 8,
+  },
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: colors.white,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingVertical: 8,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  bottomNavItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomNavItemActive: {
+    backgroundColor: colors.primary,
+    marginHorizontal: 12,
+    borderRadius: 8,
+    paddingVertical: 8,
+  },
+  bottomNavText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textGray,
+    marginTop: 2,
+  },
+  bottomNavTextActive: {
+    color: colors.white,
   },
 });

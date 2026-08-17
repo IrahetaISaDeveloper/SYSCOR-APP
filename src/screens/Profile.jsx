@@ -186,10 +186,15 @@ export const ProfileScreen = (props) => {
           <Text style={{ fontSize: 16 }}>🚪</Text>
           <Text style={styles.logoutText}>Cerrar Sesión</Text>
         </TouchableOpacity>
-
-      </ScrollView>
+        <View style={[profileStyles.bottomNavItem, profileStyles.bottomNavItemActive]}>
+          <Icon name="person" size={20} color={colors.white} />
+          <Text style={[profileStyles.bottomNavText, profileStyles.bottomNavTextActive]}>Profile</Text>
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
 
 export default ProfileScreen;
+
+export default Profile;
