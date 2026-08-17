@@ -3,15 +3,15 @@
 export const detectCardBrand = (cardNumber) => {
   const digits = (cardNumber || '').replace(/\s/g, '');
 
-  if (/^4/.test(digits)) return { brand: 'Visa', icon: '💳', cvvLength: 3 };
+  if (/^4/.test(digits)) return { brand: 'Visa', icon: 'card-outline', cvvLength: 3 };
   if (/^(5[1-5]|2(2[2-9]|[3-6]\d|7[01]|720))/.test(digits)) {
-    return { brand: 'Mastercard', icon: '💳', cvvLength: 3 };
+    return { brand: 'Mastercard', icon: 'card-outline', cvvLength: 3 };
   }
-  if (/^3[47]/.test(digits)) return { brand: 'American Express', icon: '💳', cvvLength: 4 };
-  if (/^6(011|5)/.test(digits)) return { brand: 'Discover', icon: '💳', cvvLength: 3 };
-  if (/^3(0[0-5]|[68])/.test(digits)) return { brand: 'Diners Club', icon: '💳', cvvLength: 3 };
+  if (/^3[47]/.test(digits)) return { brand: 'American Express', icon: 'card-outline', cvvLength: 4 };
+  if (/^6(011|5)/.test(digits)) return { brand: 'Discover', icon: 'card-outline', cvvLength: 3 };
+  if (/^3(0[0-5]|[68])/.test(digits)) return { brand: 'Diners Club', icon: 'card-outline', cvvLength: 3 };
 
-  return { brand: null, icon: '💳', cvvLength: 3 };
+  return { brand: null, icon: 'card-outline', cvvLength: 3 };
 };
 
 // Algoritmo de Luhn: valida que el número de tarjeta sea matemáticamente

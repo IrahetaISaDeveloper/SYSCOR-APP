@@ -6,11 +6,13 @@ import {
   ScrollView,
   SafeAreaView,
 } from 'react-native';
+import { Ionicons as Icon } from '@expo/vector-icons';
 import { InputText } from '../components/commons/InputText';
 import { PaymentSuccessModal } from '../components/commons/PaymentSuccessModal';
 import Toast from '../components/commons/Toast';
 import { usePayment } from '../hooks/usePayment';
 import { styles } from '../styles/PaymentVerification';
+import { colors } from '../styles/theme';
 
 export const PaymentScreen = (props) => {
   const { cartItems = [], onBack } = props;
@@ -50,7 +52,7 @@ export const PaymentScreen = (props) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} activeOpacity={0.7}>
-          <Text style={{ fontSize: 20, color: '#B91C1C' }}>←</Text>
+          <Icon name="arrow-back" size={20} color={colors.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Pago</Text>
         <View style={{ width: 20 }} />
@@ -78,7 +80,7 @@ export const PaymentScreen = (props) => {
 
         {/* Método de Pago */}
         <View style={styles.methodTitleSection}>
-          <Text style={{ fontSize: 18 }}>💳</Text>
+          <Icon name="card-outline" size={18} color={colors.textDark} />
           <Text style={styles.methodTitle}>Tarjeta de Crédito / Débito</Text>
         </View>
 
@@ -100,9 +102,16 @@ export const PaymentScreen = (props) => {
           onChangeText={handleCardNumberChange}
           error={fieldError === 'cardNumber'}
           rightIcon={
-            <Text style={{ fontSize: 12, fontWeight: '700', color: cardBrand.brand ? '#111827' : '#A1A1AA' }}>
-              {cardBrand.icon} {cardBrand.brand || ''}
-            </Text>
+            cardBrand.brand ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Icon name={cardBrand.icon} size={16} color={colors.textDark} />
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textDark }}>
+                  {cardBrand.brand}
+                </Text>
+              </View>
+            ) : (
+              <Icon name="card-outline" size={16} color={colors.textLight} />
+            )
           }
         />
 
@@ -126,7 +135,7 @@ export const PaymentScreen = (props) => {
             onChangeText={handleCvvChange}
             error={fieldError === 'cvv'}
             containerStyle={styles.flex1}
-            rightIcon={<Text style={{ color: '#A1A1AA', fontSize: 12 }}>ⓘ</Text>}
+            rightIcon={<Icon name="information-circle-outline" size={16} color={colors.textLight} />}
           />
         </View>
 
@@ -137,7 +146,7 @@ export const PaymentScreen = (props) => {
           activeOpacity={0.8}
         >
           <View style={[styles.checkbox, saveCard && styles.checkboxActive]}>
-            {saveCard && <Text style={{ color: '#FFFFFF', fontSize: 12 }}>✓</Text>}
+            {saveCard && <Icon name="checkmark" size={12} color={colors.white} />}
           </View>
           <Text style={styles.checkboxLabel}>Guardar tarjeta para futuros pedidos</Text>
         </TouchableOpacity>
@@ -150,11 +159,11 @@ export const PaymentScreen = (props) => {
         {/* Badges Seguridad */}
         <View style={styles.badgesContainer}>
           <View style={styles.badgeItem}>
-            <Text style={{ fontSize: 12 }}>🛡️</Text>
+            <Icon name="shield-checkmark-outline" size={14} color={colors.textGray} />
             <Text style={styles.badgeText}>SSL SECURE</Text>
           </View>
           <View style={styles.badgeItem}>
-            <Text style={{ fontSize: 12 }}>🔒</Text>
+            <Icon name="lock-closed-outline" size={14} color={colors.textGray} />
             <Text style={styles.badgeText}>SAFE PAY</Text>
           </View>
         </View>
@@ -167,7 +176,7 @@ export const PaymentScreen = (props) => {
           onPress={handlePay}
           activeOpacity={0.9}
         >
-          <Text style={{ fontSize: 16 }}>🔒</Text>
+          <Icon name="lock-closed" size={16} color={colors.white} />
           <Text style={styles.payButtonText}>Pagar ${safeTotal.toFixed(2)}</Text>
         </TouchableOpacity>
       </View>

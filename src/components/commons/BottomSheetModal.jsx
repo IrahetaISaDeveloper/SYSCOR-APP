@@ -1,5 +1,6 @@
 import React from "react";
 import { Modal, View, Text, TouchableOpacity, Pressable } from "react-native";
+import { Ionicons as Icon } from "@expo/vector-icons";
 import bottomSheetModalStyles from "../../styles/bottomSheetModalStyles";
 
 export default function BottomSheetModal({ visible, onClose, title, children }) {
@@ -14,7 +15,7 @@ export default function BottomSheetModal({ visible, onClose, title, children }) 
           <View style={bottomSheetModalStyles.header}>
             <Text style={bottomSheetModalStyles.title}>{title}</Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Text style={bottomSheetModalStyles.closeIcon}>✕</Text>
+              <Icon name="close" size={22} color="#2C3E50" />
             </TouchableOpacity>
           </View>
 

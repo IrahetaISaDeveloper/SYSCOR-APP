@@ -8,17 +8,19 @@ export const requestRecoveryCode = async ({ email, userType }) => {
   return data;
 };
 
-export const verifyRecoveryCode = async (codeRequest) => {
+export const verifyRecoveryCode = async ({ code, email }) => {
   const { data } = await apiClient.post("/auth/recovery-password/verify-code", {
-    codeRequest,
+    code,
+    email,
   });
   return data;
 };
 
-export const setNewPassword = async ({ newPassword, confirmNewPassword }) => {
+export const setNewPassword = async ({ newPassword, confirmNewPassword, email }) => {
   const { data } = await apiClient.post("/auth/recovery-password/new-password", {
     newPassword,
     confirmNewPassword,
+    email,
   });
   return data;
 };

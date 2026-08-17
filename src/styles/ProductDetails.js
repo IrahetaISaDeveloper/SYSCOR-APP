@@ -76,7 +76,7 @@ export default StyleSheet.create({
   },
   headerIcon: {
     fontSize: 18,
-    color: '#FF6B5E',
+    color: '#C62828',
     fontWeight: '700',
   },
   infoContainer: {

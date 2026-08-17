@@ -125,7 +125,7 @@ export default function useRecoveryPassword() {
 
     setIsLoading(true);
     try {
-      await verifyRecoveryCode(codeRequest);
+      await verifyRecoveryCode({ code: codeRequest, email });
       setSuccess(true);
       return { ok: true };
     } catch (err) {
@@ -137,7 +137,7 @@ export default function useRecoveryPassword() {
     } finally {
       setIsLoading(false);
     }
-  }, [digits, clearMessages]);
+  }, [digits, email, clearMessages]);
 
   // Paso 3: nueva contraseña
   const handleResetPassword = useCallback(async () => {
@@ -158,7 +158,7 @@ export default function useRecoveryPassword() {
 
     setIsLoading(true);
     try {
-      await setNewPasswordRequest({ newPassword, confirmNewPassword: confirmPassword });
+      await setNewPasswordRequest({ newPassword, confirmNewPassword: confirmPassword, email });
       setSuccess(true);
       return { ok: true };
     } catch (err) {
@@ -170,7 +170,7 @@ export default function useRecoveryPassword() {
     } finally {
       setIsLoading(false);
     }
-  }, [newPassword, confirmPassword, clearMessages]);
+  }, [newPassword, confirmPassword, email, clearMessages]);
 
   const resetFlowState = useCallback(() => {
     setDigits(["", "", "", "", "", ""]);

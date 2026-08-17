@@ -1,14 +1,16 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  Image, 
-  TouchableOpacity, 
-  ScrollView, 
-  SafeAreaView 
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView
 } from 'react-native';
+import { Ionicons as Icon } from '@expo/vector-icons';
 import QuantityStepper from '../components/commons/QuantityStepper';
 import { styles } from '../styles/Cart';
+import { colors } from '../styles/theme';
 
 export const Cart = ({ 
   cartItems = [], 
@@ -29,17 +31,17 @@ export const Cart = ({
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} activeOpacity={0.7}>
-          <Text style={{ fontSize: 20, color: '#B91C1C' }}>←</Text>
+          <Icon name="arrow-back" size={20} color={colors.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Mi Carrito</Text>
         <TouchableOpacity onPress={onClearCart} activeOpacity={0.7}>
-          <Text style={{ fontSize: 18, color: '#6B7280' }}>🗑️</Text>
+          <Icon name="trash-outline" size={18} color={colors.textGray} />
         </TouchableOpacity>
       </View>
 
       {cartItems.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyFace}>☹️</Text>
+          <Icon name="cart-outline" size={48} color={colors.textLight} style={{ marginBottom: 8 }} />
           <Text style={styles.emptyText}>No hay nada aún</Text>
         </View>
       ) : (

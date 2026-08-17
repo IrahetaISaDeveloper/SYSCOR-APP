@@ -1,37 +1,92 @@
 import React from 'react';
-import { View, TextInput, Text, StyleSheet } from 'react-native';
+import { View, TextInput, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { colors, radius, spacing } from '../../styles/theme';
 
-const InputText = ({ label, value, onChangeText, placeholder, secureTextEntry, error }) => {
+const InputText = ({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  secureTextEntry,
+  error,
+  rightIcon,
+  onRightIconPress,
+  keyboardType,
+  autoCapitalize = 'none',
+  maxLength,
+  containerStyle,
+}) => {
+  const hasError = Boolean(error);
+  const errorMessage = typeof error === 'string' ? error : null;
+
+  const InputWrapper = onRightIconPress ? TouchableOpacity : View;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
-      <TextInput
-        style={[styles.input, error ? styles.inputError : null]}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        secureTextEntry={secureTextEntry}
-        autoCapitalize="none"
-        placeholderTextColor="#999"
-      />
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      <View style={[styles.inputWrapper, hasError && styles.inputWrapperError]}>
+        <TextInput
+          style={styles.input}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textLight}
+          secureTextEntry={secureTextEntry}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          maxLength={maxLength}
+        />
+        {rightIcon ? (
+          <InputWrapper
+            onPress={onRightIconPress}
+            hitSlop={10}
+            style={styles.rightIcon}
+            {...(onRightIconPress ? { activeOpacity: 0.7 } : {})}
+          >
+            {rightIcon}
+          </InputWrapper>
+        ) : null}
+      </View>
+      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 15 },
-  label: { fontSize: 14, marginBottom: 5, color: '#333' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#fff',
+  container: { marginBottom: spacing.md },
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: spacing.xs + 2,
+    color: colors.textDark,
   },
-  inputError: { borderColor: 'red' },
-  errorText: { color: 'red', fontSize: 12, marginTop: 4 },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.white,
+    paddingHorizontal: spacing.md,
+  },
+  inputWrapperError: {
+    borderColor: colors.error,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: colors.textDark,
+  },
+  rightIcon: {
+    paddingLeft: spacing.sm,
+  },
+  errorText: {
+    color: colors.error,
+    fontSize: 12,
+    marginTop: 4,
+  },
 });
 
 export default InputText;
+export { InputText };

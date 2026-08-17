@@ -13,7 +13,7 @@ export default StyleSheet.create({
     justifyContent: "center",
   },
   errorText: {
-    color: "#E74C3C",
+    color: "#C62828",
     fontSize: 13,
   },
   emptyText: {
@@ -75,7 +75,7 @@ export default StyleSheet.create({
   deleteButtonText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#E74C3C",
+    color: "#C62828",
   },
   formFooter: {
     flexDirection: "row",

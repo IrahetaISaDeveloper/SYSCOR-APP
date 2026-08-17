@@ -35,7 +35,7 @@ export default StyleSheet.create({
     marginTop: 16,
   },
   button: {
-    backgroundColor: '#C82323', // Rojo exacto de la imagen
+    backgroundColor: '#C62828', // Rojo exacto de la imagen
     height: 50,
     borderRadius: 12,
     justifyContent: 'center',
@@ -61,7 +61,7 @@ export default StyleSheet.create({
     color: '#666666',
   },
   linkText: {
-    color: '#C82323',
+    color: '#C62828',
     fontWeight: 'bold',
   },
   errorContainer: {

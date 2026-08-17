@@ -42,7 +42,7 @@ function NavBarItem({ icon, label, active, accentColor, onPress }) {
   );
 }
 
-export default function BottomNavBar({ items, accentColor = "#E74C3C" }) {
+export default function BottomNavBar({ items, accentColor = "#C62828" }) {
   return (
     <SafeAreaView style={bottomNavBarStyles.safeArea}>
       <View style={bottomNavBarStyles.container}>

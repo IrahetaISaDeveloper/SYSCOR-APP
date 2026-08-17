@@ -49,7 +49,7 @@ export default function WaiterDashboardScreen() {
   if (loading) {
     return (
       <SafeAreaView style={waiterDashboardScreenStyles.centered}>
-        <ActivityIndicator size="large" color="#E74C3C" />
+        <ActivityIndicator size="large" color="#C62828" />
         <Text style={waiterDashboardScreenStyles.loadingText}>Cargando mesas...</Text>
       </SafeAreaView>
     );
@@ -58,7 +58,7 @@ export default function WaiterDashboardScreen() {
   return (
     <SafeAreaView style={waiterDashboardScreenStyles.container}>
       {firstName ? (
-        <Text style={waiterDashboardScreenStyles.welcomeText}>Hola, {firstName} 👋</Text>
+        <Text style={waiterDashboardScreenStyles.welcomeText}>Hola, {firstName}</Text>
       ) : null}
 
       <AppHeader
@@ -70,7 +70,7 @@ export default function WaiterDashboardScreen() {
             style={waiterDashboardScreenStyles.tablesButton}
             activeOpacity={0.8}
           >
-            <Icon name="restaurant-outline" size={20} color="#E74C3C" />
+            <Icon name="restaurant-outline" size={20} color="#C62828" />
           </TouchableOpacity>
         }
       />

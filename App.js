@@ -61,7 +61,7 @@ function AuthNavigator() {
 function CustomerTabNavigator() {
   return (
     <CustomerTab.Navigator
-      tabBar={(props) => <AppTabBar {...props} accentColor="#E74C3C" />}
+      tabBar={(props) => <AppTabBar {...props} accentColor="#C62828" />}
       screenOptions={{ headerShown: false }}
     >
       <CustomerTab.Screen
@@ -98,7 +98,7 @@ function CustomerRootNavigator() {
 function WaiterTabNavigator() {
   return (
     <WaiterTab.Navigator
-      tabBar={(props) => <AppTabBar {...props} accentColor="#E74C3C" />}
+      tabBar={(props) => <AppTabBar {...props} accentColor="#C62828" />}
       screenOptions={{ headerShown: false }}
     >
       <WaiterTab.Screen
@@ -118,7 +118,7 @@ function WaiterTabNavigator() {
 function KitchenTabNavigator() {
   return (
     <KitchenTab.Navigator
-      tabBar={(props) => <AppTabBar {...props} accentColor="#3498DB" />}
+      tabBar={(props) => <AppTabBar {...props} accentColor="#C62828" />}
       screenOptions={{ headerShown: false }}
     >
       <KitchenTab.Screen

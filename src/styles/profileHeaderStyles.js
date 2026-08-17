@@ -18,7 +18,7 @@ export default StyleSheet.create({
     width: 92,
     height: 92,
     borderRadius: 46,
-    backgroundColor: "#E74C3C",
+    backgroundColor: "#C62828",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -40,7 +40,7 @@ export default StyleSheet.create({
     marginTop: 6,
   },
   typeBadgeText: {
-    color: "#E74C3C",
+    color: "#C62828",
     fontSize: 12,
     fontWeight: "700",
   },

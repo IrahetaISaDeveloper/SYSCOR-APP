@@ -1,12 +1,13 @@
 import React from 'react';
-import { 
-  Modal, 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  ScrollView 
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView
 } from 'react-native';
+import { Ionicons as Icon } from '@expo/vector-icons';
 
 export const PaymentSuccessModal = ({ 
   visible = false, 
@@ -34,7 +35,7 @@ export const PaymentSuccessModal = ({
             onPress={onClose}
             activeOpacity={0.7}
           >
-            <Text style={styles.closeIcon}>✕</Text>
+            <Icon name="close" size={20} color="#C62828" />
           </TouchableOpacity>
 
           {/* Encabezado */}
@@ -46,7 +47,7 @@ export const PaymentSuccessModal = ({
           {/* Tiempo Estimado (Estilo PedidosYa) */}
           <View style={styles.timeCard}>
             <View style={styles.timeIconContainer}>
-              <Text style={styles.clockIcon}>🕒</Text>
+              <Icon name="time-outline" size={18} color="#FFFFFF" />
             </View>
             <View>
               <Text style={styles.timeLabel}>TIEMPO ESTIMADO DE LLEGADA</Text>
@@ -70,7 +71,7 @@ export const PaymentSuccessModal = ({
             {/* Fase 1: Recibido */}
             <View style={styles.stepItem}>
               <View style={[styles.stepDot, currentStep >= 1 && styles.stepDotActive]}>
-                {currentStep >= 1 && <Text style={styles.stepCheck}>✓</Text>}
+                {currentStep >= 1 && <Icon name="checkmark" size={12} color="#FFFFFF" />}
               </View>
               <Text style={[styles.stepLabel, currentStep >= 1 && styles.stepLabelActive]}>
                 Recibido
@@ -81,7 +82,7 @@ export const PaymentSuccessModal = ({
             <View style={styles.stepItem}>
               <View style={[styles.stepDot, currentStep >= 2 && styles.stepDotActive]}>
                 {currentStep >= 2 ? (
-                  <Text style={styles.stepCheck}>✓</Text>
+                  <Icon name="checkmark" size={12} color="#FFFFFF" />
                 ) : (
                   <View style={styles.stepDotInner} />
                 )}
@@ -95,7 +96,7 @@ export const PaymentSuccessModal = ({
             <View style={styles.stepItem}>
               <View style={[styles.stepDot, currentStep >= 3 && styles.stepDotActive]}>
                 {currentStep >= 3 ? (
-                  <Text style={styles.stepCheck}>✓</Text>
+                  <Icon name="checkmark" size={12} color="#FFFFFF" />
                 ) : (
                   <View style={styles.stepDotInner} />
                 )}
@@ -168,13 +169,13 @@ const styles = StyleSheet.create({
   },
   closeIcon: {
     fontSize: 20,
-    color: '#B91C1C',
+    color: '#C62828',
     fontWeight: 'bold',
   },
   title: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#B91C1C',
+    color: '#C62828',
     textAlign: 'center',
     marginBottom: 4,
   },
@@ -334,7 +335,7 @@ const styles = StyleSheet.create({
   totalPrice: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#B91C1C',
+    color: '#C62828',
   },
   homeButton: {
     width: '100%',

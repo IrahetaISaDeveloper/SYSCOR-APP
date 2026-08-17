@@ -42,7 +42,7 @@ export const styles = StyleSheet.create({
   totalPriceHeader: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#B91C1C',
+    color: '#C62828',
   },
   summaryCard: {
     backgroundColor: '#F9FAFB',
@@ -99,8 +99,8 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkboxActive: {
-    backgroundColor: '#B91C1C',
-    borderColor: '#B91C1C',
+    backgroundColor: '#C62828',
+    borderColor: '#C62828',
   },
   checkboxLabel: {
     fontSize: 13,
@@ -138,7 +138,7 @@ export const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   payButton: {
-    backgroundColor: '#B91C1C',
+    backgroundColor: '#C62828',
     borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',

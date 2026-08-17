@@ -37,7 +37,7 @@ export default StyleSheet.create({
     fontWeight: "500",
   },
   tabLabelActive: {
-    color: "#E74C3C",
+    color: "#C62828",
     fontWeight: "700",
   },
   emptyText: {
@@ -84,7 +84,7 @@ export default StyleSheet.create({
   stepperButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#E74C3C",
+    color: "#C62828",
     lineHeight: 18,
   },
   stepperButtonTextDisabled: {
@@ -105,7 +105,7 @@ export default StyleSheet.create({
     paddingHorizontal: 14,
   },
   summaryText: {
-    color: "#E74C3C",
+    color: "#C62828",
     fontWeight: "700",
     fontSize: 13,
     textAlign: "center",

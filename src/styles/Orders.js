@@ -2,14 +2,14 @@ import { StyleSheet } from 'react-native';
 
 // Paleta de colores globales utilizada en la pantalla de comandas de cocina
 const colors = {
-  primary: '#8B1E1E',       // Rojo corporativo El Corral
-  primaryDark: '#6E1717',   // Rojo oscuro para estados presionados o bordes
+  primary: '#C62828',       // Rojo corporativo El Corral
+  primaryDark: '#9B1B1B',   // Rojo oscuro para estados presionados o bordes
   background: '#F5F5F5',    // Fondo gris claro de la pantalla
   white: '#FFFFFF',         // Blanco
   textDark: '#1A1A1A',      // Texto principal (casi negro)
   textGray: '#6B6B6B',      // Texto secundario o deshabilitado
   border: '#E5E5E5',        // Color gris claro para divisores y bordes de tarjetas
-  danger: '#8B1E1E',        // Rojo para alertas o comanda retrasada
+  danger: '#C62828',        // Rojo para alertas o comanda retrasada
   dangerBg: '#FCE9E9',      // Fondo rosado claro para notas de peligro
   warning: '#E38B29',       // Naranja para orden en proceso
   warningBg: '#FCEFDD',     // Fondo naranja claro para notas de advertencia

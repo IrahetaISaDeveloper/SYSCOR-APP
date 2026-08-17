@@ -72,7 +72,7 @@ export default function TableManagementModal({
         <>
           {loading ? (
             <View style={tableManagementModalStyles.centered}>
-              <ActivityIndicator color="#E74C3C" />
+              <ActivityIndicator color="#C62828" />
             </View>
           ) : error ? (
             <View style={tableManagementModalStyles.centered}>

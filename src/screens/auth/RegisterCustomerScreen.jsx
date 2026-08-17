@@ -1,8 +1,10 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { Ionicons as Icon } from '@expo/vector-icons';
 import InputText from '../../components/commons/InputText';
 import { useCustomerAuth } from '../../hooks/useCustomerAuth';
 import styles from '../../styles/RegisterCustomer';
+import { colors } from '../../styles/theme';
 
 export default function RegisterCustomerScreen({ navigation }) {
   const {
@@ -13,12 +15,10 @@ export default function RegisterCustomerScreen({ navigation }) {
     loading, error,
     handleRegister,
   } = useCustomerAuth();
+  const [showPassword, setShowPassword] = useState(false);
 
   const onPressRegister = async () => {
-    const success = await handleRegister(navigation);
-    if (success) {
-      Alert.alert('Código enviado', 'Te enviamos un código de verificación a tu correo.');
-    }
+    await handleRegister(navigation);
   };
 
   return (
@@ -48,7 +48,7 @@ export default function RegisterCustomerScreen({ navigation }) {
 
         <Text style={styles.label}>Teléfono</Text>
         <InputText
-          placeholder="+57 300 000 0000"
+          placeholder="Ej. 7123 4567"
           keyboardType="phone-pad"
           value={phone}
           onChangeText={setPhone}
@@ -57,9 +57,17 @@ export default function RegisterCustomerScreen({ navigation }) {
         <Text style={styles.label}>Contraseña</Text>
         <InputText
           placeholder="• • • • • • • •"
-          secureTextEntry
+          secureTextEntry={!showPassword}
           value={password}
           onChangeText={setPassword}
+          rightIcon={
+            <Icon
+              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color={colors.textLight}
+            />
+          }
+          onRightIconPress={() => setShowPassword((prev) => !prev)}
         />
 
         {error && (

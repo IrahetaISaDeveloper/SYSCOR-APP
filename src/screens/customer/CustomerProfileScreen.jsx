@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   logoutText: {
-    color: '#E74C3C',
+    color: '#C62828',
     fontWeight: '600',
     fontSize: 14,
   },

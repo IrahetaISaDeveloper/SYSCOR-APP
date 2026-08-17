@@ -1,7 +1,8 @@
 import React from 'react';
 import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
+import { Ionicons as Icon } from '@expo/vector-icons';
 
-// Fila de texto plano (sin imagen) con botón +/✓, usada en listas
+// Fila de texto plano (sin imagen) con botón de agregar/seleccionar, usada en listas
 // "requeridas" tipo PedidosYa (ej. "Seleccione salsas", elige N opciones).
 const SelectableRow = ({ label, selected, onPress, isLast }) => {
   return (
@@ -12,9 +13,7 @@ const SelectableRow = ({ label, selected, onPress, isLast }) => {
     >
       <Text style={styles.label}>{label}</Text>
       <View style={[styles.button, selected && styles.buttonSelected]}>
-        <Text style={[styles.icon, selected && styles.iconSelected]}>
-          {selected ? '✓' : '+'}
-        </Text>
+        <Icon name={selected ? 'checkmark' : 'add'} size={15} color={selected ? '#FFFFFF' : '#3F3F46'} />
       </View>
     </TouchableOpacity>
   );

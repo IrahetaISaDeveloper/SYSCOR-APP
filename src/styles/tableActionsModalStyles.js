@@ -28,7 +28,7 @@ export default StyleSheet.create({
     color: "#2C3E50",
   },
   rowLabelDanger: {
-    color: "#E74C3C",
+    color: "#C62828",
   },
   iconEmoji: {
     fontSize: 17,

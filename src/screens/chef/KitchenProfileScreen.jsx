@@ -26,7 +26,7 @@ export default function KitchenProfileScreen({ navigation }) {
 
       <ScrollView
         contentContainerStyle={kitchenProfileScreenStyles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3498DB" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#C62828" />}
       >
         <ProfileHeader
           image={personalInfo.image}

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons as Icon } from '@expo/vector-icons';
 
 // Componentes UI de commons
 import OptionChip from '../components/commons/OptionChip';
@@ -17,6 +18,7 @@ import Toast from '../components/commons/Toast';
 
 import { useProduct } from '../hooks/useProduct';
 import styles from '../styles/ProductDetails';
+import { colors } from '../styles/theme';
 
 export const ProductDetails = ({ route, navigation, onAddToCart, onGoToCart, onBack, productIdProp, itemTypeProp }) => {
   const {
@@ -50,8 +52,8 @@ export const ProductDetails = ({ route, navigation, onAddToCart, onGoToCart, onB
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#C62828" />
-        <Text style={{ marginTop: 12, color: '#8A8A8A', fontWeight: '600' }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ marginTop: 12, color: colors.textGray, fontWeight: '600' }}>
           Cargando producto...
         </Text>
       </View>
@@ -62,8 +64,9 @@ export const ProductDetails = ({ route, navigation, onAddToCart, onGoToCart, onB
   if (errorMessage || !productData) {
     return (
       <View style={styles.centered}>
+        <Icon name="alert-circle-outline" size={32} color={colors.error} style={{ marginBottom: 8 }} />
         <Text style={[styles.errorText, { marginBottom: 8, fontWeight: 'bold' }]}>
-          ⚠️ Error de Carga
+          Error de Carga
         </Text>
         <Text style={styles.errorText}>
           {errorMessage || 'No se encontró información del producto.'}
@@ -215,10 +218,10 @@ export const ProductDetails = ({ route, navigation, onAddToCart, onGoToCart, onB
       {/* Header flotante superior */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.headerButton} onPress={() => (onBack ? onBack() : navigation?.goBack())}>
-          <Text style={styles.headerIcon}>←</Text>
+          <Icon name="arrow-back" size={20} color={colors.textDark} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.headerButton} onPress={() => onGoToCart?.()}>
-          <Text style={styles.headerIcon}>🛒</Text>
+          <Icon name="cart-outline" size={20} color={colors.textDark} />
         </TouchableOpacity>
       </View>
 

@@ -7,10 +7,12 @@ import {
   ScrollView,
   SafeAreaView,
 } from 'react-native';
+import { Ionicons as Icon } from '@expo/vector-icons';
 import { InputText } from '../components/commons/InputText';
 import Toast from '../components/commons/Toast';
 import { useProfile } from '../hooks/useProfile';
 import { styles } from '../styles/Profile';
+import { colors } from '../styles/theme';
 
 export const ProfileScreen = (props) => {
   const { user, onBack } = props;
@@ -41,7 +43,7 @@ export const ProfileScreen = (props) => {
       <View style={styles.header}>
         {onBack ? (
           <TouchableOpacity style={styles.backButton} onPress={onBack} activeOpacity={0.7}>
-            <Text style={{ fontSize: 20, color: '#B91C1C' }}>←</Text>
+            <Icon name="arrow-back" size={20} color={colors.primary} />
           </TouchableOpacity>
         ) : null}
         <Text style={styles.headerTitle}>Mi Perfil</Text>
@@ -59,7 +61,7 @@ export const ProfileScreen = (props) => {
               />
             ) : (
               <View style={styles.avatarPlaceholder}>
-                <Text style={{ fontSize: 32 }}>👤</Text>
+                <Icon name="person" size={32} color={colors.textLight} />
               </View>
             )}
 
@@ -69,7 +71,7 @@ export const ProfileScreen = (props) => {
               onPress={handleAvatarPress}
               activeOpacity={0.8}
             >
-              <Text style={styles.cameraIcon}>📷</Text>
+              <Icon name="camera-outline" size={16} color={colors.white} />
             </TouchableOpacity>
           </View>
 
@@ -139,7 +141,7 @@ export const ProfileScreen = (props) => {
           >
             <View style={styles.menuLeft}>
               <View style={styles.menuIconBg}>
-                <Text style={{ fontSize: 16 }}>🕒</Text>
+                <Icon name="time-outline" size={16} color={colors.primary} />
               </View>
               <Text style={styles.menuText}>Mis Pedidos</Text>
             </View>
@@ -154,7 +156,7 @@ export const ProfileScreen = (props) => {
           >
             <View style={styles.menuLeft}>
               <View style={styles.menuIconBg}>
-                <Text style={{ fontSize: 16 }}>💳</Text>
+                <Icon name="card-outline" size={16} color={colors.primary} />
               </View>
               <Text style={styles.menuText}>Métodos de Pago</Text>
             </View>
@@ -169,7 +171,7 @@ export const ProfileScreen = (props) => {
           >
             <View style={styles.menuLeft}>
               <View style={styles.menuIconBg}>
-                <Text style={{ fontSize: 16 }}>❓</Text>
+                <Icon name="help-circle-outline" size={16} color={colors.primary} />
               </View>
               <Text style={styles.menuText}>Ayuda y Soporte</Text>
             </View>
@@ -183,18 +185,12 @@ export const ProfileScreen = (props) => {
           onPress={handleLogoutPress}
           activeOpacity={0.8}
         >
-          <Text style={{ fontSize: 16 }}>🚪</Text>
+          <Icon name="log-out-outline" size={18} color={colors.error} />
           <Text style={styles.logoutText}>Cerrar Sesión</Text>
         </TouchableOpacity>
-        <View style={[profileStyles.bottomNavItem, profileStyles.bottomNavItemActive]}>
-          <Icon name="person" size={20} color={colors.white} />
-          <Text style={[profileStyles.bottomNavText, profileStyles.bottomNavTextActive]}>Profile</Text>
-        </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
 export default ProfileScreen;
-
-export default Profile;

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Text, StyleSheet } from 'react-native';
+import { Ionicons as Icon } from '@expo/vector-icons';
 
 // Notificación flotante no bloqueante (reemplaza los Alert.alert nativos
 // para avisos de validación, como "selecciona las opciones requeridas").
@@ -37,7 +38,12 @@ const Toast = ({ visible, message, type = 'error', onHide }) => {
         { transform: [{ translateY }] },
       ]}
     >
-      <Text style={styles.icon}>{type === 'success' ? '✓' : '⚠️'}</Text>
+      <Icon
+        name={type === 'success' ? 'checkmark-circle' : 'warning'}
+        size={18}
+        color="#FFFFFF"
+        style={styles.icon}
+      />
       <Text style={styles.message}>{message}</Text>
     </Animated.View>
   );

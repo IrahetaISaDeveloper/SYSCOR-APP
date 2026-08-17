@@ -60,7 +60,7 @@ export default StyleSheet.create({
     color: '#333333',
   },
   button: {
-    backgroundColor: '#C82323',
+    backgroundColor: '#C62828',
     height: 50,
     borderRadius: 12,
     justifyContent: 'center',
@@ -85,7 +85,7 @@ export default StyleSheet.create({
     fontSize: 14,
   },
   resendLink: {
-    color: '#C82323',
+    color: '#C62828',
     fontWeight: 'bold',
   },
   errorContainer: {

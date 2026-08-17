@@ -78,7 +78,7 @@ export const styles = StyleSheet.create({
   itemPrice: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#B91C1C',
+    color: '#C62828',
     marginLeft: 8,
   },
   itemDescription: {
@@ -133,14 +133,14 @@ export const styles = StyleSheet.create({
   totalPrice: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#B91C1C',
+    color: '#C62828',
   },
   bottomBar: {
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
   checkoutButton: {
-    backgroundColor: '#B91C1C',
+    backgroundColor: '#C62828',
     borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',

@@ -8,7 +8,7 @@ export default function TableMap({ tables, onTablePress, refreshing, onRefresh }
   return (
     <ScrollView
       contentContainerStyle={tableMapStyles.scrollContent}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E74C3C" />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#C62828" />}
     >
       <View style={tableMapStyles.legendRow}>
         {Object.entries(TABLE_STATUS_META).map(([key, meta]) => (

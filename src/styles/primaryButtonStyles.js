@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import { colors, radius } from "./theme";
 
 export default StyleSheet.create({
   base: {
@@ -6,29 +7,29 @@ export default StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     gap: 8,
   },
   primary: {
-    backgroundColor: "#E74C3C",
+    backgroundColor: colors.primary,
   },
   danger: {
-    backgroundColor: "#C0392B",
+    backgroundColor: colors.primaryDark,
   },
   ghost: {
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: colors.border,
   },
   disabled: {
     opacity: 0.5,
   },
   label: {
-    color: "#FFFFFF",
+    color: colors.white,
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   ghostLabel: {
-    color: "#2C3E50",
+    color: colors.textDark,
   },
 });

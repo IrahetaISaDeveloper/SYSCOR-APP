@@ -24,14 +24,14 @@ export default StyleSheet.create({
     paddingHorizontal: 12,
   },
   errorText: {
-    color: "#E74C3C",
+    color: "#C62828",
     fontSize: 12,
     fontWeight: "600",
   },
   welcomeText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#E74C3C",
+    color: "#C62828",
     paddingHorizontal: 20,
     paddingTop: 10,
   },

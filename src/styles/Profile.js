@@ -64,7 +64,7 @@ const profileStyles = StyleSheet.create({
     marginBottom: 12,
   },
   editButton: {
-    backgroundColor: '#B91C1C',
+    backgroundColor: '#C62828',
     paddingHorizontal: 24,
     paddingVertical: 8,
     borderRadius: 20,

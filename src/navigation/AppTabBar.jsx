@@ -1,7 +1,7 @@
 import React from 'react';
 import BottomNavBar from '../components/commons/BottomNavBar';
 
-export default function AppTabBar({ state, descriptors, navigation, accentColor = '#E74C3C' }) {
+export default function AppTabBar({ state, descriptors, navigation, accentColor = '#C62828' }) {
   const items = state.routes.map((route, index) => {
     const { options } = descriptors[route.key];
     const isFocused = state.index === index;

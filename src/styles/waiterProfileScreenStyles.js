@@ -1,9 +1,10 @@
 import { StyleSheet } from "react-native";
+import { colors } from "./theme";
 
 export default StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.white,
   },
   header: {
     flexDirection: "row",
@@ -14,7 +15,7 @@ export default StyleSheet.create({
     paddingBottom: 8,
   },
   backText: {
-    color: "#3498DB",
+    color: colors.primary,
     fontSize: 15,
     fontWeight: "600",
     width: 60,
@@ -22,7 +23,7 @@ export default StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#2C3E50",
+    color: colors.textDark,
   },
   scrollContent: {
     paddingBottom: 40,
@@ -34,7 +35,7 @@ export default StyleSheet.create({
     paddingVertical: 12,
   },
   logoutText: {
-    color: "#E74C3C",
+    color: colors.primary,
     fontWeight: "600",
     fontSize: 14,
   },

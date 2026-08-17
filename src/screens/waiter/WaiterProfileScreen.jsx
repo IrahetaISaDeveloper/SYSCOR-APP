@@ -33,7 +33,7 @@ export default function WaiterProfileScreen({ navigation  }) {
 
       <ScrollView
         contentContainerStyle={waiterProfileScreenStyles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E74C3C" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#C62828" />}
       >
         <ProfileHeader
           image={personalInfo.image}

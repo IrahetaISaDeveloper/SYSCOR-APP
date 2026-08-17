@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   incrementButton: {
-    backgroundColor: '#BA1A1A',
+    backgroundColor: '#C62828',
   },
   decrementText: {
     fontSize: 16,

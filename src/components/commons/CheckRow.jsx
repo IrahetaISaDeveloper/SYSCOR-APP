@@ -1,8 +1,9 @@
 import React from 'react';
 import { TouchableOpacity, Text, View, Image, StyleSheet } from 'react-native';
+import { Ionicons as Icon } from '@expo/vector-icons';
 
 // Fila de "otras personas lo combinaron con": foto circular, nombre, precio
-// y un botón +/✓ para agregar o quitar el extra del pedido.
+// y un botón para agregar o quitar el extra del pedido.
 const CheckRow = ({ label, price, checked, onPress, image }) => {
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
@@ -17,9 +18,7 @@ const CheckRow = ({ label, price, checked, onPress, image }) => {
         ) : null}
       </View>
       <View style={[styles.addButton, checked && styles.addButtonChecked]}>
-        <Text style={[styles.addIcon, checked && styles.addIconChecked]}>
-          {checked ? '✓' : '+'}
-        </Text>
+        <Icon name={checked ? 'checkmark' : 'add'} size={18} color={checked ? '#FFFFFF' : '#3F3F46'} />
       </View>
     </TouchableOpacity>
   );

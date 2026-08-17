@@ -4,7 +4,7 @@ import statusBadgeStyles from "../../styles/statusBadgeStyles";
 
 export const TABLE_STATUS_META = {
   libre: { label: "Libre", color: "#2ECC71" },
-  ocupada: { label: "Ocupada", color: "#E74C3C" },
+  ocupada: { label: "Ocupada", color: "#C62828" },
   limpieza: { label: "Limpieza", color: "#F39C12" },
   reservada: { label: "Reservada", color: "#9B59B6" },
 };
@@ -14,7 +14,7 @@ export const ORDER_STATUS_META = {
   preparing: { label: "Preparando", color: "#3498DB" },
   ready: { label: "Listo", color: "#2ECC71" },
   delivered: { label: "Entregado", color: "#7F8C8D" },
-  cancelled: { label: "Cancelado", color: "#E74C3C" },
+  cancelled: { label: "Cancelado", color: "#C62828" },
 };
 
 export default function StatusBadge({ status, type = "table" }) {

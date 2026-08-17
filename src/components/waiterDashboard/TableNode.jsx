@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useMemo } from "react";
 import { View, Text, TouchableOpacity, Animated, Easing } from "react-native";
+import { Ionicons as Icon } from "@expo/vector-icons";
 import { TABLE_STATUS_META } from "../commons/StatusBadge";
 import tableNodeStyles from "../../styles/tableNodeStyles";
 
 const STATUS_ICON = {
-  libre: "✓",
-  ocupada: "🍽",
-  limpieza: "🧹",
-  reservada: "🔖",
+  libre: "checkmark",
+  ocupada: "restaurant-outline",
+  limpieza: "sparkles-outline",
+  reservada: "bookmark-outline",
 };
 
 // Posiciones de las 4 sillas alrededor de la mesa (arriba, derecha, abajo, izquierda)
@@ -107,9 +108,9 @@ export default function TableNode({ table, onPress }) {
             },
           ]}
         >
-          <Animated.Text style={[tableNodeStyles.statusIcon, { transform: [{ rotate }] }]}>
-            {STATUS_ICON[table.status]}
-          </Animated.Text>
+          <Animated.View style={[tableNodeStyles.statusIcon, { transform: [{ rotate }] }]}>
+            <Icon name={STATUS_ICON[table.status]} size={14} color={shade(meta.color, -55)} />
+          </Animated.View>
           <Text style={tableNodeStyles.tableNumber}>{table.number}</Text>
           <Text style={tableNodeStyles.statusLabel}>{meta.label}</Text>
         </Animated.View>

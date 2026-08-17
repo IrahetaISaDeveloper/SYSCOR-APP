@@ -35,12 +35,37 @@ export const useCustomerAuth = () => {
     }
   };
 
+  const buildPersonalInfoPayload = () => {
+    const normalizedName = name.trim().replace(/\s+/g, ' ');
+    const nameParts = normalizedName.split(' ');
+    const firstName = nameParts.shift() || '';
+    const lastname = nameParts.join(' ').trim();
+
+    return {
+      name: firstName,
+      lastname,
+      image: null,
+      birthdate: null,
+      phones: phone.trim() ? [phone.trim()] : [],
+      addresses: [],
+    };
+  };
+
   // 3. PASO 1: Registrar y enviar código de verificación al correo
   const handleRegister = async (navigation) => {
-    if (!name.trim() || !email.trim() || !phone.trim() || !password.trim()) {
+    const normalizedName = name.trim().replace(/\s+/g, ' ');
+    if (!normalizedName || !email.trim() || !phone.trim() || !password.trim()) {
       setError({
         title: 'Campos incompletos',
         message: 'Por favor, rellena todos los campos para continuar.',
+      });
+      return false;
+    }
+
+    if (normalizedName.split(' ').length < 2) {
+      setError({
+        title: 'Nombre incompleto',
+        message: 'Debes ingresar nombre y apellido para completar el registro.',
       });
       return false;
     }
@@ -70,8 +95,14 @@ export const useCustomerAuth = () => {
         email: email.trim(),
       });
 
-      // Navegamos a la pantalla de verificación pasando el correo
-      navigation.navigate('CustomerCodeVerification', { email: email.trim() });
+      // Reemplazamos la pantalla de registro por la de verificación (sin dejarla
+      // en el stack) para ir directo al input del código, pasando el correo.
+      navigation.replace('CustomerCodeVerification', {
+        name: normalizedName,
+        email: email.trim(),
+        phone: phone.trim(),
+        password,
+      });
       return true;
 
     } catch (err) {
@@ -111,9 +142,18 @@ export const useCustomerAuth = () => {
       // ¡ACTUALIZADO CON GUIONES PARA COINCIDIR CON EL BACKEND!
       await apiClient.post('/auth/customers/register/verify-code', {
         code: code.trim(),
+        email: email.trim(),
       });
 
-      // Después de verificar el correo, vamos directamente a la pantalla de Éxito
+      const personalInfo = buildPersonalInfoPayload();
+
+      await apiClient.post('/auth/customers/register/personal-info', personalInfo);
+      await apiClient.post('/auth/customers/register/set-password', {
+        password: password.trim(),
+      });
+
+      // Cuando el backend confirma código, datos personales y contraseña,
+      // la cuenta ya quedó creada.
       navigation.replace('VerifiedSuccess');
       return true;
 

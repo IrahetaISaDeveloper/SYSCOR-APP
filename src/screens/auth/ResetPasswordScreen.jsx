@@ -1,13 +1,19 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
+import { Ionicons as Icon } from "@expo/vector-icons";
 import AuthCard from "../../components/commons/AuthCard";
 import InputText from "../../components/commons/InputText";
 import Button from "../../components/commons/Button";
+import Toast from "../../components/commons/Toast";
 import useRecoveryPassword from "../../hooks/useRecoveryPassword";
 import authCardStyles from "../../styles/authCardStyles";
+import { colors } from "../../styles/theme";
 
-export default function ResetPasswordScreen({ navigation }) {
+export default function ResetPasswordScreen({ navigation, route }) {
+  const { email } = route.params || {};
+  const [showPassword, setShowPassword] = useState(false);
   const {
+    setEmail,
     newPassword,
     setNewPassword,
     confirmPassword,
@@ -18,6 +24,10 @@ export default function ResetPasswordScreen({ navigation }) {
     success,
     handleResetPassword,
   } = useRecoveryPassword();
+
+  useEffect(() => {
+    if (email) setEmail(email);
+  }, [email, setEmail]);
 
   const onSubmit = async () => {
     const result = await handleResetPassword();
@@ -30,6 +40,12 @@ export default function ResetPasswordScreen({ navigation }) {
 
   return (
     <AuthCard>
+      <Toast
+        visible={Boolean(apiError)}
+        message={apiError ? `${apiError.title}${apiError.message ? `: ${apiError.message}` : ""}` : ""}
+        type="error"
+      />
+
       <Text style={authCardStyles.title}>Nueva contraseña</Text>
       <Text style={authCardStyles.subtitle}>Ingresa y confirma tu nueva clave de acceso</Text>
 
@@ -40,24 +56,33 @@ export default function ResetPasswordScreen({ navigation }) {
             value={newPassword}
             onChangeText={setNewPassword}
             placeholder="••••••••"
-            secureTextEntry
+            secureTextEntry={!showPassword}
+            rightIcon={
+              <Icon
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                size={20}
+                color={colors.textLight}
+              />
+            }
+            onRightIconPress={() => setShowPassword((prev) => !prev)}
           />
           <InputText
             label="Confirmar contraseña"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             placeholder="••••••••"
-            secureTextEntry
+            secureTextEntry={!showPassword}
+            rightIcon={
+              <Icon
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                size={20}
+                color={colors.textLight}
+              />
+            }
+            onRightIconPress={() => setShowPassword((prev) => !prev)}
           />
 
-          {inputError ? <Text style={{ color: "#EF4444", fontSize: 13, textAlign: "center", marginBottom: 10 }}>{inputError}</Text> : null}
-
-          {apiError && (
-            <View style={authCardStyles.errorContainer}>
-              <Text style={authCardStyles.errorTitle}>{apiError.title}</Text>
-              {apiError.message ? <Text style={authCardStyles.errorMessage}>{apiError.message}</Text> : null}
-            </View>
-          )}
+          {inputError ? <Text style={{ color: colors.error, fontSize: 13, textAlign: "center", marginBottom: 10 }}>{inputError}</Text> : null}
 
           <Button
             title={isLoading ? "Guardando..." : "Restablecer contraseña"}

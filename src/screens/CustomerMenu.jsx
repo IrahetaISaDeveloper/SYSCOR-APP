@@ -87,7 +87,10 @@ const DishCard = ({ item, index, onPress }) => {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Text style={menuStyles.dishPrice}>{item.price}</Text>
           {item.quantity > 0 && (
-            <Text style={menuStyles.dishQty}>🔥 {item.quantity} pedidos</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+              <Icon name="flame-outline" size={13} color={colors.primary} />
+              <Text style={menuStyles.dishQty}>{item.quantity} pedidos</Text>
+            </View>
           )}
         </View>
       </View>
@@ -178,7 +181,7 @@ const CustomerMenu = ({ navigation }) => {
       <ScrollView showsVerticalScrollIndicator={false}>
         {firstName ? (
           <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textDark, paddingHorizontal: 16, paddingTop: 12 }}>
-            Hola, {firstName} 👋
+            Hola, {firstName}
           </Text>
         ) : null}
 

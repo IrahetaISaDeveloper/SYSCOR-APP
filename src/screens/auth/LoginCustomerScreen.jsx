@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { Ionicons as Icon } from '@expo/vector-icons';
 import { useCustomerLogin } from '../../hooks/useCustomerLogin';
 import styles from '../../styles/loginCustomer';
+import { colors } from '../../styles/theme';
 
 // Componentes comunes del proyecto
 import InputText from '../../components/commons/InputText';
@@ -54,6 +56,14 @@ export default function LoginCustomerScreen({ navigation }) {
         value={password}
         onChangeText={setPassword}
         secureTextEntry={!showPassword}
+        rightIcon={
+          <Icon
+            name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+            size={20}
+            color={colors.textLight}
+          />
+        }
+        onRightIconPress={() => setShowPassword((prev) => !prev)}
       />
 
       {/* Botón de Iniciar Sesión con componente común */}

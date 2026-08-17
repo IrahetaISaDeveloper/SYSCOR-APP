@@ -3,8 +3,10 @@ import { View, Text, TouchableOpacity } from "react-native";
 import AuthCard from "../../components/commons/AuthCard";
 import InputText from "../../components/commons/InputText";
 import Button from "../../components/commons/Button";
+import Toast from "../../components/commons/Toast";
 import useRecoveryPassword from "../../hooks/useRecoveryPassword";
 import authCardStyles from "../../styles/authCardStyles";
+import { colors } from "../../styles/theme";
 
 export default function RequestRecoveryCodeScreen({ navigation }) {
   const {
@@ -28,6 +30,12 @@ export default function RequestRecoveryCodeScreen({ navigation }) {
 
   return (
     <AuthCard>
+      <Toast
+        visible={Boolean(apiError)}
+        message={apiError ? `${apiError.title}${apiError.message ? `: ${apiError.message}` : ""}` : ""}
+        type="error"
+      />
+
       <Text style={authCardStyles.title}>Recuperar contraseña</Text>
       <Text style={authCardStyles.subtitle}>
         Ingresa tu correo para recibir un código de recuperación
@@ -43,14 +51,7 @@ export default function RequestRecoveryCodeScreen({ navigation }) {
             keyboardType="email-address"
           />
 
-          {inputError ? <Text style={{ color: "#EF4444", fontSize: 13, textAlign: "center", marginBottom: 10 }}>{inputError}</Text> : null}
-
-          {apiError && (
-            <View style={authCardStyles.errorContainer}>
-              <Text style={authCardStyles.errorTitle}>{apiError.title}</Text>
-              {apiError.message ? <Text style={authCardStyles.errorMessage}>{apiError.message}</Text> : null}
-            </View>
-          )}
+          {inputError ? <Text style={{ color: colors.error, fontSize: 13, textAlign: "center", marginBottom: 10 }}>{inputError}</Text> : null}
 
           <Button
             title={isLoading ? "Enviando..." : "Enviar código"}

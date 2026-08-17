@@ -148,7 +148,7 @@ const Orders = ({ navigation }) => {
 
       {firstName ? (
         <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textDark, paddingHorizontal: 16, paddingTop: 10 }}>
-          Hola, {firstName} 👋
+          Hola, {firstName}
         </Text>
       ) : null}
 
