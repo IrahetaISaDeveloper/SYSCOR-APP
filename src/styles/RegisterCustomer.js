@@ -1,46 +1,51 @@
 import { StyleSheet } from 'react-native';
 
-// Estilos para la pantalla de registro de clientes
-export const styles = StyleSheet.create({
+export default StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     backgroundColor: '#FFFFFF',
-    padding: 24,
-    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 60, // Espacio para el header
   },
   header: {
-    marginBottom: 24,
     alignItems: 'center',
+    marginBottom: 30,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#1A1A1A',
+    textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
     color: '#666666',
     textAlign: 'center',
-    paddingHorizontal: 10,
+    lineHeight: 22,
   },
   form: {
     width: '100%',
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#333333',
+    color: '#1A1A1A',
     marginBottom: 6,
-    marginTop: 12,
+    marginTop: 16,
   },
   button: {
-    backgroundColor: '#C82323',
+    backgroundColor: '#C82323', // Rojo exacto de la imagen
     height: 50,
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonText: {
     color: '#FFFFFF',
@@ -52,11 +57,29 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footerText: {
-    color: '#666666',
     fontSize: 14,
+    color: '#666666',
   },
   linkText: {
     color: '#C82323',
     fontWeight: 'bold',
+  },
+  errorContainer: {
+    backgroundColor: '#FEF2F2',
+    borderLeftWidth: 4,
+    borderLeftColor: '#EF4444',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 10,
+  },
+  errorTitle: {
+    fontWeight: 'bold',
+    color: '#DC2626',
+    fontSize: 14,
+  },
+  errorMessage: {
+    color: '#DC2626',
+    fontSize: 13,
+    marginTop: 4,
   },
 });
