@@ -1,7 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-// Estilos para la pantalla de verificación de código por correo
-export const styles = StyleSheet.create({
+export default StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -11,6 +10,25 @@ export const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 30,
+  },
+  shieldContainer: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+    marginBottom: 20,
+  },
+  shieldIcon: {
+    width: 40,
+    height: 50,
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 26,
@@ -22,6 +40,7 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
     textAlign: 'center',
+    lineHeight: 20,
   },
   codeContainer: {
     flexDirection: 'row',
@@ -43,9 +62,14 @@ export const styles = StyleSheet.create({
   button: {
     backgroundColor: '#C82323',
     height: 50,
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonText: {
     color: '#FFFFFF',
@@ -63,5 +87,23 @@ export const styles = StyleSheet.create({
   resendLink: {
     color: '#C82323',
     fontWeight: 'bold',
+  },
+  errorContainer: {
+    backgroundColor: '#FEF2F2',
+    borderLeftWidth: 4,
+    borderLeftColor: '#EF4444',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+  },
+  errorTitle: {
+    fontWeight: 'bold',
+    color: '#DC2626',
+    fontSize: 14,
+  },
+  errorMessage: {
+    color: '#DC2626',
+    fontSize: 13,
+    marginTop: 4,
   },
 });

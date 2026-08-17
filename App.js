@@ -1,3 +1,4 @@
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
@@ -7,10 +8,6 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import LoginEmployeeScreen from './src/screens/auth/LoginEmployeeScreen';
 import WaiterDashboardScreen from './src/screens/waiter/WaiterDashboardScreen';
 import WaiterProfileScreen from './src/screens/waiter/WaiterProfileScreen';
-
-import RequestRecoveryCodeScreen from './src/screens/auth/RequestRecoveryCodeScreen';
-import VerifyRecoveryCodeScreen from './src/screens/auth/VerifyRecoveryCodeScreen';
-import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 
 import Orders from './src/screens/Orders';
 import KitchenProfileScreen from './src/screens/chef/KitchenProfileScreen'; // <-- nuevo import
@@ -23,9 +20,6 @@ function AuthNavigator() {
   return (
     <AuthStack.Navigator screenOptions={{ headerShown: false }}>
       <AuthStack.Screen name="Login" component={LoginEmployeeScreen} />
-      <AuthStack.Screen name="RequestRecoveryCode" component={RequestRecoveryCodeScreen} />
-      <AuthStack.Screen name="VerifyRecoveryCode" component={VerifyRecoveryCodeScreen} />
-      <AuthStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
     </AuthStack.Navigator>
   );
 }
@@ -73,18 +67,11 @@ function RootNavigator() {
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <AuthProvider>
+      <NavigationContainer>
+        <StatusBar style="dark" />
+        <RootNavigator />
+      </NavigationContainer>
+    </AuthProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
