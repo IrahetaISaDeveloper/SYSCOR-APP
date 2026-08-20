@@ -84,7 +84,7 @@ export default function useWaiterDashboard() {
       }
     }
     setOrderModalVisible(true);
-  }, [menu]);
+  }, []);
 
   // ---- Acciones sobre mesas ----
 

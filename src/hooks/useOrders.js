@@ -50,6 +50,19 @@ const getMinutesAgo = (date) => {
   return Math.floor((Date.now() - t) / 60000);
 };
 
+// Fecha desde la que hay que contar el umbral de "retrasada": el momento en
+// que la orden entró a su estado ACTUAL (según statusHistory), no la fecha
+// de creación del pedido. Si se midiera desde la creación, una orden que ya
+// pasó los 15 min jamás podría volver a "preparación" — al recargar, el
+// tiempo transcurrido desde la creación seguiría siendo ≥15 min y se
+// re-marcaría como retrasada de inmediato, sin importar que se acabara de
+// mover a "preparando".
+const getStatusSinceDate = (item) => {
+  const history = item.statusHistory || [];
+  const lastMatching = [...history].reverse().find((h) => h.status === item.status);
+  return lastMatching?.changedAt || item.updatedAt || item.createdAt;
+};
+
 const formatTimeAgo = (minutes) => {
   if (minutes < 1) return 'NUEVO';
   if (minutes < 60) return `HACE ${minutes} MIN`;
@@ -171,8 +184,9 @@ const mapCartToKitchen = (cart) => {
   const minutesAgo = getMinutesAgo(cart.createdAt);
   let status = STATUS_MAP[cart.status] || 'pending';
 
-  // Si la orden lleva demasiado tiempo activa sin terminar → retrasada
-  if ((status === 'pending' || status === 'preparing') && minutesAgo >= LATE_THRESHOLD_MINUTES) {
+  // Si lleva demasiado tiempo EN ESTE ESTADO (no desde que se creó) → retrasada
+  const minutesInStatus = getMinutesAgo(getStatusSinceDate(cart));
+  if ((status === 'pending' || status === 'preparing') && minutesInStatus >= LATE_THRESHOLD_MINUTES) {
     status = 'late';
   }
 
@@ -232,8 +246,16 @@ const mapOrderToKitchen = (order) => {
   const minutesAgo = getMinutesAgo(order.createdAt);
   let status = STATUS_MAP[order.status] || 'pending';
 
-  if ((status === 'pending' || status === 'preparing') && minutesAgo >= LATE_THRESHOLD_MINUTES) {
+  // El backend ya marca 'atrasado' con su propia lógica (basada en statusHistory);
+  // confiamos en eso, y si aún no llegó a marcarlo, calculamos igual desde el
+  // último cambio de estado (no desde la creación) para evitar el mismo bug.
+  if (order.status === 'atrasado') {
     status = 'late';
+  } else {
+    const minutesInStatus = getMinutesAgo(getStatusSinceDate(order));
+    if ((status === 'pending' || status === 'preparing') && minutesInStatus >= LATE_THRESHOLD_MINUTES) {
+      status = 'late';
+    }
   }
 
   // Los items ya vienen planos: { itemType, name, price, quantity, notes }

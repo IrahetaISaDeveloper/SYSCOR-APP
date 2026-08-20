@@ -10,14 +10,14 @@ export const fetchWaiterDashboard = async () => {
 // Trae el menú (combos, bebidas, extras) para armar la comanda
 export const fetchMenu = async () => {
   const [combos, drinks, extras] = await Promise.all([
-    apiClient.get("/menu/combos"),
-    apiClient.get("/menu/drinks"),
-    apiClient.get("/menu/extras"),
+    apiClient.get("/menu/combos/active"),
+    apiClient.get("/menu/drinks/active"),
+    apiClient.get("/menu/extras/active"),
   ]);
 
-  console.log('🍕 combos:', JSON.stringify(combos.data).slice(0, 300));
-  console.log('🥤 drinks:', JSON.stringify(drinks.data).slice(0, 300));
-  console.log('🍟 extras:', JSON.stringify(extras.data).slice(0, 300));
+  console.log('combos:', JSON.stringify(combos.data).slice(0, 300));
+  console.log('drinks:', JSON.stringify(drinks.data).slice(0, 300));
+  console.log('extras:', JSON.stringify(extras.data).slice(0, 300));
 
   return {
     combos: combos.data,
