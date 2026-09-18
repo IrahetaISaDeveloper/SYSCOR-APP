@@ -47,14 +47,14 @@ export default function CustomerCodeVerificationScreen({ navigation, route }) {
   };
 
   const onPressVerify = async () => {
-    const success = await handleVerifyCode(navigation);
+    const success = await handleVerifyCode(navigation, { name, email, phone, password, code });
     if (success) {
       setToast({ visible: true, message: '¡Tu correo fue verificado!', type: 'success' });
     }
   };
 
   const onPressResend = () => {
-    handleResendCode();
+    handleResendCode(email);
     setToast({ visible: true, message: 'Se ha enviado un nuevo código a tu correo.', type: 'success' });
   };
 

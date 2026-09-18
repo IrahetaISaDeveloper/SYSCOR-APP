@@ -30,7 +30,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
   }, [email, setEmail]);
 
   const onSubmit = async () => {
-    const result = await handleResetPassword();
+    const result = await handleResetPassword(email);
     if (result.ok) {
       setTimeout(() => {
         navigation.reset({ index: 0, routes: [{ name: "Login" }] });

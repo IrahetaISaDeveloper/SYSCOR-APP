@@ -68,15 +68,16 @@ export default function useRecoveryPassword() {
     [email, clearMessages]
   );
 
-  const handleResendCode = useCallback(async () => {
-    if (timer > 0 || isLoadingResend || !email) return;
+  const handleResendCode = useCallback(async (explicitEmail) => {
+    const emailToUse = (explicitEmail ?? email).trim();
+    if (timer > 0 || isLoadingResend || !emailToUse) return;
 
     setIsLoadingResend(true);
     clearMessages();
     setResendSuccess("");
 
     try {
-      await requestRecoveryCode({ email, userType: "customer" });
+      await requestRecoveryCode({ email: emailToUse, userType: "customer" });
       setTimer(RESEND_COOLDOWN_SECONDS);
       setResendSuccess("¡Código reenviado con éxito!");
     } catch (err) {
@@ -91,15 +92,16 @@ export default function useRecoveryPassword() {
 
   // Paso 2: verificar código
   const handleDigitChange = useCallback((value, index, inputRefs) => {
+    const cleanValue = value.replace(/[^a-zA-Z0-9]/g, "").slice(-1).toUpperCase();
     setDigits((prev) => {
       const next = [...prev];
-      next[index] = value;
+      next[index] = cleanValue;
       return next;
     });
     setApiError(null);
     setInputError("");
 
-    if (value && index < 5) {
+    if (cleanValue && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   }, []);
@@ -114,9 +116,13 @@ export default function useRecoveryPassword() {
     }
   }, []);
 
-  const handleVerifyCode = useCallback(async () => {
+  // `explicitCode` y `explicitEmail` permiten al llamador pasar los valores
+  // directamente para evitar problemas de closure obsoleto (stale closure).
+  const handleVerifyCode = useCallback(async (explicitCode, explicitEmail) => {
     clearMessages();
-    const codeRequest = digits.join("");
+    const rawCode = explicitCode ?? digits.join("");
+    const codeRequest = (rawCode || "").trim().toUpperCase();
+    const emailToUse = (explicitEmail ?? email).trim();
 
     if (codeRequest.length < 6) {
       setInputError("Ingresa el código completo de 6 dígitos");
@@ -125,10 +131,12 @@ export default function useRecoveryPassword() {
 
     setIsLoading(true);
     try {
-      await verifyRecoveryCode({ code: codeRequest, email });
+      console.log('[Recovery] verify-code →', { code: codeRequest, codeRequest, email: emailToUse });
+      await verifyRecoveryCode({ code: codeRequest, codeRequest, email: emailToUse });
       setSuccess(true);
       return { ok: true };
     } catch (err) {
+      console.error('[Recovery] verify-code ERROR:', err.response?.status, err.response?.data);
       setApiError({
         title: err.response?.data?.title || "Código inválido",
         message: err.response?.data?.message || "El código es incorrecto o ha expirado.",
@@ -140,7 +148,7 @@ export default function useRecoveryPassword() {
   }, [digits, email, clearMessages]);
 
   // Paso 3: nueva contraseña
-  const handleResetPassword = useCallback(async () => {
+  const handleResetPassword = useCallback(async (explicitEmail) => {
     clearMessages();
 
     if (!newPassword.trim() || !confirmPassword.trim()) {
@@ -158,7 +166,12 @@ export default function useRecoveryPassword() {
 
     setIsLoading(true);
     try {
-      await setNewPasswordRequest({ newPassword, confirmNewPassword: confirmPassword, email });
+      const emailToUse = (explicitEmail ?? email).trim();
+      await setNewPasswordRequest({
+        newPassword: newPassword.trim(),
+        confirmNewPassword: confirmPassword.trim(),
+        email: emailToUse,
+      });
       setSuccess(true);
       return { ok: true };
     } catch (err) {

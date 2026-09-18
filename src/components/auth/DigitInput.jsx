@@ -10,7 +10,9 @@ export default function DigitInput({ value, onChangeText, onKeyPress, inputRef }
       value={value}
       onChangeText={onChangeText}
       onKeyPress={onKeyPress}
-      keyboardType="number-pad"
+      keyboardType="default"
+      autoCapitalize="characters"
+      autoCorrect={false}
       maxLength={1}
       textAlign="center"
       selectTextOnFocus

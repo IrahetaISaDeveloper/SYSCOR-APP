@@ -30,28 +30,31 @@ export default function VerifyRecoveryCodeScreen({ navigation, route }) {
   const inputRefs = useRef([]);
   const hasSubmittedRef = useRef(false);
 
-  // El backend identifica el código por correo — sin esto, la verificación
-  // siempre falla porque cada pantalla usa su propia instancia del hook.
+  // El backend identifica el código por correo — el email se pasa también
+  // explícitamente en handleVerifyCode para evitar cualquier stale closure.
   useEffect(() => {
     if (email) setEmail(email);
   }, [email, setEmail]);
 
   // Auto-verifica en cuanto se completan los 6 dígitos (sin botón "Verificar").
+  // Se pasan `code` y `email` explícitamente para evitar closures obsoletas:
+  // el email viene de route.params (siempre fresco) y el code del scope del effect.
   useEffect(() => {
     const code = digits.join("");
-    if (code.length === 6 && !isLoading && !success && !hasSubmittedRef.current) {
+    if (code.length === 6 && !hasSubmittedRef.current && !success) {
       hasSubmittedRef.current = true;
-      handleVerifyCode().then((result) => {
+      handleVerifyCode(code, email).then((result) => {
         if (result.ok) {
           setTimeout(() => {
             navigation.replace("ResetPassword", { email });
           }, 700);
         } else {
+          // Solo permitir reintentar si el usuario borra y vuelve a completar
           hasSubmittedRef.current = false;
         }
       });
     }
-  }, [digits, isLoading, success, handleVerifyCode, navigation, email]);
+  }, [digits, success, navigation, email, handleVerifyCode]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -103,13 +106,13 @@ export default function VerifyRecoveryCodeScreen({ navigation, route }) {
           {inputError ? <Text style={{ color: colors.error, fontSize: 13, textAlign: "center", marginBottom: 10 }}>{inputError}</Text> : null}
 
           <View style={{ alignItems: "center", gap: 10, marginTop: 6 }}>
-            <TouchableOpacity onPress={handleResendCode} disabled={timer > 0 || isLoadingResend}>
+            <TouchableOpacity onPress={() => handleResendCode(email)} disabled={timer > 0 || isLoadingResend}>
               <Text style={[authCardStyles.linkText, (timer > 0 || isLoadingResend) && { color: colors.textLight }]}>
                 {isLoadingResend
                   ? "Reenviando..."
                   : timer > 0
-                  ? `Reenviar en (${formatTime(timer)})`
-                  : "¿No recibiste el código? Reenviar"}
+                    ? `Reenviar en (${formatTime(timer)})`
+                    : "¿No recibiste el código? Reenviar"}
               </Text>
             </TouchableOpacity>
 

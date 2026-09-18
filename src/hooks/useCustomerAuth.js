@@ -35,8 +35,10 @@ export const useCustomerAuth = () => {
     }
   };
 
-  const buildPersonalInfoPayload = () => {
-    const normalizedName = name.trim().replace(/\s+/g, ' ');
+  const buildPersonalInfoPayload = (customName, customPhone) => {
+    const rawName = (customName !== undefined ? customName : name) || '';
+    const rawPhone = (customPhone !== undefined ? customPhone : phone) || '';
+    const normalizedName = rawName.trim().replace(/\s+/g, ' ');
     const nameParts = normalizedName.split(' ');
     const firstName = nameParts.shift() || '';
     const lastname = nameParts.join(' ').trim();
@@ -46,7 +48,7 @@ export const useCustomerAuth = () => {
       lastname,
       image: null,
       birthdate: null,
-      phones: phone.trim() ? [phone.trim()] : [],
+      phones: rawPhone.trim() ? [rawPhone.trim()] : [],
       addresses: [],
     };
   };
@@ -54,10 +56,19 @@ export const useCustomerAuth = () => {
   // 3. PASO 1: Registrar y enviar código de verificación al correo
   const handleRegister = async (navigation) => {
     const normalizedName = name.trim().replace(/\s+/g, ' ');
-    if (!normalizedName || !email.trim() || !phone.trim() || !password.trim()) {
+    const cleanEmail = email.trim();
+    if (!normalizedName || !cleanEmail || !phone.trim() || !password.trim()) {
       setError({
         title: 'Campos incompletos',
         message: 'Por favor, rellena todos los campos para continuar.',
+      });
+      return false;
+    }
+
+    if (cleanEmail.includes('+')) {
+      setError({
+        title: 'Correo no válido',
+        message: 'El servicio de correo no admite direcciones con el signo "+" (alias). Por favor, utiliza tu dirección de correo estándar.',
       });
       return false;
     }
@@ -90,23 +101,24 @@ export const useCustomerAuth = () => {
     setError(null);
 
     try {
-      // ¡ACTUALIZADO CON GUIONES PARA COINCIDIR CON EL BACKEND!
+      console.log('[Register] send-code →', { email: cleanEmail });
       await apiClient.post('/auth/customers/register/send-code', {
-        email: email.trim(),
+        email: cleanEmail,
       });
+      console.log('[Register] send-code ✓');
 
       // Reemplazamos la pantalla de registro por la de verificación (sin dejarla
       // en el stack) para ir directo al input del código, pasando el correo.
       navigation.replace('CustomerCodeVerification', {
         name: normalizedName,
-        email: email.trim(),
+        email: cleanEmail,
         phone: phone.trim(),
         password,
       });
       return true;
 
     } catch (err) {
-      console.error(err);
+      console.error('[Register] send-code ERROR:', err.response?.status, JSON.stringify(err.response?.data));
       // Manejamos el error estandarizado del backend
       if (err.response) {
         setError({
@@ -126,8 +138,14 @@ export const useCustomerAuth = () => {
   };
 
   // 4. PASO 2: Verificar el código de 6 dígitos
-  const handleVerifyCode = async (navigation) => {
-    if (!code.trim() || code.length < 6) {
+  const handleVerifyCode = async (navigation, explicitData = {}) => {
+    const activeCode = (explicitData.code || code || '').trim();
+    const activeEmail = (explicitData.email || email || '').trim();
+    const activePassword = (explicitData.password || password || '').trim();
+    const activeName = explicitData.name !== undefined ? explicitData.name : name;
+    const activePhone = explicitData.phone !== undefined ? explicitData.phone : phone;
+
+    if (!activeCode || activeCode.length < 6) {
       setError({
         title: 'Código incompleto',
         message: 'Por favor, ingresa los 6 dígitos del código.',
@@ -139,18 +157,26 @@ export const useCustomerAuth = () => {
     setError(null);
 
     try {
-      // ¡ACTUALIZADO CON GUIONES PARA COINCIDIR CON EL BACKEND!
-      await apiClient.post('/auth/customers/register/verify-code', {
-        code: code.trim(),
-        email: email.trim(),
+      // Paso 2a: verificar código
+      console.log('[Register] verify-code →', { code: activeCode, email: activeEmail });
+      const verifyRes = await apiClient.post('/auth/customers/register/verify-code', {
+        code: activeCode,
+        email: activeEmail,
       });
+      console.log('[Register] verify-code ✓', verifyRes.data);
 
-      const personalInfo = buildPersonalInfoPayload();
+      // Paso 2b: datos personales
+      const personalInfo = buildPersonalInfoPayload(activeName, activePhone);
+      console.log('[Register] personal-info →', personalInfo);
+      const infoRes = await apiClient.post('/auth/customers/register/personal-info', personalInfo);
+      console.log('[Register] personal-info ✓', infoRes.data);
 
-      await apiClient.post('/auth/customers/register/personal-info', personalInfo);
-      await apiClient.post('/auth/customers/register/set-password', {
-        password: password.trim(),
+      // Paso 2c: contraseña
+      console.log('[Register] set-password →', { password: activePassword });
+      const pwRes = await apiClient.post('/auth/customers/register/set-password', {
+        password: activePassword,
       });
+      console.log('[Register] set-password ✓', pwRes.data);
 
       // Cuando el backend confirma código, datos personales y contraseña,
       // la cuenta ya quedó creada.
@@ -158,7 +184,7 @@ export const useCustomerAuth = () => {
       return true;
 
     } catch (err) {
-      console.error(err);
+      console.error('[Register] ERROR:', err.response?.status, JSON.stringify(err.response?.data) || err.message);
       if (err.response) {
         setError({
           title: err.response.data?.title || 'Error de verificación',
@@ -177,14 +203,14 @@ export const useCustomerAuth = () => {
   };
 
   // 5. Reenviar código (opcional, para el botón de reenviar)
-  const handleResendCode = async () => {
-    if (!email.trim()) return;
+  const handleResendCode = async (explicitEmail) => {
+    const targetEmail = (explicitEmail || email || '').trim();
+    if (!targetEmail) return;
     setError(null);
 
     try {
-      // ¡ACTUALIZADO CON GUIONES PARA COINCIDIR CON EL BACKEND!
       await apiClient.post('/auth/customers/register/send-code', {
-        email: email.trim(),
+        email: targetEmail,
       });
     } catch (err) {
       console.error(err);
