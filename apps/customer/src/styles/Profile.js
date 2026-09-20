@@ -1,0 +1,182 @@
+import { StyleSheet } from 'react-native';
+import { colors } from '@syscor/shared/src/styles/Orders';
+
+const profileStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 16,
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 100,
+  },
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  avatarWrapper: {
+    position: 'relative',
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: colors.border,
+  },
+  editBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: colors.primary,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.white,
+  },
+  userName: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  editButton: {
+    backgroundColor: '#C62828',
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  editButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  // Card de Información Personal
+  infoCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 16,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+  },
+  infoTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  infoRowLast: {
+    borderBottomWidth: 0,
+  },
+  infoLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  infoValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#111827',
+    flexShrink: 1,
+    marginLeft: 12,
+    textAlign: 'right',
+  },
+  // Menú de Opciones
+  menuCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    marginBottom: 20,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+  },
+  menuItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  menuLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutButtonText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: '700',
+    marginLeft: 8,
+  },
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: colors.white,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingVertical: 8,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  bottomNavItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomNavItemActive: {
+    backgroundColor: colors.primary,
+    marginHorizontal: 12,
+    borderRadius: 8,
+    paddingVertical: 8,
+  },
+  bottomNavText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textGray,
+    marginTop: 2,
+  },
+  bottomNavTextActive: {
+    color: colors.white,
+  },
+});

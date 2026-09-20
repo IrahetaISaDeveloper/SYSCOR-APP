@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "El Corral",
+    "slug": "syscor-app-clientes",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo-el-corral.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ]
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.syscor.clientes"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.syscor.clientes"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
