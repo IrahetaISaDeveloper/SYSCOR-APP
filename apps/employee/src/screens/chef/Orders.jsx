@@ -4,13 +4,12 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  SafeAreaView,
   ActivityIndicator,
   RefreshControl,
-  Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons as Icon } from '@expo/vector-icons';
-import ordersStyles, { colors } from '@syscor/shared/src/styles/Orders';
+import ordersStyles, { kitchenPalette } from '@syscor/shared/src/styles/Orders';
 import useOrders from '../../hooks/useOrders';
 import OrderCard from '@syscor/shared/src/components/commons/OrderCard';
 import { useAuth } from '@syscor/shared/src/context/AuthContext';
@@ -125,32 +124,26 @@ const Orders = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={ordersStyles.container}>
+    <SafeAreaView style={ordersStyles.container} edges={['top', 'left', 'right']}>
 
       {/* ── ENCABEZADO ── */}
       <View style={ordersStyles.header}>
         <View style={ordersStyles.headerTitleRow}>
-          <Image
-            source={require('../../../assets/logo-el-corral.png')}
-            style={ordersStyles.headerLogo}
-            resizeMode="contain"
-          />
-          <Text style={ordersStyles.headerTitle}>El Corral</Text>
+          <Text style={ordersStyles.headerTitle}>Comandas</Text>
+          <Text style={ordersStyles.headerSubtitle}>
+            {firstName ? `HOLA, ${firstName.toUpperCase()} · COCINA` : 'COCINA'}
+          </Text>
         </View>
         <View style={ordersStyles.headerActions}>
           <View style={ordersStyles.activeBadge}>
-            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.white }} />
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: kitchenPalette.white }} />
             <Text style={ordersStyles.activeBadgeText}>{counts.all} activas</Text>
           </View>
-          <Icon name="notifications-outline" size={22} color={colors.textDark} />
+          <View style={ordersStyles.notificationButton}>
+            <Icon name="notifications-outline" size={18} color={kitchenPalette.ink} />
+          </View>
         </View>
       </View>
-
-      {firstName ? (
-        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textDark, paddingHorizontal: 16, paddingTop: 10 }}>
-          Hola, {firstName}
-        </Text>
-      ) : null}
 
       {/* ── FILTROS POR ESTADO ── */}
       <View style={ordersStyles.filtersContainer}>
@@ -176,23 +169,23 @@ const Orders = ({ navigation }) => {
       {isLoading && allOrders.length === 0 ? (
         // Estado: cargando por primera vez
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={{ color: colors.textGray, marginTop: 12, fontSize: 13 }}>
+          <ActivityIndicator size="large" color={kitchenPalette.accent} />
+          <Text style={{ color: kitchenPalette.muted, marginTop: 12, fontSize: 13 }}>
             Cargando comandas...
           </Text>
         </View>
       ) : error ? (
         // Estado: error de conexión
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
-          <Icon name="cloud-offline-outline" size={48} color={colors.textGray} />
-          <Text style={{ color: colors.textGray, textAlign: 'center', marginVertical: 12, fontSize: 14 }}>
+          <Icon name="cloud-offline-outline" size={48} color={kitchenPalette.muted} />
+          <Text style={{ color: kitchenPalette.muted, textAlign: 'center', marginVertical: 12, fontSize: 14 }}>
             {error}
           </Text>
           <TouchableOpacity
             onPress={refetch}
-            style={{ backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 }}
+            style={{ backgroundColor: kitchenPalette.accent, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 14 }}
           >
-            <Text style={{ color: colors.white, fontWeight: '700' }}>Reintentar</Text>
+            <Text style={{ color: kitchenPalette.white, fontWeight: '700' }}>Reintentar</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -202,12 +195,12 @@ const Orders = ({ navigation }) => {
           keyExtractor={(item) => item.id}
           contentContainerStyle={ordersStyles.listContent}
           refreshControl={
-            <RefreshControl refreshing={isLoading} onRefresh={refetch} colors={[colors.primary]} />
+            <RefreshControl refreshing={isLoading} onRefresh={refetch} colors={[kitchenPalette.accent]} />
           }
           ListEmptyComponent={
             <View style={{ alignItems: 'center', marginTop: 60 }}>
-              <Icon name="checkmark-circle-outline" size={48} color={colors.success} />
-              <Text style={{ textAlign: 'center', color: colors.textGray, marginTop: 12, fontSize: 14 }}>
+              <Icon name="checkmark-circle-outline" size={48} color={kitchenPalette.ready} />
+              <Text style={{ textAlign: 'center', color: kitchenPalette.muted, marginTop: 12, fontSize: 14 }}>
                 No hay comandas pendientes en este momento.
               </Text>
             </View>

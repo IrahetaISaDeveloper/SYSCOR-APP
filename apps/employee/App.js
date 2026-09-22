@@ -4,6 +4,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '@syscor/shared/src/context/AuthContext';
 import { ROLES, EMPLOYEE_TYPES } from '@syscor/shared/src/constants/roles';
@@ -57,7 +58,7 @@ function WaiterTabNavigator() {
 function KitchenTabNavigator() {
   return (
     <KitchenTab.Navigator
-      tabBar={(props) => <AppTabBar {...props} accentColor="#C62828" />}
+      tabBar={(props) => <AppTabBar {...props} accentColor="#8E2222" />}
       screenOptions={{ headerShown: false }}
     >
       <KitchenTab.Screen
@@ -98,13 +99,15 @@ function RootNavigator() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BootGate>
-        <NavigationContainer>
-          <StatusBar style="dark" />
-          <RootNavigator />
-        </NavigationContainer>
-      </BootGate>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <BootGate>
+          <NavigationContainer>
+            <StatusBar style="dark" />
+            <RootNavigator />
+          </NavigationContainer>
+        </BootGate>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

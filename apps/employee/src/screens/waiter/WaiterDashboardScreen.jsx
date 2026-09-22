@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, ActivityIndicator, SafeAreaView, TouchableOpacity } from "react-native";
+import { View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons as Icon } from "@expo/vector-icons";
 import { useAuth } from '@syscor/shared/src/context/AuthContext';
 import { getFirstName } from '@syscor/shared/src/utils/userDisplay';
@@ -48,7 +49,7 @@ export default function WaiterDashboardScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={waiterDashboardScreenStyles.centered}>
+      <SafeAreaView style={waiterDashboardScreenStyles.centered} edges={['top', 'left', 'right']}>
         <ActivityIndicator size="large" color="#C62828" />
         <Text style={waiterDashboardScreenStyles.loadingText}>Cargando mesas...</Text>
       </SafeAreaView>
@@ -56,7 +57,7 @@ export default function WaiterDashboardScreen() {
   }
 
   return (
-    <SafeAreaView style={waiterDashboardScreenStyles.container}>
+    <SafeAreaView style={waiterDashboardScreenStyles.container} edges={['top', 'left', 'right']}>
       {firstName ? (
         <Text style={waiterDashboardScreenStyles.welcomeText}>Hola, {firstName}</Text>
       ) : null}
