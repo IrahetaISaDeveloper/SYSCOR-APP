@@ -35,10 +35,10 @@ export const updateTableStatus = async (tableId, status) => {
 // Crea una nueva comanda para una mesa ya ocupada
 export const createOrder = async ({ table, items, customerName, peopleCount }) => {
   const { data } = await apiClient.post("/orders", {
+    orderType: "local",
     table,
     items,
-    customerName,
-    peopleCount,
+    localCustomerName: customerName,
   });
   return data;
 };
