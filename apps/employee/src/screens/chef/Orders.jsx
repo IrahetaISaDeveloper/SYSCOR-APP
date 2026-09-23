@@ -9,13 +9,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons as Icon } from '@expo/vector-icons';
-import ordersStyles, { kitchenPalette } from '@syscor/shared/src/styles/Orders';
+import ordersStyles, { colors as kitchenPalette } from '@syscor/shared/src/styles/Orders';
 import useOrders from '../../hooks/useOrders';
 import OrderCard from '@syscor/shared/src/components/commons/OrderCard';
 import { useAuth } from '@syscor/shared/src/context/AuthContext';
 import { getFirstName } from '@syscor/shared/src/utils/userDisplay';
 
-// Pestañas de filtrado. Los conteos se muestran entre paréntesis (excepto "Todas")
 const filterOptions = [
   { key: 'all',       label: 'Todas' },
   { key: 'pending',   label: 'Pendientes' },
@@ -23,18 +22,12 @@ const filterOptions = [
   { key: 'late',      label: 'Retrasadas' },
 ];
 
-// Determina cuál es el siguiente estado lógico al presionar el botón principal de acción
 const nextStatusMap = {
   pending:   'preparing',
   preparing: 'ready',
   late:      'ready',
 };
 
-/**
- * Pantalla 'Orders' — Dashboard de Cocina
- * Muestra las comandas activas con filtros, el empleado asignado, los platillos a cocinar
- * con sus especificaciones, y botones para avanzar el estado de cada orden.
- */
 const Orders = ({ navigation }) => {
   const { user } = useAuth();
   const firstName = getFirstName(user);
@@ -55,7 +48,6 @@ const Orders = ({ navigation }) => {
     refetchApiOrders,
   } = useOrders();
 
-  // ── Combinar ambas fuentes eliminando duplicados por ID ──
   const allOrders = useMemo(() => {
     const carts = Array.isArray(cartOrders)      ? cartOrders      : [];
     const api   = Array.isArray(apiOrdersMapped) ? apiOrdersMapped : [];
@@ -67,16 +59,10 @@ const Orders = ({ navigation }) => {
     });
   }, [cartOrders, apiOrdersMapped]);
 
-  // Cargando si cualquiera de los dos está cargando (primera vez)
   const isLoading = (cartLoading && cartOrders.length === 0) || (apiOrdersLoading && apiOrdersMapped.length === 0);
-
-  // Error solo si ambos fallaron
   const error = cartError && apiOrdersError ? `${cartError}\n${apiOrdersError}` : null;
-
-  // Recargar ambos endpoints
   const refetch = () => { refetchCarts(); refetchApiOrders(); };
 
-  // Conteos sobre la lista combinada
   const counts = {
     all:       allOrders.length,
     pending:   allOrders.filter((o) => o.status === 'pending').length,
@@ -84,18 +70,15 @@ const Orders = ({ navigation }) => {
     late:      allOrders.filter((o) => o.status === 'late').length,
   };
 
-  // Filtrado local por estado
   const filteredOrders = activeFilter === 'all'
     ? allOrders
     : allOrders.filter((o) => o.status === activeFilter);
 
-  // IDs de órdenes del nuevo endpoint para saber a cuál update llamar
   const apiOrderIds = useMemo(
     () => new Set(apiOrdersMapped.map((o) => o.id)),
     [apiOrdersMapped]
   );
 
-  // Avanza la orden al siguiente estado (Pendiente → En Preparación → Lista)
   const handlePrimaryAction = (orderId) => {
     const order = filteredOrders.find((item) => item.id === orderId);
     if (!order) return;
@@ -108,7 +91,6 @@ const Orders = ({ navigation }) => {
     }
   };
 
-  // Botón secundario: regresa una orden retrasada a "En Preparación"
   const handleSecondaryAction = (orderId) => {
     if (apiOrderIds.has(orderId)) {
       updateApiOrderStatus(orderId, 'preparing');
@@ -117,7 +99,6 @@ const Orders = ({ navigation }) => {
     }
   };
 
-  // Etiqueta del chip con el conteo de órdenes en ese estado
   const renderFilterLabel = (option) => {
     if (option.key === 'all') return `${option.label} (${counts.all})`;
     return `${option.label} (${counts[option.key] ?? 0})`;
@@ -125,7 +106,6 @@ const Orders = ({ navigation }) => {
 
   return (
     <SafeAreaView style={ordersStyles.container} edges={['top', 'left', 'right']}>
-
       {/* ── ENCABEZADO ── */}
       <View style={ordersStyles.header}>
         <View style={ordersStyles.headerTitleRow}>
@@ -136,12 +116,12 @@ const Orders = ({ navigation }) => {
         </View>
         <View style={ordersStyles.headerActions}>
           <View style={ordersStyles.activeBadge}>
-            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: kitchenPalette.white }} />
+            <View style={ordersStyles.activeBadgeDot} />
             <Text style={ordersStyles.activeBadgeText}>{counts.all} activas</Text>
           </View>
-          <View style={ordersStyles.notificationButton}>
+          <TouchableOpacity style={ordersStyles.notificationButton}>
             <Icon name="notifications-outline" size={18} color={kitchenPalette.ink} />
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -167,7 +147,6 @@ const Orders = ({ navigation }) => {
 
       {/* ── CONTENIDO PRINCIPAL ── */}
       {isLoading && allOrders.length === 0 ? (
-        // Estado: cargando por primera vez
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={kitchenPalette.accent} />
           <Text style={{ color: kitchenPalette.muted, marginTop: 12, fontSize: 13 }}>
@@ -175,7 +154,6 @@ const Orders = ({ navigation }) => {
           </Text>
         </View>
       ) : error ? (
-        // Estado: error de conexión
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
           <Icon name="cloud-offline-outline" size={48} color={kitchenPalette.muted} />
           <Text style={{ color: kitchenPalette.muted, textAlign: 'center', marginVertical: 12, fontSize: 14 }}>
@@ -189,7 +167,6 @@ const Orders = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       ) : (
-        // Estado: lista de comandas de cocina
         <FlatList
           data={filteredOrders}
           keyExtractor={(item) => item.id}
@@ -199,7 +176,7 @@ const Orders = ({ navigation }) => {
           }
           ListEmptyComponent={
             <View style={{ alignItems: 'center', marginTop: 60 }}>
-              <Icon name="checkmark-circle-outline" size={48} color={kitchenPalette.ready} />
+              <Icon name="checkmark-circle-outline" size={48} color={kitchenPalette.readyBg} />
               <Text style={{ textAlign: 'center', color: kitchenPalette.muted, marginTop: 12, fontSize: 14 }}>
                 No hay comandas pendientes en este momento.
               </Text>
