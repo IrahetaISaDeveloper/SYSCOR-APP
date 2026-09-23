@@ -50,7 +50,7 @@ export default function WaiterDashboardScreen() {
   if (loading) {
     return (
       <SafeAreaView style={waiterDashboardScreenStyles.centered} edges={['top', 'left', 'right']}>
-        <ActivityIndicator size="large" color="#C62828" />
+        <ActivityIndicator size="large" color="#8E2222" />
         <Text style={waiterDashboardScreenStyles.loadingText}>Cargando mesas...</Text>
       </SafeAreaView>
     );
@@ -58,20 +58,17 @@ export default function WaiterDashboardScreen() {
 
   return (
     <SafeAreaView style={waiterDashboardScreenStyles.container} edges={['top', 'left', 'right']}>
-      {firstName ? (
-        <Text style={waiterDashboardScreenStyles.welcomeText}>Hola, {firstName}</Text>
-      ) : null}
-
       <AppHeader
+        eyebrow={firstName ? `HOLA, ${firstName.toUpperCase()} · MESERA` : 'MESERA'}
         title="Mis mesas"
-        subtitle="Toca una mesa para asignar clientes o gestionar la comanda"
+        subtitle="Toca una mesa para asignar o ver la comanda"
         accessory={
           <TouchableOpacity
             onPress={tableManagement.openManagement}
             style={waiterDashboardScreenStyles.tablesButton}
             activeOpacity={0.8}
           >
-            <Icon name="restaurant-outline" size={20} color="#C62828" />
+            <Icon name="restaurant-outline" size={19} color="#8E2222" />
           </TouchableOpacity>
         }
       />

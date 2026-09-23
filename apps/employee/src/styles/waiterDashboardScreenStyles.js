@@ -1,45 +1,42 @@
 import { StyleSheet } from "react-native";
+import { employeePalette } from '@syscor/shared/src/styles/employeePalette';
 
 export default StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: employeePalette.bg,
   },
   centered: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
+    backgroundColor: employeePalette.bg,
   },
   loadingText: {
-    color: "#7F8C8D",
+    color: employeePalette.muted,
     fontSize: 13,
   },
   errorBanner: {
-    marginHorizontal: 20,
-    marginTop: 10,
-    backgroundColor: "#FDEDEA",
-    borderRadius: 10,
+    marginHorizontal: 18,
+    marginTop: 4,
+    backgroundColor: employeePalette.warnSurface,
+    borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
   errorText: {
-    color: "#C62828",
+    color: employeePalette.warnText,
     fontSize: 12,
     fontWeight: "600",
-  },
-  welcomeText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#C62828",
-    paddingHorizontal: 20,
-    paddingTop: 10,
   },
   tablesButton: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "#FDEDEA",
+    backgroundColor: employeePalette.surface,
+    borderWidth: 1,
+    borderColor: employeePalette.line,
     alignItems: "center",
     justifyContent: "center",
   },

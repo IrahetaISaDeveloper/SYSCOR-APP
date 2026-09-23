@@ -38,13 +38,13 @@ function AuthNavigator() {
 function WaiterTabNavigator() {
   return (
     <WaiterTab.Navigator
-      tabBar={(props) => <AppTabBar {...props} accentColor="#C62828" />}
+      tabBar={(props) => <AppTabBar {...props} accentColor="#8E2222" />}
       screenOptions={{ headerShown: false }}
     >
       <WaiterTab.Screen
         name="Dashboard"
         component={WaiterDashboardScreen}
-        options={{ tabBarLabel: 'Mesas', tabBarIcon: 'grid-outline' }}
+        options={{ tabBarLabel: 'Mesas', tabBarIcon: 'restaurant-outline' }}
       />
       <WaiterTab.Screen
         name="Profile"
@@ -64,7 +64,7 @@ function KitchenTabNavigator() {
       <KitchenTab.Screen
         name="Dashboard"
         component={Orders}
-        options={{ tabBarLabel: 'Dashboard', tabBarIcon: 'grid' }}
+        options={{ tabBarLabel: 'Comandas', tabBarIcon: 'receipt-outline' }}
       />
       <KitchenTab.Screen
         name="Profile"

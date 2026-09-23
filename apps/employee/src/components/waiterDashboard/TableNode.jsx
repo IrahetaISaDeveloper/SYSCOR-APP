@@ -11,16 +11,20 @@ const STATUS_ICON = {
   reservada: "bookmark-outline",
 };
 
-// Posiciones de las 4 sillas alrededor de la mesa (arriba, derecha, abajo, izquierda)
-const CHAIR_POSITIONS = [
-  { top: -10, left: "50%", marginLeft: -9 },
-  { top: "50%", right: -10, marginTop: -9 },
-  { bottom: -10, left: "50%", marginLeft: -9 },
-  { top: "50%", left: -10, marginTop: -9 },
-];
+// Color de borde exacto por estado (igual al mockup, no un shade calculado)
+const STATUS_BORDER_COLOR = {
+  libre: "#25A25A",
+  ocupada: "#8E1C1C",
+  limpieza: "#B9740A",
+  reservada: "#74408A",
+};
+
+// Color del ícono de "estado" dentro del aro (mismo tono que el ícono de estado del mockup)
+const STATUS_ICON_COLOR = "#FFFFFF";
 
 export default function TableNode({ table, onPress }) {
   const meta = TABLE_STATUS_META[table.status] ?? TABLE_STATUS_META.libre;
+  const borderColor = STATUS_BORDER_COLOR[table.status] ?? STATUS_BORDER_COLOR.libre;
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const spinAnim = useRef(new Animated.Value(0)).current;
@@ -92,10 +96,11 @@ export default function TableNode({ table, onPress }) {
       onPressOut={handlePressOut}
     >
       <Animated.View style={[tableNodeStyles.wrapper, { transform: [{ scale: pressAnim }] }]}>
-        {/* Sillas alrededor */}
-        {CHAIR_POSITIONS.map((pos, i) => (
-          <View key={i} style={[tableNodeStyles.chair, pos]} />
-        ))}
+        {/* Sillas alrededor: rectangulares horizontales arriba/abajo, verticales izq/der */}
+        <View style={[tableNodeStyles.chairH, tableNodeStyles.chairTop]} />
+        <View style={[tableNodeStyles.chairH, tableNodeStyles.chairBottom]} />
+        <View style={[tableNodeStyles.chairV, tableNodeStyles.chairLeft]} />
+        <View style={[tableNodeStyles.chairV, tableNodeStyles.chairRight]} />
 
         {/* Mesa circular */}
         <Animated.View
@@ -103,13 +108,13 @@ export default function TableNode({ table, onPress }) {
             tableNodeStyles.tableCircle,
             {
               backgroundColor: meta.color,
-              borderColor: shade(meta.color, -18),
+              borderColor,
               transform: [{ scale: pulseAnim }],
             },
           ]}
         >
-          <Animated.View style={[tableNodeStyles.statusIcon, { transform: [{ rotate }] }]}>
-            <Icon name={STATUS_ICON[table.status]} size={14} color={shade(meta.color, -55)} />
+          <Animated.View style={{ transform: [{ rotate }] }}>
+            <Icon name={STATUS_ICON[table.status]} size={14} color={STATUS_ICON_COLOR} style={tableNodeStyles.statusIcon} />
           </Animated.View>
           <Text style={tableNodeStyles.tableNumber}>{table.number}</Text>
           <Text style={tableNodeStyles.statusLabel}>{meta.label}</Text>
@@ -123,13 +128,4 @@ export default function TableNode({ table, onPress }) {
       </Animated.View>
     </TouchableOpacity>
   );
-}
-
-function shade(hex, percent) {
-  const num = parseInt(hex.replace("#", ""), 16);
-  const amt = Math.round(2.55 * percent);
-  const r = Math.max(0, Math.min(255, (num >> 16) + amt));
-  const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt));
-  const b = Math.max(0, Math.min(255, (num & 0x0000ff) + amt));
-  return `#${(0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1)}`;
 }

@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import { employeePalette } from '@syscor/shared/src/styles/employeePalette';
 
 export default StyleSheet.create({
   scroll: {
@@ -10,29 +11,30 @@ export default StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#2C3E50",
+    color: employeePalette.ink,
     marginTop: 12,
     marginBottom: 6,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: employeePalette.line,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 14,
-    color: "#2C3E50",
+    color: employeePalette.ink,
+    backgroundColor: employeePalette.surface,
   },
   sectionTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#2C3E50",
+    color: employeePalette.ink,
     marginTop: 20,
     marginBottom: 4,
   },
   helperText: {
     fontSize: 12,
-    color: "#B0B4B8",
+    color: employeePalette.muted,
     marginBottom: 12,
   },
   footer: {

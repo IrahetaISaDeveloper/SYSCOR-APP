@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import { employeePalette } from '@syscor/shared/src/styles/employeePalette';
 
 export default StyleSheet.create({
   loadingBox: {
@@ -7,12 +8,12 @@ export default StyleSheet.create({
     gap: 8,
   },
   loadingText: {
-    color: "#7F8C8D",
+    color: employeePalette.muted,
     fontSize: 13,
   },
   tabsRow: {
     flexDirection: "row",
-    backgroundColor: "#F4F4F4",
+    backgroundColor: employeePalette.surface2,
     borderRadius: 12,
     padding: 4,
     marginBottom: 14,
@@ -24,8 +25,8 @@ export default StyleSheet.create({
     alignItems: "center",
   },
   tabActive: {
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
+    backgroundColor: employeePalette.surface,
+    shadowColor: "#1B1613",
     shadowOpacity: 0.08,
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 1 },
@@ -33,15 +34,15 @@ export default StyleSheet.create({
   },
   tabLabel: {
     fontSize: 13,
-    color: "#7F8C8D",
+    color: employeePalette.muted,
     fontWeight: "500",
   },
   tabLabelActive: {
-    color: "#C62828",
+    color: employeePalette.accent,
     fontWeight: "700",
   },
   emptyText: {
-    color: "#B0B4B8",
+    color: employeePalette.muted,
     fontSize: 13,
     paddingVertical: 20,
     textAlign: "center",
@@ -52,7 +53,7 @@ export default StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
+    borderBottomColor: employeePalette.line,
   },
   productInfo: {
     flex: 1,
@@ -60,11 +61,12 @@ export default StyleSheet.create({
   productName: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#2C3E50",
+    color: employeePalette.ink,
   },
   productPrice: {
+    fontFamily: "monospace",
     fontSize: 12,
-    color: "#7F8C8D",
+    color: employeePalette.muted,
     marginTop: 2,
   },
   stepper: {
@@ -77,35 +79,36 @@ export default StyleSheet.create({
     height: 28,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: employeePalette.line,
     alignItems: "center",
     justifyContent: "center",
   },
   stepperButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#C62828",
+    color: employeePalette.accent,
     lineHeight: 18,
   },
   stepperButtonTextDisabled: {
-    color: "#CCCCCC",
+    color: employeePalette.line,
   },
   stepperValue: {
+    fontFamily: "monospace",
     fontSize: 14,
-    fontWeight: "700",
-    color: "#2C3E50",
+    fontWeight: "500",
+    color: employeePalette.ink,
     minWidth: 16,
     textAlign: "center",
   },
   summaryBox: {
     marginTop: 14,
-    backgroundColor: "#FDF2F0",
+    backgroundColor: employeePalette.accentSoft,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 14,
   },
   summaryText: {
-    color: "#C62828",
+    color: employeePalette.accent,
     fontWeight: "700",
     fontSize: 13,
     textAlign: "center",

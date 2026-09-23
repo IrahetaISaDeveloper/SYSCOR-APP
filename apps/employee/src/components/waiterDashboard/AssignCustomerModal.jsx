@@ -4,6 +4,7 @@ import BottomSheetModal from '@syscor/shared/src/components/commons/BottomSheetM
 import PrimaryButton from '@syscor/shared/src/components/commons/PrimaryButton';
 import MenuItemPicker from "./MenuItemPicker";
 import assignCustomerModalStyles from "../../styles/assignCustomerModalStyles";
+import { employeePalette } from '@syscor/shared/src/styles/employeePalette';
 
 export default function AssignCustomerModal({
   visible,
@@ -54,7 +55,7 @@ export default function AssignCustomerModal({
         <TextInput
           style={assignCustomerModalStyles.input}
           placeholder="Ej. Familia Pérez"
-          placeholderTextColor="#B0B4B8"
+          placeholderTextColor={employeePalette.muted}
           value={customerName}
           onChangeText={setCustomerName}
         />
@@ -63,7 +64,7 @@ export default function AssignCustomerModal({
         <TextInput
           style={assignCustomerModalStyles.input}
           placeholder="1"
-          placeholderTextColor="#B0B4B8"
+          placeholderTextColor={employeePalette.muted}
           keyboardType="number-pad"
           value={peopleCount}
           onChangeText={setPeopleCount}
@@ -83,7 +84,12 @@ export default function AssignCustomerModal({
       </ScrollView>
 
       <View style={assignCustomerModalStyles.footer}>
-        <PrimaryButton label="Ocupar mesa" onPress={handleConfirm} loading={submitting} />
+        <PrimaryButton
+          label="Ocupar mesa"
+          onPress={handleConfirm}
+          loading={submitting}
+          color={employeePalette.accent}
+        />
       </View>
     </BottomSheetModal>
   );

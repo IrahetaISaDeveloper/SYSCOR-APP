@@ -6,8 +6,27 @@ import {
   updateTableStatus,
   createOrder,
 } from "../services/waiterDashboardApi";
+import { fetchApiOrders } from "../services/kitchenOrdersApi";
 
 const POLL_INTERVAL_MS = 15000;
+
+// El endpoint del dashboard del mesero solo trae un resumen por comanda
+// (itemCount/total). Para poder mostrar los productos reales (ej. "Combo
+// Familiar" en vez de "2 platillos") cruzamos esa info con /orders, que sí
+// trae el detalle de cada ítem.
+const attachOrderItems = (tables, allOrders) => {
+  const itemsByOrderId = new Map(
+    (allOrders || []).map((o) => [String(o._id), o.items || []])
+  );
+
+  return (tables || []).map((table) => ({
+    ...table,
+    activeOrders: (table.activeOrders || []).map((order) => {
+      const fullItems = itemsByOrderId.get(String(order._id));
+      return fullItems ? { ...order, items: fullItems } : order;
+    }),
+  }));
+};
 
 export default function useWaiterDashboard() {
   const [tables, setTables] = useState([]);
@@ -28,8 +47,16 @@ export default function useWaiterDashboard() {
   const loadDashboard = useCallback(async ({ silent = false } = {}) => {
     try {
       if (!silent) setLoading(true);
-      const data = await fetchWaiterDashboard();
-      setTables(data);
+      const [data, allOrdersRaw] = await Promise.all([
+        fetchWaiterDashboard(),
+        // Si este endpoint falla (ej. permisos), no debe tumbar el mapa de mesas.
+        fetchApiOrders().catch(() => []),
+      ]);
+      const allOrders = Array.isArray(allOrdersRaw)
+        ? allOrdersRaw
+        : Array.isArray(allOrdersRaw?.data) ? allOrdersRaw.data : [];
+
+      setTables(attachOrderItems(data, allOrders));
       setError(null);
     } catch (err) {
       console.error("useWaiterDashboard.loadDashboard:", err);
@@ -50,6 +77,15 @@ export default function useWaiterDashboard() {
     pollRef.current = setInterval(() => loadDashboard({ silent: true }), POLL_INTERVAL_MS);
     return () => clearInterval(pollRef.current);
   }, [loadDashboard]);
+
+  // Mantiene la mesa seleccionada (la que muestran los modales) sincronizada
+  // con los datos frescos del polling/refresh, para que los productos y
+  // totales no se queden desactualizados mientras el modal sigue abierto.
+  useEffect(() => {
+    if (!selectedTable) return;
+    const fresh = tables.find((t) => t._id === selectedTable._id);
+    if (fresh && fresh !== selectedTable) setSelectedTable(fresh);
+  }, [tables]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---- Selección de mesa / navegación entre modales ----
 

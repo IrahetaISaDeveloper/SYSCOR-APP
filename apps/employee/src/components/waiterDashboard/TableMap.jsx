@@ -8,13 +8,13 @@ export default function TableMap({ tables, onTablePress, refreshing, onRefresh }
   return (
     <ScrollView
       contentContainerStyle={tableMapStyles.scrollContent}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#C62828" />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8E2222" />}
     >
       <View style={tableMapStyles.legendRow}>
         {Object.entries(TABLE_STATUS_META).map(([key, meta]) => (
           <View key={key} style={tableMapStyles.legendItem}>
             <View style={[tableMapStyles.legendDot, { backgroundColor: meta.color }]} />
-            <Text style={tableMapStyles.legendLabel}>{meta.label}</Text>
+            <Text style={tableMapStyles.legendLabel}>{meta.label.toUpperCase()}</Text>
           </View>
         ))}
       </View>

@@ -14,7 +14,7 @@ export default function MenuItemPicker({ menu, loading, selectedItems, onChangeS
   if (loading) {
     return (
       <View style={menuItemPickerStyles.loadingBox}>
-        <ActivityIndicator color="#C62828" />
+        <ActivityIndicator color="#8E2222" />
         <Text style={menuItemPickerStyles.loadingText}>Cargando menú...</Text>
       </View>
     );

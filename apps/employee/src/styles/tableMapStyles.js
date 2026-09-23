@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import { employeePalette } from '@syscor/shared/src/styles/employeePalette';
 
 export default StyleSheet.create({
   scrollContent: {
@@ -7,35 +8,41 @@ export default StyleSheet.create({
   legendRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 8,
-    gap: 16,
+    paddingHorizontal: 18,
+    paddingTop: 4,
+    paddingBottom: 12,
+    gap: 7,
   },
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 6,
+    backgroundColor: employeePalette.surface,
+    borderWidth: 1,
+    borderColor: employeePalette.line,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   legendDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   legendLabel: {
-    fontSize: 12,
-    color: "#7F8C8D",
-    fontWeight: "500",
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 0.4,
+    color: employeePalette.ink,
   },
   floor: {
-    marginTop: 14,
-    marginHorizontal: 16,
-    backgroundColor: "#EFE6D8",
-    borderRadius: 28,
-    paddingVertical: 28,
-    paddingHorizontal: 14,
+    marginHorizontal: 18,
+    backgroundColor: employeePalette.surface2,
+    borderRadius: 22,
+    paddingVertical: 22,
+    paddingHorizontal: 18,
     borderWidth: 1,
-    borderColor: "#E1D4BE",
+    borderColor: employeePalette.line,
   },
   grid: {
     flexDirection: "row",
