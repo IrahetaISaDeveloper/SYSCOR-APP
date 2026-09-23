@@ -5,16 +5,20 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "plugins": [
       [
         "expo-splash-screen",
         {
-          "image": "./assets/logo-el-corral.png",
+          "image": "./assets/logo-horizontal-negro.png",
           "imageWidth": 220,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#F7F5F1",
+          "dark": {
+            "image": "./assets/logo-horizontal-blanco.png",
+            "backgroundColor": "#0E0E0E"
+          }
         }
       ]
     ],
@@ -28,6 +32,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "resize",
       "package": "com.syscor.clientes"
     },
     "web": {

@@ -1,63 +1,87 @@
 import { useState } from 'react';
 import apiClient from '@syscor/shared/src/services/apiClient';
+import { firstPasswordProblem } from '@syscor/shared/src/utils/passwordRules';
+
+// Solo letras (con acentos) y espacios, con la inicial de cada palabra en mayúscula.
+const formatPersonName = (text) =>
+  text
+    .replace(/[^a-zA-ZáéíóúüÁÉÍÓÚÜñÑ\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .split(' ')
+    .map((word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : ''))
+    .join(' ');
+
+// Los números de El Salvador son de 8 dígitos y se escriben 0000-0000.
+export const formatPhone = (text) => {
+  const digits = text.replace(/[^0-9]/g, '').slice(0, 8);
+  if (digits.length <= 4) return digits;
+  return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+};
+
+export const phoneDigits = (text) => (text || '').replace(/[^0-9]/g, '');
+
+// Fuerza de la contraseña, usada por el medidor de la pantalla de registro.
+export const getPasswordStrength = (password) => {
+  if (!password) return { level: 0, label: '' };
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (password.length >= 12) score += 1;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1;
+  if (/[0-9]/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+  if (score <= 2) return { level: 1, label: 'DÉBIL' };
+  if (score <= 4) return { level: 2, label: 'MEDIA' };
+  return { level: 3, label: 'FUERTE' };
+};
 
 export const useCustomerAuth = () => {
-  // Estados del Paso 1 (Registro)
-  const [name, setName] = useState('');
+  // Paso 1 — datos de la cuenta
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  
-  // Estados del Paso 2 (Verificación)
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  // Paso 3 — verificación
   const [code, setCode] = useState('');
-  
+
   // Estados generales
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // 1. Formateo de nombre (solo letras y mayúsculas iniciales)
-  const handleNameChange = (text) => {
-    let formatted = text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
-    formatted = formatted.replace(/\s+/g, ' ');
-    formatted = formatted
-      .toLowerCase()
-      .split(' ')
-      .map((word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : ''))
-      .join(' ');
-    setName(formatted);
-  };
+  const handleFirstNameChange = (text) => setFirstName(formatPersonName(text));
+  const handleLastNameChange = (text) => setLastName(formatPersonName(text));
+  const handlePhoneChange = (text) => setPhone(formatPhone(text));
 
-  // 2. Formateo de teléfono (solo números, max 8 dígitos)
-  const handlePhoneChange = (text) => {
-    const numericOnly = text.replace(/[^0-9]/g, '');
-    if (numericOnly.length <= 8) {
-      setPhone(numericOnly);
-    }
-  };
-
-  const buildPersonalInfoPayload = (customName, customPhone) => {
-    const rawName = (customName !== undefined ? customName : name) || '';
-    const rawPhone = (customPhone !== undefined ? customPhone : phone) || '';
-    const normalizedName = rawName.trim().replace(/\s+/g, ' ');
-    const nameParts = normalizedName.split(' ');
-    const firstName = nameParts.shift() || '';
-    const lastname = nameParts.join(' ').trim();
+  // Arma el payload de datos personales, incluida la dirección del paso 2.
+  const buildPersonalInfoPayload = (data = {}) => {
+    const rawFirst = (data.firstName !== undefined ? data.firstName : firstName) || '';
+    const rawLast = (data.lastName !== undefined ? data.lastName : lastName) || '';
+    const rawPhone = (data.phone !== undefined ? data.phone : phone) || '';
+    const address = data.address || null;
 
     return {
-      name: firstName,
-      lastname,
+      name: rawFirst.trim().replace(/\s+/g, ' '),
+      lastname: rawLast.trim().replace(/\s+/g, ' '),
       image: null,
       birthdate: null,
-      phones: rawPhone.trim() ? [rawPhone.trim()] : [],
-      addresses: [],
+      phones: phoneDigits(rawPhone) ? [phoneDigits(rawPhone)] : [],
+      addresses: address ? [address] : [],
     };
   };
 
-  // 3. PASO 1: Registrar y enviar código de verificación al correo
-  const handleRegister = async (navigation) => {
-    const normalizedName = name.trim().replace(/\s+/g, ' ');
+  // Valida el paso 1 sin llamar al backend todavía.
+  const validateAccountStep = () => {
+    const cleanFirst = firstName.trim().replace(/\s+/g, ' ');
+    const cleanLast = lastName.trim().replace(/\s+/g, ' ');
     const cleanEmail = email.trim();
-    if (!normalizedName || !cleanEmail || !phone.trim() || !password.trim()) {
+    const digits = phoneDigits(phone);
+
+    if (!cleanFirst || !cleanLast || !cleanEmail || !digits || !password || !confirmPassword) {
       setError({
         title: 'Campos incompletos',
         message: 'Por favor, rellena todos los campos para continuar.',
@@ -65,23 +89,24 @@ export const useCustomerAuth = () => {
       return false;
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setError({
+        title: 'Correo no válido',
+        message: 'Ingresa un formato de correo válido.',
+      });
+      return false;
+    }
+
     if (cleanEmail.includes('+')) {
       setError({
         title: 'Correo no válido',
-        message: 'El servicio de correo no admite direcciones con el signo "+" (alias). Por favor, utiliza tu dirección de correo estándar.',
+        message:
+          'El servicio de correo no admite direcciones con el signo "+" (alias). Utiliza tu dirección estándar.',
       });
       return false;
     }
 
-    if (normalizedName.split(' ').length < 2) {
-      setError({
-        title: 'Nombre incompleto',
-        message: 'Debes ingresar nombre y apellido para completar el registro.',
-      });
-      return false;
-    }
-
-    if (phone.length < 8) {
+    if (digits.length < 8) {
       setError({
         title: 'Teléfono incompleto',
         message: 'El número debe tener exactamente 8 dígitos.',
@@ -89,41 +114,80 @@ export const useCustomerAuth = () => {
       return false;
     }
 
-    if (password.length < 8) {
+    // Mismas reglas que aplica el backend (8 caracteres, mayúscula,
+    // minúscula, número y símbolo): avisarlas aquí evita que el registro
+    // falle al final, después de haber llenado todo el formulario.
+    const passwordProblem = firstPasswordProblem(password);
+    if (passwordProblem) {
       setError({
-        title: 'Contraseña muy corta',
-        message: 'Debe tener un mínimo de 8 caracteres.',
+        title: 'Contraseña insegura',
+        message: passwordProblem,
       });
       return false;
     }
 
+    if (password.includes(' ')) {
+      setError({
+        title: 'Contraseña inválida',
+        message: 'Por seguridad, la contraseña no puede contener espacios.',
+      });
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      setError({
+        title: 'Las contraseñas no coinciden',
+        message: 'Verifica que ambas contraseñas sean iguales.',
+      });
+      return false;
+    }
+
+    if (!acceptedTerms) {
+      setError({
+        title: 'Términos pendientes',
+        message: 'Debes aceptar los términos de servicio para crear tu cuenta.',
+      });
+      return false;
+    }
+
+    setError(null);
+    return true;
+  };
+
+  // Valida la dirección del paso 2.
+  const validateAddress = (address) => {
+    if (
+      !address?.departamento ||
+      !address?.municipio ||
+      !address?.tipo ||
+      !address?.colonia?.trim() ||
+      !address?.calle?.trim() ||
+      !address?.numero?.trim()
+    ) {
+      setError({
+        title: 'Dirección incompleta',
+        message: 'Completa los campos obligatorios de tu dirección.',
+      });
+      return false;
+    }
+    setError(null);
+    return true;
+  };
+
+  // Envía el código de verificación al correo (último paso antes de crear).
+  const sendVerificationCode = async (explicitEmail) => {
+    const cleanEmail = (explicitEmail || email || '').trim();
     setLoading(true);
     setError(null);
 
     try {
-      console.log('[Register] send-code →', { email: cleanEmail });
-      await apiClient.post('/auth/customers/register/send-code', {
-        email: cleanEmail,
-      });
-      console.log('[Register] send-code ✓');
-
-      // Reemplazamos la pantalla de registro por la de verificación (sin dejarla
-      // en el stack) para ir directo al input del código, pasando el correo.
-      navigation.replace('CustomerCodeVerification', {
-        name: normalizedName,
-        email: cleanEmail,
-        phone: phone.trim(),
-        password,
-      });
+      await apiClient.post('/auth/customers/register/send-code', { email: cleanEmail });
       return true;
-
     } catch (err) {
-      console.error('[Register] send-code ERROR:', err.response?.status, JSON.stringify(err.response?.data));
-      // Manejamos el error estandarizado del backend
       if (err.response) {
         setError({
           title: err.response.data?.title || 'Error en el registro',
-          message: err.response.data?.message || 'No se pudo completar el registro.',
+          message: err.response.data?.message || 'No se pudo enviar el código.',
         });
       } else {
         setError({
@@ -137,13 +201,11 @@ export const useCustomerAuth = () => {
     }
   };
 
-  // 4. PASO 2: Verificar el código de 6 dígitos
+  // Verifica el código y crea la cuenta con los datos y la dirección recogidos.
   const handleVerifyCode = async (navigation, explicitData = {}) => {
     const activeCode = (explicitData.code || code || '').trim();
     const activeEmail = (explicitData.email || email || '').trim();
     const activePassword = (explicitData.password || password || '').trim();
-    const activeName = explicitData.name !== undefined ? explicitData.name : name;
-    const activePhone = explicitData.phone !== undefined ? explicitData.phone : phone;
 
     if (!activeCode || activeCode.length < 6) {
       setError({
@@ -157,34 +219,21 @@ export const useCustomerAuth = () => {
     setError(null);
 
     try {
-      // Paso 2a: verificar código
-      console.log('[Register] verify-code →', { code: activeCode, email: activeEmail });
-      const verifyRes = await apiClient.post('/auth/customers/register/verify-code', {
+      await apiClient.post('/auth/customers/register/verify-code', {
         code: activeCode,
         email: activeEmail,
       });
-      console.log('[Register] verify-code ✓', verifyRes.data);
 
-      // Paso 2b: datos personales
-      const personalInfo = buildPersonalInfoPayload(activeName, activePhone);
-      console.log('[Register] personal-info →', personalInfo);
-      const infoRes = await apiClient.post('/auth/customers/register/personal-info', personalInfo);
-      console.log('[Register] personal-info ✓', infoRes.data);
+      const personalInfo = buildPersonalInfoPayload(explicitData);
+      await apiClient.post('/auth/customers/register/personal-info', personalInfo);
 
-      // Paso 2c: contraseña
-      console.log('[Register] set-password →', { password: activePassword });
-      const pwRes = await apiClient.post('/auth/customers/register/set-password', {
+      await apiClient.post('/auth/customers/register/set-password', {
         password: activePassword,
       });
-      console.log('[Register] set-password ✓', pwRes.data);
 
-      // Cuando el backend confirma código, datos personales y contraseña,
-      // la cuenta ya quedó creada.
       navigation.replace('VerifiedSuccess');
       return true;
-
     } catch (err) {
-      console.error('[Register] ERROR:', err.response?.status, JSON.stringify(err.response?.data) || err.message);
       if (err.response) {
         setError({
           title: err.response.data?.title || 'Error de verificación',
@@ -202,18 +251,14 @@ export const useCustomerAuth = () => {
     }
   };
 
-  // 5. Reenviar código (opcional, para el botón de reenviar)
   const handleResendCode = async (explicitEmail) => {
     const targetEmail = (explicitEmail || email || '').trim();
     if (!targetEmail) return;
     setError(null);
 
     try {
-      await apiClient.post('/auth/customers/register/send-code', {
-        email: targetEmail,
-      });
+      await apiClient.post('/auth/customers/register/send-code', { email: targetEmail });
     } catch (err) {
-      console.error(err);
       setError({
         title: 'Error al reenviar',
         message: err.response?.data?.message || 'No se pudo enviar el código nuevamente.',
@@ -222,23 +267,32 @@ export const useCustomerAuth = () => {
   };
 
   return {
-    // Datos y setters de Registro
-    name,
-    setName: handleNameChange,
+    // Paso 1
+    firstName,
+    setFirstName: handleFirstNameChange,
+    lastName,
+    setLastName: handleLastNameChange,
     email,
     setEmail,
     phone,
     setPhone: handlePhoneChange,
     password,
     setPassword,
-    // Datos y setters de Verificación
+    confirmPassword,
+    setConfirmPassword,
+    acceptedTerms,
+    setAcceptedTerms,
+    // Paso 3
     code,
     setCode,
-    // Estados generales
+    // Estados
     loading,
     error,
-    // Funciones de acción
-    handleRegister,
+    setError,
+    // Acciones
+    validateAccountStep,
+    validateAddress,
+    sendVerificationCode,
     handleVerifyCode,
     handleResendCode,
   };
