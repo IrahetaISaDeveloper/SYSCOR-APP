@@ -1,7 +1,11 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { ActivityIndicator, View, useColorScheme } from 'react-native';
+import {
+  NavigationContainer,
+  DefaultTheme,
+  DarkTheme,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -9,12 +13,14 @@ import { useFonts } from 'expo-font';
 
 import { AuthProvider, useAuth } from '@syscor/shared/src/context/AuthContext';
 import { fontAssets } from '@syscor/shared/src/styles/typography';
+import { getMenuColors } from './src/styles/CustomerMenu';
 import { ROLES } from '@syscor/shared/src/constants/roles';
-import AppTabBar from '@syscor/shared/src/navigation/AppTabBar';
+import CustomerTabBar from './src/navigation/CustomerTabBar';
 import BootGate from '@syscor/shared/src/navigation/BootGate';
 import UnsupportedRoleScreen from '@syscor/shared/src/screens/UnsupportedRoleScreen';
 
 import { CartProvider } from './src/context/CartContext';
+import { TabBarVisibilityProvider } from './src/context/TabBarVisibilityContext';
 
 // Auth (solo cliente)
 import LoginCustomerScreen from './src/screens/auth/LoginCustomerScreen';
@@ -60,26 +66,28 @@ function AuthNavigator({ initialRouteName = 'Login' }) {
 
 function CustomerTabNavigator() {
   return (
-    <CustomerTab.Navigator
-      tabBar={(props) => <AppTabBar {...props} accentColor="#C62828" />}
-      screenOptions={{ headerShown: false }}
-    >
-      <CustomerTab.Screen
-        name="Menu"
-        component={CustomerMenu}
-        options={{ tabBarLabel: 'Menú', tabBarIcon: 'restaurant' }}
-      />
-      <CustomerTab.Screen
-        name="Cart"
-        component={CartScreen}
-        options={{ tabBarLabel: 'Carrito', tabBarIcon: 'cart-outline' }}
-      />
-      <CustomerTab.Screen
-        name="Profile"
-        component={CustomerProfileScreen}
-        options={{ tabBarLabel: 'Perfil', tabBarIcon: 'person-outline' }}
-      />
-    </CustomerTab.Navigator>
+    <TabBarVisibilityProvider>
+      <CustomerTab.Navigator
+        tabBar={(props) => <CustomerTabBar {...props} />}
+        screenOptions={{ headerShown: false }}
+      >
+        <CustomerTab.Screen
+          name="Menu"
+          component={CustomerMenu}
+          options={{ tabBarLabel: 'Menú', tabBarIcon: 'restaurant' }}
+        />
+        <CustomerTab.Screen
+          name="Cart"
+          component={CartScreen}
+          options={{ tabBarLabel: 'Carrito', tabBarIcon: 'cart-outline' }}
+        />
+        <CustomerTab.Screen
+          name="Profile"
+          component={CustomerProfileScreen}
+          options={{ tabBarLabel: 'Perfil', tabBarIcon: 'person-outline' }}
+        />
+      </CustomerTab.Navigator>
+    </TabBarVisibilityProvider>
   );
 }
 
@@ -118,11 +126,33 @@ function RootNavigator({ entryRoute }) {
   return <UnsupportedRoleScreen />;
 }
 
+// Tema de la navegación: el fondo debe ser el de la app, no el blanco que
+// React Navigation usa por defecto. Se nota al esconderse la barra inferior,
+// que deja ver lo que hay debajo.
+const useNavigationTheme = () => {
+  const isDark = useColorScheme() === 'dark';
+  const c = getMenuColors(isDark);
+  const base = isDark ? DarkTheme : DefaultTheme;
+
+  return {
+    ...base,
+    colors: {
+      ...base.colors,
+      background: c.background,
+      card: c.navBackground,
+      border: c.navBorder,
+      primary: c.primary,
+      text: c.textDark,
+    },
+  };
+};
+
 export default function App() {
   // Archivo / Inter / IBM Plex Mono: las mismas del sistema web. Mientras
   // cargan seguimos mostrando el splash nativo, así que no hay parpadeo de
   // texto con la fuente del sistema.
   const [fontsLoaded, fontError] = useFonts(fontAssets);
+  const navigationTheme = useNavigationTheme();
 
   // Si una fuente no carga, la app arranca igual con la del sistema: es
   // preferible a dejar al cliente ante una pantalla en blanco.
@@ -133,7 +163,7 @@ export default function App() {
       <AuthProvider>
         <BootGate>
           {({ entryRoute }) => (
-            <NavigationContainer>
+            <NavigationContainer theme={navigationTheme}>
               <StatusBar style="auto" />
               <RootNavigator entryRoute={entryRoute} />
             </NavigationContainer>

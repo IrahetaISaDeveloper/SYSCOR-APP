@@ -1,313 +1,193 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-const { width } = Dimensions.get('window');
-
-export const colors = {
-  primary: '#C62828',
-  primaryDark: '#9B1B1B',
-  background: '#FFFFFF',
-  surface: '#F7F7F7',
+// Paleta del menú del cliente, en claro y oscuro.
+//
+// Los valores salen del diseño: fondo hueso muy claro, tarjetas blancas de
+// borde suave y el rojo de la marca como único acento. En oscuro el fondo es
+// negro plano y las tarjetas gris muy oscuro, tal como en la maqueta.
+export const lightColors = {
+  primary: '#E23D28',
+  primaryDark: '#C62828',
+  background: '#FAF7F2',
+  surface: '#FFFFFF',
+  surfaceMuted: '#F2EEE7',
+  border: '#EAE5DC',
+  borderStrong: '#D8D2C7',
   textDark: '#1A1A1A',
-  textGray: '#6B6B6B',
-  textLight: '#AAAAAA',
-  border: '#EFEFEF',
+  textGray: '#6F7076',
+  textLight: '#A8A49E',
   white: '#FFFFFF',
-  badge: '#FF6B35',
+  imagePlaceholder: '#F4F1EB',
+  // La píldora de la bolsa y el botón central son oscuros en ambos temas.
+  pill: '#1C1C1E',
+  navBackground: '#FFFFFF',
+  navBorder: '#EFEBE4',
 };
 
+export const darkColors = {
+  primary: '#E23D28',
+  primaryDark: '#C62828',
+  background: '#0A0A0A',
+  surface: '#161617',
+  surfaceMuted: '#1E1E20',
+  border: '#232325',
+  borderStrong: '#2E2E31',
+  textDark: '#FFFFFF',
+  textGray: '#9A9AA0',
+  textLight: '#6E6E75',
+  white: '#FFFFFF',
+  imagePlaceholder: '#1E1E20',
+  pill: '#1C1C1E',
+  navBackground: '#0F0F10',
+  navBorder: '#1E1E20',
+};
+
+export const getMenuColors = (isDark) => (isDark ? darkColors : lightColors);
+
+// Compatibilidad: alguna pantalla podría seguir importando `colors`.
+export const colors = lightColors;
+
+// Solo lo que no depende del tema. El color se aplica en la pantalla, porque
+// cambia entre claro y oscuro.
 const menuStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
 
-  // ── HEADER ──────────────────────────────────────────
+  // ── ENCABEZADO ──────────────────────────────────────
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  headerLogo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerLogoImage: {
-    width: 38,
-    height: 38,
-  },
-  headerBrandText: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: colors.primary,
-    letterSpacing: -0.5,
-  },
-  headerIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
+    justifyContent: 'center',
   },
 
-  // ── SEARCH BAR ──────────────────────────────────────
+  // ── BUSCADOR ────────────────────────────────────────
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginVertical: 12,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
-    color: colors.textDark,
-    marginLeft: 8,
+    padding: 0,
   },
 
-  // ── CATEGORIES ──────────────────────────────────────
-  categoriesContainer: {
-    paddingLeft: 16,
-    paddingBottom: 4,
-    marginBottom: 8,
-  },
-  categoryChip: {
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    borderRadius: 30,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    marginRight: 10,
-    backgroundColor: colors.white,
-  },
-  categoryChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  categoryChipText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textDark,
-  },
-  categoryChipTextActive: {
-    color: colors.white,
-  },
-
-  // ── SECTION HEADER ──────────────────────────────────
+  // ── ENCABEZADO DE SECCIÓN ───────────────────────────
+  // El título y su insignia van juntos a la izquierda, no separados.
   sectionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 12,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.textDark,
-    letterSpacing: -0.3,
-  },
-  seeAllText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.primary,
+  sectionBadge: {
+    borderWidth: 1,
   },
 
-  // ── PROMO CARDS ─────────────────────────────────────
-  promosContainer: {
-    paddingLeft: 16,
-    paddingBottom: 4,
-  },
+  // ── PROMOCIONES ─────────────────────────────────────
   promoCard: {
-    width: width * 0.7,
-    height: 160,
-    borderRadius: 16,
-    marginRight: 14,
     overflow: 'hidden',
-    backgroundColor: colors.textDark,
+    borderWidth: 1,
   },
   promoImage: {
     width: '100%',
-    height: '100%',
-    position: 'absolute',
-  },
-  promoOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.42)',
-    padding: 14,
-    justifyContent: 'flex-end',
   },
   promoBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.primary,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginBottom: 8,
+    position: 'absolute',
   },
-  promoBadgeNew: {
-    backgroundColor: colors.badge,
+  promoFooter: {
+    borderTopWidth: 1,
   },
-  promoBadgeText: {
-    color: colors.white,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  promoTitle: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '800',
-    lineHeight: 21,
-    marginBottom: 4,
-  },
-  promoSubtitle: {
-    color: 'rgba(255,255,255,0.78)',
-    fontSize: 12,
-    fontWeight: '500',
-    lineHeight: 16,
+  promoPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
   },
 
-  // ── DISH LIST ───────────────────────────────────────
-  dishesContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 100,
+  dotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dot: {
+    height: 3,
+    borderRadius: 2,
+  },
+
+  // ── TARJETAS DE CATEGORÍA ───────────────────────────
+  categoryCardImage: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+
+  // ── REJILLA DEL MENÚ ────────────────────────────────
+  dishGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   dishCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    borderRadius: 14,
-    marginBottom: 14,
-    padding: 12,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
   },
-  dishImage: {
-    width: 84,
-    height: 84,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-  },
-  dishInfo: {
-    flex: 1,
-    paddingHorizontal: 12,
-  },
-  dishName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textDark,
-    marginBottom: 3,
-  },
-  dishDescription: {
-    fontSize: 12,
-    color: colors.textGray,
-    lineHeight: 17,
-    marginBottom: 6,
-  },
-  dishPrice: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.primary,
-  },
-  dishQty: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.textGray,
-  },
-  addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: colors.primary,
+  // La imagen lleva el nombre del platillo encima, centrado.
+  dishImageArea: {
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 4,
   },
+  dishFooter: {},
 
-  // ── ERROR / EMPTY ────────────────────────────────────────────────
-  errorContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-  },
-  errorText: {
-    fontSize: 14,
-    color: colors.textGray,
-    textAlign: 'center',
-    marginTop: 10,
-    marginBottom: 16,
-  },
-  retryButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  retryText: {
-    color: colors.white,
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: colors.textLight,
-    fontSize: 14,
-    paddingVertical: 32,
-  },
-
-  // ── BOTTOM NAV ──────────────────────────────────────────────────────
-  bottomNav: {
+  // ── PÍLDORA "VER MI BOLSA" ──────────────────────────
+  // Flotante, centrada y compacta: se ajusta a su contenido.
+  bagPill: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     flexDirection: 'row',
-    backgroundColor: colors.white,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingVertical: 10,
-    paddingBottom: 16,
+    alignItems: 'center',
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.32,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
   },
-  navItem: {
-    flex: 1,
+  bagIconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
   },
-  navItemActive: {
-    backgroundColor: colors.primary,
-    marginHorizontal: 16,
-    borderRadius: 12,
-    paddingVertical: 8,
+  bagCountBadge: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  navText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.textGray,
-    marginTop: 3,
+
+  // ── PANEL DE ORDEN ──────────────────────────────────
+  sheetBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
   },
-  navTextActive: {
-    color: colors.white,
+  sheet: {
+    overflow: 'hidden',
+  },
+  sheetHandle: {
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+  },
+  sortRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+
+  // ── ESTADOS ─────────────────────────────────────────
+  errorNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  centerBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
