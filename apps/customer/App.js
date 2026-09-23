@@ -21,6 +21,8 @@ import UnsupportedRoleScreen from '@syscor/shared/src/screens/UnsupportedRoleScr
 
 import { CartProvider } from './src/context/CartContext';
 import { TabBarVisibilityProvider } from './src/context/TabBarVisibilityContext';
+import { FavoritesProvider } from './src/context/FavoritesContext';
+import { PreferencesProvider } from './src/context/PreferencesContext';
 
 // Auth (solo cliente)
 import LoginCustomerScreen from './src/screens/auth/LoginCustomerScreen';
@@ -36,7 +38,11 @@ import TermsAndConditionsScreen from './src/screens/auth/TermsAndConditionsScree
 // Pantallas del cliente
 import CustomerMenu from './src/screens/CustomerMenu';
 import CartScreen from './src/screens/CartScreen';
-import CustomerProfileScreen from './src/screens/CustomerProfileScreen';
+import MoreScreen from './src/screens/MoreScreen';
+import EditProfileScreen from './src/screens/EditProfileScreen';
+import OrdersScreen from './src/screens/OrdersScreen';
+import FavoritesScreen from './src/screens/FavoritesScreen';
+import AddressesScreen from './src/screens/AddressesScreen';
 import ProductDetailsScreen from './src/screens/ProductDetailsScreen';
 import PaymentScreenWrapper from './src/screens/PaymentScreenWrapper';
 import GuestProductDetailsScreen from './src/screens/GuestProductDetailsScreen';
@@ -77,14 +83,29 @@ function CustomerTabNavigator() {
           options={{ tabBarLabel: 'Menú', tabBarIcon: 'restaurant' }}
         />
         <CustomerTab.Screen
+          name="Orders"
+          component={OrdersScreen}
+          options={{ tabBarLabel: 'Pedidos', tabBarIcon: 'time-outline' }}
+        />
+        <CustomerTab.Screen
+          name="Favorites"
+          component={FavoritesScreen}
+          options={{ tabBarLabel: 'Favoritos', tabBarIcon: 'heart-outline' }}
+        />
+        <CustomerTab.Screen
+          name="Addresses"
+          component={AddressesScreen}
+          options={{ tabBarLabel: 'Dirección', tabBarIcon: 'location-outline' }}
+        />
+        <CustomerTab.Screen
           name="Cart"
           component={CartScreen}
           options={{ tabBarLabel: 'Carrito', tabBarIcon: 'cart-outline' }}
         />
         <CustomerTab.Screen
-          name="Profile"
-          component={CustomerProfileScreen}
-          options={{ tabBarLabel: 'Perfil', tabBarIcon: 'person-outline' }}
+          name="More"
+          component={MoreScreen}
+          options={{ tabBarLabel: 'Más', tabBarIcon: 'menu-outline' }}
         />
       </CustomerTab.Navigator>
     </TabBarVisibilityProvider>
@@ -94,11 +115,14 @@ function CustomerTabNavigator() {
 function CustomerRootNavigator() {
   return (
     <CartProvider>
-      <CustomerStack.Navigator screenOptions={{ headerShown: false }}>
-        <CustomerStack.Screen name="CustomerTabs" component={CustomerTabNavigator} />
-        <CustomerStack.Screen name="ProductDetails" component={ProductDetailsScreen} />
-        <CustomerStack.Screen name="PaymentVerification" component={PaymentScreenWrapper} />
-      </CustomerStack.Navigator>
+      <FavoritesProvider>
+        <CustomerStack.Navigator screenOptions={{ headerShown: false }}>
+          <CustomerStack.Screen name="CustomerTabs" component={CustomerTabNavigator} />
+          <CustomerStack.Screen name="ProductDetails" component={ProductDetailsScreen} />
+          <CustomerStack.Screen name="EditProfile" component={EditProfileScreen} />
+          <CustomerStack.Screen name="PaymentVerification" component={PaymentScreenWrapper} />
+        </CustomerStack.Navigator>
+      </FavoritesProvider>
     </CartProvider>
   );
 }
@@ -160,16 +184,19 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <BootGate>
-          {({ entryRoute }) => (
-            <NavigationContainer theme={navigationTheme}>
-              <StatusBar style="auto" />
-              <RootNavigator entryRoute={entryRoute} />
-            </NavigationContainer>
-          )}
-        </BootGate>
-      </AuthProvider>
+      {/* Va arriba de todo: el tema elegido en "Más" aplica también al login. */}
+      <PreferencesProvider>
+        <AuthProvider>
+          <BootGate>
+            {({ entryRoute }) => (
+              <NavigationContainer theme={navigationTheme}>
+                <StatusBar style="auto" />
+                <RootNavigator entryRoute={entryRoute} />
+              </NavigationContainer>
+            )}
+          </BootGate>
+        </AuthProvider>
+      </PreferencesProvider>
     </SafeAreaProvider>
   );
 }

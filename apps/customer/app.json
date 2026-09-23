@@ -20,6 +20,19 @@
             "backgroundColor": "#0E0E0E"
           }
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "El Corral usa tu ubicación para calcular qué tan lejos estás del local y llenar tus direcciones de entrega."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "El Corral usa tus fotos para que elijas tu foto de perfil.",
+          "cameraPermission": "El Corral usa la cámara para que te tomes tu foto de perfil."
+        }
       ]
     ],
     "ios": {

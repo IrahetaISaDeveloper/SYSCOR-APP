@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,13 @@ import {
   Image,
   ActivityIndicator,
   Modal,
+  BackHandler,
   useColorScheme,
   useWindowDimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import menuStyles, { getMenuColors } from '../styles/CustomerMenu';
 import { textStyles } from '@syscor/shared/src/styles/typography';
@@ -21,6 +23,7 @@ import useMenu from '../hooks/useMenu';
 import { MENU_CATEGORIES } from '../constants/menuCategories';
 import CartContext from '../context/CartContext';
 import { useTabBarVisibility } from '../context/TabBarVisibilityContext';
+import { useFavorites } from '../context/FavoritesContext';
 
 // Promociones del carrusel. Son fijas: el backend todavía no expone
 // promociones, así que viven aquí hasta que exista ese endpoint.
@@ -54,7 +57,9 @@ const PROMOS = [
 // Formas de ordenar la lista. El botón de la derecha del buscador abre este
 // panel; antes era un icono decorativo que no hacía nada.
 const SORT_OPTIONS = [
-  { id: 'popular', label: 'Más pedidos', icon: 'flame-outline' },
+  // El backend no expone ventas por platillo al cliente, así que el orden
+  // por defecto es el que trae el menú.
+  { id: 'recommended', label: 'Recomendados', icon: 'star-outline' },
   { id: 'priceAsc', label: 'Precio: menor a mayor', icon: 'arrow-up-outline' },
   { id: 'priceDesc', label: 'Precio: mayor a menor', icon: 'arrow-down-outline' },
   { id: 'nameAsc', label: 'Nombre (A-Z)', icon: 'text-outline' },
@@ -73,12 +78,21 @@ const CustomerMenu = ({ navigation }) => {
   const [openCategory, setOpenCategory] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [promoIndex, setPromoIndex] = useState(0);
-  const [sortBy, setSortBy] = useState('popular');
+  const [sortBy, setSortBy] = useState('recommended');
+  // Proteína elegida dentro de la categoría abierta. 'all' = todas.
+  const [subFilter, setSubFilter] = useState('all');
+  const scrollRef = useRef(null);
   const [sortOpen, setSortOpen] = useState(false);
 
-  const { dishes, isLoading, error, refetch } = useMenu();
+  const { dishes, isLoading, error, needsAuth, refetch } = useMenu();
   // Avisa a la barra inferior para que se esconda al bajar.
-  const { handleScroll } = useTabBarVisibility();
+  const { handleScroll, reset: resetTabBar } = useTabBarVisibility();
+
+  // Al salir del menú la barra vuelve a verse: si no, la siguiente pestaña
+  // se abriría con la barra escondida.
+  useFocusEffect(
+    useCallback(() => () => resetTabBar?.(), [resetTabBar]),
+  );
 
   // La tarjeta de promo deja ver un trozo de la siguiente, como en el diseño.
   const promoWidth = Math.round(width - m.gutter * 2 - ms(46));
@@ -116,18 +130,76 @@ const CustomerMenu = ({ navigation }) => {
     if (sortBy === 'priceAsc') return list.sort((a, b) => a.price - b.price);
     if (sortBy === 'priceDesc') return list.sort((a, b) => b.price - a.price);
     if (sortBy === 'nameAsc') return list.sort((a, b) => a.name.localeCompare(b.name));
-    return list.sort((a, b) => b.quantity - a.quantity);
+    return list;
   }, [visibleDishes, sortBy]);
+
+  // Proteínas (subcategorías) que hay dentro de la categoría abierta, para
+  // los chips de filtro. Sopas y Especiales no suelen tener.
+  const subcategories = useMemo(() => {
+    if (!openCategory) return [];
+    const set = new Set();
+    for (const dish of dishes) {
+      if (dish.category === openCategory && dish.subcategory) set.add(dish.subcategory);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [dishes, openCategory]);
+
+  // Dentro de una categoría los platillos se separan por proteína, cada una
+  // con su título. En la búsqueda se muestran todos juntos.
+  const dishGroups = useMemo(() => {
+    if (searching || !openCategory) return [{ key: 'all', title: null, items: sortedDishes }];
+
+    const filtered =
+      subFilter === 'all' ? sortedDishes : sortedDishes.filter((d) => d.subcategory === subFilter);
+
+    // Sin proteínas no tiene sentido poner un solo título "Otros".
+    if (subcategories.length === 0) return [{ key: 'all', title: null, items: filtered }];
+
+    const groups = new Map();
+    for (const dish of filtered) {
+      const key = dish.subcategory || 'Otros';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(dish);
+    }
+    return [...groups.entries()]
+      // "Otros" siempre al final.
+      .sort(([a], [b]) => (a === 'Otros') - (b === 'Otros') || a.localeCompare(b))
+      .map(([title, items]) => ({ key: title, title, items }));
+  }, [searching, openCategory, subFilter, sortedDishes, subcategories]);
+
+  // Abrir una categoría se comporta como entrar a otra página: arranca
+  // arriba y sin lo de la portada (promos).
+  const openCategoryCard = (id) => {
+    setSubFilter('all');
+    setOpenCategory(id);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  };
+
+  const closeCategory = useCallback(() => {
+    setOpenCategory(null);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, []);
+
+  // El botón "atrás" de Android regresa a las categorías en vez de salir.
+  useFocusEffect(
+    useCallback(() => {
+      if (!openCategory) return undefined;
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        closeCategory();
+        return true;
+      });
+      return () => sub.remove();
+    }, [openCategory, closeCategory]),
+  );
 
   // El 401/403 del backend significa que /menu/saucers pide sesión, no que
   // el cliente no tenga internet: conviene decirlo en sus palabras.
-  const errorHint =
-    error && /40[13]/.test(error)
-      ? 'El menú necesita que inicies sesión. Vuelve a entrar a tu cuenta e inténtalo de nuevo.'
-      : 'Revisa tu conexión e inténtalo de nuevo.';
+  const errorHint = needsAuth
+    ? 'Inicia sesión para ver los platillos de cada categoría.'
+    : 'Revisa tu conexión e inténtalo de nuevo.';
 
   const openDish = (item) => {
-    navigation.navigate('ProductDetails', { saucerId: item.id, itemType: 'saucer' });
+    navigation.navigate('ProductDetails', { id: item.id, itemType: item.itemType || 'saucer' });
   };
 
   const onPromoScroll = (event) => {
@@ -163,6 +235,7 @@ const CustomerMenu = ({ navigation }) => {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: ms(150) }}
         keyboardShouldPersistTaps="handled"
@@ -218,14 +291,14 @@ const CustomerMenu = ({ navigation }) => {
                 size={ms(19)}
                 // Se tiñe cuando hay un orden distinto del normal, para que se
                 // note que está aplicado.
-                color={sortBy === 'popular' ? c.textGray : c.primary}
+                color={sortBy === 'recommended' ? c.textGray : c.primary}
               />
             </TouchableOpacity>
           )}
         </View>
 
-        {/* ── DE LA PLANCHA HOY ── */}
-        {!searching ? (
+        {/* ── DE LA PLANCHA HOY ── (solo en la portada del menú) */}
+        {!searching && !openCategory ? (
           <>
             <View
               style={[
@@ -359,38 +432,76 @@ const CustomerMenu = ({ navigation }) => {
         ) : null}
 
         {/* ── DEL MENÚ ── */}
-        <View
-          style={[
-            menuStyles.sectionHeader,
-            { paddingHorizontal: m.gutter, marginTop: ms(28), marginBottom: ms(14), gap: ms(10) },
-          ]}
-        >
-          <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(19) }]}>
-            {searching ? 'Resultados' : openCategory || 'Menú'}
-          </Text>
-          {openCategory && !searching ? (
+        {openCategory && !searching ? (
+          // Encabezado de la "página" de la categoría.
+          <View
+            style={[
+              menuStyles.sectionHeader,
+              { paddingHorizontal: m.gutter, marginTop: ms(22), marginBottom: ms(14), gap: ms(12) },
+            ]}
+          >
             <TouchableOpacity
-              onPress={() => setOpenCategory(null)}
+              onPress={closeCategory}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               accessibilityRole="button"
               accessibilityLabel="Volver a las categorías"
-              style={{ flexDirection: 'row', alignItems: 'center', gap: ms(4) }}
+              style={[
+                menuStyles.backButton,
+                {
+                  backgroundColor: c.surface,
+                  borderColor: c.border,
+                  width: ms(38),
+                  height: ms(38),
+                  borderRadius: ms(19),
+                },
+              ]}
             >
-              <Icon name="chevron-back" size={ms(15)} color={c.primary} />
-              <Text style={[textStyles.link, { color: c.primary, fontSize: ms(13) }]}>
-                Categorías
+              <Icon name="chevron-back" size={ms(20)} color={c.textDark} />
+            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(22) }]}>
+                {openCategory}
               </Text>
-            </TouchableOpacity>
-          ) : null}
-          {!isLoading ? (
-            <TouchableOpacity
-              onPress={refetch}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Icon name="refresh-outline" size={ms(18)} color={c.textLight} />
-            </TouchableOpacity>
-          ) : null}
-        </View>
+              {!isLoading ? (
+                <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(12.5) }]}>
+                  {countByCategory[openCategory] || 0}{' '}
+                  {countByCategory[openCategory] === 1 ? 'platillo' : 'platillos'}
+                </Text>
+              ) : null}
+            </View>
+            {!isLoading ? (
+              <TouchableOpacity
+                onPress={refetch}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel="Recargar"
+              >
+                <Icon name="refresh-outline" size={ms(18)} color={c.textLight} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        ) : (
+          <View
+            style={[
+              menuStyles.sectionHeader,
+              { paddingHorizontal: m.gutter, marginTop: ms(28), marginBottom: ms(14), gap: ms(10) },
+            ]}
+          >
+            <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(19) }]}>
+              {searching ? 'Resultados' : 'Menú'}
+            </Text>
+            {!isLoading ? (
+              <TouchableOpacity
+                onPress={refetch}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel="Recargar"
+              >
+                <Icon name="refresh-outline" size={ms(18)} color={c.textLight} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        )}
 
         {isLoading ? (
           <View style={[menuStyles.centerBox, { paddingVertical: ms(40), gap: ms(12) }]}>
@@ -414,10 +525,51 @@ const CustomerMenu = ({ navigation }) => {
                 colors={c}
                 ms={ms}
                 cardWidth={(width - m.gutter * 2 - ms(14)) / 2}
-                onPress={() => setOpenCategory(cat.id)}
+                onPress={() => openCategoryCard(cat.id)}
               />
             ))}
           </View>
+        ) : null}
+
+        {/* Chips de proteína: filtran la categoría abierta. */}
+        {!isLoading && !error && openCategory && !searching && subcategories.length > 1 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: m.gutter, gap: ms(8), marginBottom: ms(6) }}
+          >
+            {['all', ...subcategories].map((sub) => {
+              const active = sub === subFilter;
+              return (
+                <TouchableOpacity
+                  key={sub}
+                  onPress={() => setSubFilter(sub)}
+                  activeOpacity={0.8}
+                  style={[
+                    menuStyles.chip,
+                    {
+                      backgroundColor: active ? c.primary : c.surface,
+                      borderColor: active ? c.primary : c.border,
+                      borderRadius: ms(20),
+                      paddingHorizontal: ms(14),
+                      paddingVertical: ms(8),
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text
+                    style={[
+                      active ? textStyles.link : textStyles.body,
+                      { color: active ? c.white : c.textGray, fontSize: ms(13) },
+                    ]}
+                  >
+                    {sub === 'all' ? 'Todos' : sub}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         ) : null}
 
         {!isLoading && !error && (searching || openCategory) ? (
@@ -441,18 +593,51 @@ const CustomerMenu = ({ navigation }) => {
               </Text>
             </View>
           ) : (
-            <View style={[menuStyles.dishGrid, { paddingHorizontal: m.gutter, gap: ms(12) }]}>
-              {sortedDishes.map((dish) => (
-                <DishCard
-                  key={dish.id}
-                  dish={dish}
-                  colors={c}
-                  ms={ms}
-                  cardWidth={(width - m.gutter * 2 - ms(12)) / 2}
-                  onPress={() => openDish(dish)}
-                />
-              ))}
-            </View>
+            dishGroups.map((group) => (
+              <View key={group.key}>
+                {group.title ? (
+                  <View
+                    style={[
+                      menuStyles.groupHeader,
+                      {
+                        paddingHorizontal: m.gutter,
+                        marginTop: ms(18),
+                        marginBottom: ms(12),
+                        gap: ms(8),
+                      },
+                    ]}
+                  >
+                    <View
+                      style={{ width: ms(4), height: ms(16), borderRadius: ms(2), backgroundColor: c.primary }}
+                    />
+                    <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(16) }]}>
+                      {group.title}
+                    </Text>
+                    <Text style={[textStyles.num, { color: c.textLight, fontSize: ms(12) }]}>
+                      {group.items.length}
+                    </Text>
+                  </View>
+                ) : null}
+
+                <View
+                  style={[
+                    menuStyles.dishGrid,
+                    { paddingHorizontal: m.gutter, gap: ms(12), marginTop: group.title ? 0 : ms(6) },
+                  ]}
+                >
+                  {group.items.map((dish) => (
+                    <DishCard
+                      key={dish.id}
+                      dish={dish}
+                      colors={c}
+                      ms={ms}
+                      cardWidth={(width - m.gutter * 2 - ms(12)) / 2}
+                      onPress={() => openDish(dish)}
+                    />
+                  ))}
+                </View>
+              </View>
+            ))
           )
         ) : null}
         {/* Aviso de carga fallida. Va al final y en tono menor: las
@@ -522,63 +707,128 @@ const CustomerMenu = ({ navigation }) => {
 
 // ── COMPONENTES ─────────────────────────────────────────────────────────
 
-// Tarjeta de la rejilla: imagen con el nombre encima y, debajo, la
-// subcategoría con el precio "desde".
-const DishCard = ({ dish, colors: c, ms, cardWidth, onPress }) => (
-  <TouchableOpacity
-    style={[
-      menuStyles.dishCard,
-      {
-        width: cardWidth,
-        backgroundColor: c.surface,
-        borderColor: c.border,
-        borderRadius: ms(16),
-      },
-    ]}
-    activeOpacity={0.85}
-    onPress={onPress}
-  >
-    <View
-      style={[
-        menuStyles.dishImageArea,
-        { height: ms(104), backgroundColor: c.imagePlaceholder },
-      ]}
-    >
-      {dish.imageUrl ? (
-        <Image
-          source={{ uri: dish.imageUrl }}
-          style={{ width: '100%', height: '100%' }}
-          resizeMode="cover"
-        />
-      ) : (
-        <>
-          <Icon name="image-outline" size={ms(22)} color={c.textLight} />
-          <Text
-            style={[
-              textStyles.body,
-              { color: c.textGray, fontSize: ms(12.5), marginTop: ms(6) },
-            ]}
-            numberOfLines={1}
-          >
-            {dish.name}
-          </Text>
-        </>
-      )}
-    </View>
+// Tarjeta de un platillo: foto arriba, nombre y descripción corta, y abajo el
+// precio con un botón para abrir el detalle y agregarlo.
+const DishCard = ({ dish, colors: c, ms, cardWidth, onPress }) => {
+  // null en el menú de invitado: ahí no se muestra el corazón.
+  const favorites = useFavorites();
+  const favorite = favorites?.isFavorite(dish.itemType || 'saucer', dish.id) ?? false;
 
-    <View style={[menuStyles.dishFooter, { padding: ms(12), gap: ms(4) }]}>
-      <Text
-        style={[textStyles.title, { color: c.textDark, fontSize: ms(13.5) }]}
-        numberOfLines={1}
+  return (
+    <TouchableOpacity
+      style={[
+        menuStyles.dishCard,
+        {
+          width: cardWidth,
+          backgroundColor: c.surface,
+          borderColor: c.border,
+          borderRadius: ms(18),
+        },
+      ]}
+      activeOpacity={0.85}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${dish.name}, ${dish.priceLabel}`}
+    >
+      <View
+        style={[
+          menuStyles.dishImageArea,
+          { height: cardWidth * 0.8, backgroundColor: c.imagePlaceholder },
+        ]}
       >
-        {dish.subcategory || dish.name}
-      </Text>
-      <Text style={[textStyles.num, { color: c.textGray, fontSize: ms(12) }]}>
-        desde <Text style={{ color: c.primary }}>{dish.priceLabel}</Text>
-      </Text>
-    </View>
-  </TouchableOpacity>
-);
+        {dish.imageUrl ? (
+          <Image source={{ uri: dish.imageUrl }} style={menuStyles.dishImage} resizeMode="cover" />
+        ) : (
+          <Icon name="fast-food-outline" size={ms(30)} color={c.textLight} />
+        )}
+
+        {favorites ? (
+          <TouchableOpacity
+            onPress={() =>
+              favorites.toggleFavorite({
+                type: dish.itemType || 'saucer',
+                id: dish.id,
+                name: dish.name,
+                price: dish.price,
+                imageUrl: dish.imageUrl,
+              })
+            }
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[
+              menuStyles.dishFavorite,
+              {
+                backgroundColor: 'rgba(0,0,0,0.45)',
+                width: ms(30),
+                height: ms(30),
+                borderRadius: ms(15),
+                top: ms(8),
+                right: ms(8),
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={favorite ? `Quitar ${dish.name} de favoritos` : `Agregar ${dish.name} a favoritos`}
+          >
+            <Icon name={favorite ? 'heart' : 'heart-outline'} size={ms(16)} color={favorite ? c.primary : '#FFFFFF'} />
+          </TouchableOpacity>
+        ) : null}
+
+        {/* Los tacos se venden por orden de 3, 4 o 5. */}
+        {dish.tacosPerOrder ? (
+          <View
+            style={[
+              menuStyles.dishBadge,
+              {
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                borderRadius: ms(8),
+                paddingHorizontal: ms(8),
+                paddingVertical: ms(4),
+                top: ms(8),
+                left: ms(8),
+              },
+            ]}
+          >
+            <Text style={[textStyles.link, { color: '#FFFFFF', fontSize: ms(10.5) }]}>
+              Orden de {dish.tacosPerOrder}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
+      <View style={[menuStyles.dishBody, { padding: ms(12), gap: ms(4) }]}>
+        <Text
+          style={[textStyles.title, { color: c.textDark, fontSize: ms(14.5) }]}
+          numberOfLines={1}
+        >
+          {dish.name}
+        </Text>
+        <Text
+          style={[
+            textStyles.body,
+            // Alto fijo de dos líneas para que todas las tarjetas midan igual.
+            { color: c.textGray, fontSize: ms(11.5), lineHeight: ms(15.5), height: ms(31) },
+          ]}
+          numberOfLines={2}
+        >
+          {dish.description}
+        </Text>
+
+        <View style={[menuStyles.dishPriceRow, { marginTop: ms(6) }]}>
+          <Text style={[textStyles.num, { color: c.primary, fontSize: ms(16) }]}>
+            {dish.priceLabel}
+          </Text>
+          <View
+            style={[
+              menuStyles.dishAddButton,
+              { backgroundColor: c.primary, width: ms(30), height: ms(30), borderRadius: ms(15) },
+            ]}
+          >
+            <Icon name="add" size={ms(18)} color="#FFFFFF" />
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 // Píldora flotante con el resumen del carrito.
 //
@@ -656,57 +906,72 @@ const BagPill = ({ colors: c, ms, bottom, onPress }) => {
   );
 };
 
-// Tarjeta de una categoría: foto grande arriba y el nombre debajo, como en
-// el diseño. Al tocarla se abren los platillos de esa categoría.
-const CategoryCard = ({ category, count, colors: c, ms, cardWidth, onPress }) => (
-  <TouchableOpacity
-    style={{ width: cardWidth, gap: ms(10) }}
-    activeOpacity={0.85}
-    onPress={onPress}
-    accessibilityRole="button"
-    accessibilityLabel={`${category.label}, ${count} platillos`}
-  >
-    <View
+// Franjas del degradado de la tarjeta de categoría, de la más alta a la más
+// baja. Cada una oscurece un poco; al apilarse, la parte de abajo queda más
+// oscura y el paso entre una y otra no se nota. Así se evita instalar una
+// librería de degradados.
+const SHADE_STEPS = Array.from({ length: 14 }, (_, i) => `${Math.round(75 - i * 5)}%`);
+
+// Tarjeta de una categoría: la foto ocupa toda la tarjeta y el nombre va
+// encima, sobre un degradado oscuro. Al tocarla se abren sus platillos.
+const CategoryCard = ({ category, count, colors: c, ms, cardWidth, onPress }) => {
+  const cardHeight = Math.round(cardWidth * 1.1);
+
+  return (
+    <TouchableOpacity
       style={[
-        menuStyles.categoryCardImage,
+        menuStyles.categoryCard,
         {
-          height: cardWidth,
-          backgroundColor: c.surface,
-          borderColor: c.border,
+          width: cardWidth,
+          height: cardHeight,
           borderRadius: ms(20),
+          backgroundColor: c.imagePlaceholder,
         },
       ]}
+      activeOpacity={0.85}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${category.label}, ${count} platillos`}
     >
+      {/* Medidas en números y no en %: con % Android dejaba la foto a media
+          tarjeta y abajo se veía el fondo claro. */}
       <Image
         source={category.image}
-        style={{ width: '82%', height: '82%' }}
-        resizeMode="contain"
+        style={[menuStyles.categoryImage, { width: cardWidth, height: cardHeight }]}
+        resizeMode="cover"
       />
-    </View>
 
-    <View style={{ gap: ms(2) }}>
-      <Text
-        style={[
-          textStyles.title,
-          { color: c.textDark, fontSize: ms(15), textAlign: 'center' },
-        ]}
-        numberOfLines={1}
-      >
-        {category.label}
-      </Text>
-      {count > 0 ? (
+      {SHADE_STEPS.map((h) => (
+        <View key={h} style={[menuStyles.categoryShade, { height: h }]} />
+      ))}
+
+      <View style={[menuStyles.categoryContent, { padding: ms(14), gap: ms(4) }]}>
         <Text
-          style={[
-            textStyles.body,
-            { color: c.textLight, fontSize: ms(11.5), textAlign: 'center' },
-          ]}
+          style={[textStyles.title, menuStyles.categoryTitle, { fontSize: ms(20) }]}
+          numberOfLines={1}
         >
-          {count} {count === 1 ? 'platillo' : 'platillos'}
+          {category.label}
         </Text>
-      ) : null}
-    </View>
-  </TouchableOpacity>
-);
+        <View style={[menuStyles.categoryMeta, { gap: ms(6) }]}>
+          <Text
+            style={[textStyles.body, menuStyles.categoryCount, { fontSize: ms(12) }]}
+            numberOfLines={1}
+          >
+            {count > 0 ? `${count} ${count === 1 ? 'platillo' : 'platillos'}` : 'Ver platillos'}
+          </Text>
+          <View
+            style={[
+              menuStyles.categoryArrow,
+              { backgroundColor: c.primary, width: ms(26), height: ms(26), borderRadius: ms(13) },
+            ]}
+          >
+            <Icon name="arrow-forward" size={ms(14)} color="#FFFFFF" />
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 // Panel para elegir cómo ordenar el menú. Sale desde abajo, como el resto de
 // las hojas de la app.

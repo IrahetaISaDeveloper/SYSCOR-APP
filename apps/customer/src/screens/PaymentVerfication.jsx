@@ -5,16 +5,20 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  useColorScheme,
 } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { InputText } from '@syscor/shared/src/components/commons/InputText';
 import { PaymentSuccessModal } from '@syscor/shared/src/components/commons/PaymentSuccessModal';
 import Toast from '@syscor/shared/src/components/commons/Toast';
 import { usePayment } from '../hooks/usePayment';
-import { styles } from '../styles/PaymentVerification';
-import { colors } from '@syscor/shared/src/styles/theme';
+import { getPaymentStyles } from '../styles/PaymentVerification';
+import { getMenuColors } from '../styles/CustomerMenu';
 
 export const PaymentScreen = (props) => {
+  const isDark = useColorScheme() === 'dark';
+  const styles = getPaymentStyles(isDark);
+  const colors = getMenuColors(isDark);
   const { cartItems = [], onBack } = props;
   const {
     safeSubtotal,
@@ -86,6 +90,7 @@ export const PaymentScreen = (props) => {
 
         {/* Formulario Wompi */}
         <InputText
+            dark={isDark}
           label="Nombre en la tarjeta"
           placeholder="Juan Pérez"
           value={cardName}
@@ -94,6 +99,7 @@ export const PaymentScreen = (props) => {
         />
 
         <InputText
+            dark={isDark}
           label="Número de tarjeta"
           placeholder="0000 0000 0000 0000"
           keyboardType="numeric"
@@ -117,6 +123,7 @@ export const PaymentScreen = (props) => {
 
         <View style={styles.rowInputs}>
           <InputText
+            dark={isDark}
             label="Vencimiento"
             placeholder="MM/YY"
             maxLength={5}
@@ -126,6 +133,7 @@ export const PaymentScreen = (props) => {
             containerStyle={styles.flex1}
           />
           <InputText
+            dark={isDark}
             label="CVV"
             placeholder={cardBrand.cvvLength === 4 ? '****' : '***'}
             keyboardType="numeric"
@@ -153,7 +161,7 @@ export const PaymentScreen = (props) => {
 
         {/* Badge Wompi */}
         <View style={styles.wompiBadgeContainer}>
-          <Text style={styles.wompiText}>Procesado de forma segura por <Text style={{ fontWeight: '800', color: '#111827' }}>Wompi</Text></Text>
+          <Text style={styles.wompiText}>Procesado de forma segura por <Text style={{ fontWeight: '800', color: colors.textDark }}>Wompi</Text></Text>
         </View>
 
         {/* Badges Seguridad */}

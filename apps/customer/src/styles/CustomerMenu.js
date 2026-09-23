@@ -22,6 +22,7 @@ export const lightColors = {
   pill: '#1C1C1E',
   navBackground: '#FFFFFF',
   navBorder: '#EFEBE4',
+  error: '#D93636',
 };
 
 export const darkColors = {
@@ -40,6 +41,7 @@ export const darkColors = {
   pill: '#1C1C1E',
   navBackground: '#0F0F10',
   navBorder: '#1E1E20',
+  error: '#EF5350',
 };
 
 export const getMenuColors = (isDark) => (isDark ? darkColors : lightColors);
@@ -111,12 +113,46 @@ const menuStyles = StyleSheet.create({
   },
 
   // ── TARJETAS DE CATEGORÍA ───────────────────────────
-  categoryCardImage: {
+  categoryCard: {
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+  categoryImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  // Una franja del degradado; la altura la pone la pantalla.
+  categoryShade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.07)',
+  },
+  categoryTitle: {
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0,0,0,0.45)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
+  },
+  categoryCount: {
+    color: 'rgba(255,255,255,0.9)',
+    textShadowColor: 'rgba(0,0,0,0.45)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  categoryContent: {
     width: '100%',
+  },
+  categoryMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  categoryArrow: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    overflow: 'hidden',
   },
 
   // ── REJILLA DEL MENÚ ────────────────────────────────
@@ -128,13 +164,47 @@ const menuStyles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
   },
-  // La imagen lleva el nombre del platillo encima, centrado.
   dishImageArea: {
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dishFooter: {},
+  dishImage: {
+    width: '100%',
+    height: '100%',
+  },
+  dishBadge: {
+    position: 'absolute',
+  },
+  dishFavorite: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dishBody: {},
+  dishPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dishAddButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── AGRUPACIÓN POR PROTEÍNA ─────────────────────────
+  chip: {
+    borderWidth: 1,
+  },
+  backButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
 
   // ── PÍLDORA "VER MI BOLSA" ──────────────────────────
   // Flotante, centrada y compacta: se ajusta a su contenido.

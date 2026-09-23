@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 
@@ -17,10 +18,14 @@ import SelectableRow from '@syscor/shared/src/components/commons/SelectableRow';
 import Toast from '@syscor/shared/src/components/commons/Toast';
 
 import { useProduct } from '../hooks/useProduct';
-import styles from '../styles/ProductDetails';
-import { colors } from '@syscor/shared/src/styles/theme';
+import { useFavorites } from '../context/FavoritesContext';
+import { getProductDetailsStyles } from '../styles/ProductDetails';
+import { getMenuColors } from '../styles/CustomerMenu';
 
 export const ProductDetails = ({ route, navigation, onAddToCart, onGoToCart, onBack, productIdProp, itemTypeProp }) => {
+  const isDark = useColorScheme() === 'dark';
+  const styles = getProductDetailsStyles(isDark);
+  const colors = getMenuColors(isDark);
   const {
     loading,
     errorMessage,
@@ -47,6 +52,19 @@ export const ProductDetails = ({ route, navigation, onAddToCart, onGoToCart, onB
     handleToggleSauce,
     handleAddToCartPress,
   } = useProduct({ route, navigation, onAddToCart, productIdProp, itemTypeProp });
+
+  // Sin sesión (detalle de invitado) no hay favoritos y no se muestra el corazón.
+  const favorites = useFavorites();
+  const itemType = route?.params?.itemType || itemTypeProp || 'combo';
+  const favorite = favorites && productData ? favorites.isFavorite(itemType, productData._id) : false;
+  const toggleFavorite = () =>
+    favorites?.toggleFavorite({
+      type: itemType,
+      id: productData._id,
+      name: productData.name,
+      price: productData.price,
+      imageUrl: productData.image,
+    });
 
   // Render de Carga
   if (loading) {
@@ -220,9 +238,21 @@ export const ProductDetails = ({ route, navigation, onAddToCart, onGoToCart, onB
         <TouchableOpacity style={styles.headerButton} onPress={() => (onBack ? onBack() : navigation?.goBack())}>
           <Icon name="arrow-back" size={20} color={colors.textDark} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.headerButton} onPress={() => onGoToCart?.()}>
-          <Icon name="cart-outline" size={20} color={colors.textDark} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {favorites ? (
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={toggleFavorite}
+              accessibilityRole="button"
+              accessibilityLabel={favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+            >
+              <Icon name={favorite ? 'heart' : 'heart-outline'} size={20} color={favorite ? colors.primary : colors.textDark} />
+            </TouchableOpacity>
+          ) : null}
+          <TouchableOpacity style={styles.headerButton} onPress={() => onGoToCart?.()}>
+            <Icon name="cart-outline" size={20} color={colors.textDark} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Control Inferior y Añadir */}

@@ -1,15 +1,23 @@
 import React from 'react';
-import { TouchableOpacity, Text, View, Image, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, View, Image, StyleSheet, useColorScheme } from 'react-native';
+import { darkPalette as d } from '../../styles/darkPalette';
 
 // Chip seleccionable simple (sin imagen): se usa para salsas y otras
 // opciones de solo texto, selección única o múltiple con "dotColor".
 const OptionChip = ({ label, selected, onPress, dotColor, style, image, price }) => {
+  const isDark = useColorScheme() === 'dark';
   // Si viene una imagen, mostramos una tarjeta ancha estilo "PedidosYa"
   // con foto, nombre, precio y un indicador de selección (radio).
   if (image !== undefined) {
     return (
       <TouchableOpacity
-        style={[cardStyles.card, selected && cardStyles.cardSelected, style]}
+        style={[
+          cardStyles.card,
+          isDark && darkStyles.card,
+          selected && cardStyles.cardSelected,
+          selected && isDark && darkStyles.cardSelected,
+          style,
+        ]}
         onPress={onPress}
         activeOpacity={0.8}
       >
@@ -18,12 +26,12 @@ const OptionChip = ({ label, selected, onPress, dotColor, style, image, price })
           style={cardStyles.image}
         />
         <View style={cardStyles.info}>
-          <Text style={cardStyles.label} numberOfLines={1}>{label}</Text>
+          <Text style={[cardStyles.label, isDark && darkStyles.text]} numberOfLines={1}>{label}</Text>
           {price ? (
             <Text style={cardStyles.price}>+${Number(price).toFixed(2)}</Text>
           ) : null}
         </View>
-        <View style={[cardStyles.radio, selected && cardStyles.radioSelected]}>
+        <View style={[cardStyles.radio, isDark && darkStyles.radio, selected && cardStyles.radioSelected]}>
           {selected ? <View style={cardStyles.radioDot} /> : null}
         </View>
       </TouchableOpacity>
@@ -32,14 +40,14 @@ const OptionChip = ({ label, selected, onPress, dotColor, style, image, price })
 
   return (
     <TouchableOpacity
-      style={[styles.chip, selected && styles.chipSelected, style]}
+      style={[styles.chip, isDark && darkStyles.chip, selected && styles.chipSelected, style]}
       onPress={onPress}
       activeOpacity={0.8}
     >
       {dotColor ? (
         <View style={[styles.dot, { backgroundColor: dotColor }]} />
       ) : null}
-      <Text style={[styles.label, selected && styles.labelSelected]}>
+      <Text style={[styles.label, isDark && darkStyles.text, selected && styles.labelSelected]}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -133,6 +141,15 @@ const cardStyles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: '#C62828',
   },
+});
+
+// Capa para modo oscuro: solo cambia colores.
+const darkStyles = StyleSheet.create({
+  card: { backgroundColor: d.surface, borderColor: d.border },
+  cardSelected: { backgroundColor: d.primaryTint },
+  chip: { backgroundColor: d.surface, borderColor: d.border },
+  radio: { borderColor: d.borderStrong },
+  text: { color: d.textDark },
 });
 
 export default OptionChip;

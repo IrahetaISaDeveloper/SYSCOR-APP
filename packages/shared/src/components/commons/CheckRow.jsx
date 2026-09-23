@@ -1,24 +1,26 @@
 import React from 'react';
-import { TouchableOpacity, Text, View, Image, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, View, Image, StyleSheet, useColorScheme } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
+import { darkPalette as d } from '../../styles/darkPalette';
 
 // Fila de "otras personas lo combinaron con": foto circular, nombre, precio
 // y un botón para agregar o quitar el extra del pedido.
 const CheckRow = ({ label, price, checked, onPress, image }) => {
+  const isDark = useColorScheme() === 'dark';
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
       <Image
         source={{ uri: image || 'https://via.placeholder.com/60' }}
-        style={styles.avatar}
+        style={[styles.avatar, isDark && darkStyles.avatar]}
       />
       <View style={styles.info}>
-        <Text style={styles.label} numberOfLines={1}>{label}</Text>
+        <Text style={[styles.label, isDark && darkStyles.text]} numberOfLines={1}>{label}</Text>
         {price != null ? (
-          <Text style={styles.price}>${Number(price).toFixed(2)}</Text>
+          <Text style={[styles.price, isDark && darkStyles.muted]}>${Number(price).toFixed(2)}</Text>
         ) : null}
       </View>
-      <View style={[styles.addButton, checked && styles.addButtonChecked]}>
-        <Icon name={checked ? 'checkmark' : 'add'} size={18} color={checked ? '#FFFFFF' : '#3F3F46'} />
+      <View style={[styles.addButton, isDark && darkStyles.addButton, checked && styles.addButtonChecked]}>
+        <Icon name={checked ? 'checkmark' : 'add'} size={18} color={checked || isDark ? '#FFFFFF' : '#3F3F46'} />
       </View>
     </TouchableOpacity>
   );
@@ -72,6 +74,14 @@ const styles = StyleSheet.create({
   addIconChecked: {
     color: '#FFFFFF',
   },
+});
+
+// Capa para modo oscuro: solo cambia colores.
+const darkStyles = StyleSheet.create({
+  avatar: { backgroundColor: d.surfaceMuted },
+  addButton: { borderColor: d.borderStrong },
+  text: { color: d.textDark },
+  muted: { color: d.textGray },
 });
 
 export default CheckRow;

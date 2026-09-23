@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getSaucersList } from '../services/api';
+import { getSaucersList, getCombosList } from '../services/api';
 
 // Consulta el menú y lo entrega ya formateado para la pantalla.
 //
@@ -11,35 +11,38 @@ const useMenu = () => {
   const [dishes, setDishes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  // El backend respondió 401/403: el menú pide sesión.
+  const [needsAuth, setNeedsAuth] = useState(false);
 
   const fetchDishes = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    setNeedsAuth(false);
 
     // Se usa `getSaucersList` (apiClient) y no `fetch` directo: manda la
     // cookie de sesión, que el backend exige en /menu/saucers.
-    const res = await getSaucersList();
+    // Platillos y combos se piden juntos; los combos van a su propia
+    // categoría ("Combos"). Si solo fallan los combos, el menú sigue.
+    const [res, combosRes] = await Promise.all([getSaucersList(), getCombosList()]);
 
     if (!res.success) {
       setError(res.error || 'No se pudieron cargar los platillos.');
+      setNeedsAuth(res.status === 401 || res.status === 403);
       setDishes([]);
       setIsLoading(false);
       return;
     }
 
-    setDishes((res.data || []).map(normalizeDish));
+    setDishes([
+      ...(res.data || []).map(normalizeDish),
+      ...(combosRes.success ? (combosRes.data || []).map(normalizeCombo) : []),
+    ]);
     setIsLoading(false);
   }, []);
 
   useEffect(() => {
     fetchDishes();
   }, [fetchDishes]);
-
-  // Los más pedidos, para la sección destacada.
-  const popularDishes = useMemo(
-    () => [...dishes].sort((a, b) => b.quantity - a.quantity).slice(0, 4),
-    [dishes],
-  );
 
   // Solo las categorías que de verdad tienen platillos: no tiene sentido
   // ofrecer un filtro que devuelve una lista vacía.
@@ -50,10 +53,10 @@ const useMenu = () => {
 
   return {
     dishes,
-    popularDishes,
     availableCategories,
     isLoading,
     error,
+    needsAuth,
     refetch: fetchDishes,
   };
 };
@@ -66,6 +69,7 @@ const normalizeDish = (item) => {
   const rawPrice = item.price ?? item.precio ?? item.cost ?? 0;
 
   return {
+    itemType: 'saucer',
     id: String(item._id?.$oid || item._id || item.id || Math.random()),
     name: item.name || item.nombre || item.title || 'Platillo',
     description:
@@ -73,13 +77,26 @@ const normalizeDish = (item) => {
     // Se guardan los dos: el número para ordenar y comparar, el texto para pintar.
     price: toNumber(rawPrice),
     priceLabel: formatPrice(rawPrice),
-    quantity: toNumber(item.quantity ?? item.qty ?? item.sold ?? item.orders ?? 0),
+    // En el backend `quantity` NO son ventas: es cuántos tacos trae la orden
+    // (3, 4 o 5) y solo aplica a la categoría Tacos.
+    tacosPerOrder: toNumber(item.quantity) || null,
     // Tal cual lo guarda el panel de administración ("Tacos", "Burritos"...).
     category: item.category || item.categoria || null,
     subcategory: item.subcategory || item.subcategoria || null,
     imageUrl: item.image || item.imageUrl || item.img || item.foto || null,
   };
 };
+
+// Los combos usan su tamaño como subcategoría, así los chips de la categoría
+// Combos filtran por Individual / Dúo / Familiar.
+const COMBO_SIZES = { individual: 'Individual', duo: 'Dúo', familiar: 'Familiar' };
+
+const normalizeCombo = (item) => ({
+  ...normalizeDish({ ...item, category: null, subcategory: null, quantity: null }),
+  itemType: 'combo',
+  category: 'Combos',
+  subcategory: COMBO_SIZES[item.category] || null,
+});
 
 const toNumber = (raw) => {
   const num = parseFloat(raw);

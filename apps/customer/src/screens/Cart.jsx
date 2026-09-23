@@ -5,12 +5,13 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView
+  SafeAreaView,
+  useColorScheme,
 } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import QuantityStepper from '@syscor/shared/src/components/commons/QuantityStepper';
-import { styles } from '../styles/Cart';
-import { colors } from '@syscor/shared/src/styles/theme';
+import { getCartStyles } from '../styles/Cart';
+import { getMenuColors } from '../styles/CustomerMenu';
 
 export const Cart = ({ 
   cartItems = [], 
@@ -20,8 +21,12 @@ export const Cart = ({
   onBack,
   onClearCart,
   onUpdateQuantity,
-  onCheckout
+  onCheckout,
+  onSaveCombination,
 }) => {
+  const isDark = useColorScheme() === 'dark';
+  const styles = getCartStyles(isDark);
+  const colors = getMenuColors(isDark);
   const safeSubtotal = Number(subtotal) || 0;
   const safeTip = Number(tip) || 0;
   const safeTotal = Number(total) || safeSubtotal + safeTip;
@@ -107,6 +112,19 @@ export const Cart = ({
       {/* Botón de Checkout Rojo */}
       {cartItems.length > 0 && (
         <View style={styles.bottomBar}>
+          {onSaveCombination ? (
+            <TouchableOpacity
+              onPress={onSaveCombination}
+              activeOpacity={0.7}
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12 }}
+              accessibilityRole="button"
+            >
+              <Icon name="bookmark-outline" size={16} color={colors.primary} />
+              <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 14 }}>
+                Guardar como combinación
+              </Text>
+            </TouchableOpacity>
+          ) : null}
           <TouchableOpacity
             style={styles.checkoutButton}
             onPress={onCheckout}

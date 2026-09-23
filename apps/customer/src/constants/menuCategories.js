@@ -1,14 +1,21 @@
 // Categorías de platillos del menú.
 //
-// Son exactamente las que el panel de administración ofrece al crear un
-// platillo (ver DISH_CATEGORIES en AddDishModal.jsx y SAUCER_CATEGORIES en
-// AddComboModal.jsx del sistema web). El valor de `id` debe coincidir
+// Son exactamente las que acepta el backend (SAUCER_CATEGORIES en
+// utils/saucers/saucerCategoriesUtils.js). El valor de `id` debe coincidir
 // carácter por carácter con lo que el backend guarda en `saucer.category`,
-// porque el filtro es una comparación directa.
+// porque el filtro es una comparación directa. El orden de esta lista es el
+// orden de las tarjetas en el menú.
 //
-// La imagen es la que se ve en la tarjeta del menú. Mientras el backend no
-// devuelva una foto por categoría, se usan las locales que ya trae la app.
+// La imagen es la portada de la tarjeta. Las de `assets/categories/` son fotos
+// de Pexels (licencia libre, uso comercial sin atribución obligatoria).
 export const MENU_CATEGORIES = [
+  // Los combos no son platillos: vienen de /menu/combos y useMenu les pone
+  // esta categoría.
+  {
+    id: 'Combos',
+    label: 'Combos',
+    image: require('../../assets/promo-tacos-pastor.png'),
+  },
   {
     id: 'Tacos',
     label: 'Tacos',
@@ -25,14 +32,44 @@ export const MENU_CATEGORIES = [
     image: require('../../assets/torta-milanesa.png'),
   },
   {
+    id: 'Quesadillas',
+    label: 'Quesadillas',
+    image: require('../../assets/quesadilla-birria.png'),
+  },
+  {
+    id: 'Antojitos',
+    label: 'Antojitos',
+    image: require('../../assets/categories/antojitos.jpg'),
+  },
+  {
+    id: 'Nachos',
+    label: 'Nachos',
+    image: require('../../assets/categories/nachos.jpg'),
+  },
+  {
+    id: 'A la plancha',
+    label: 'A la plancha',
+    image: require('../../assets/categories/a-la-plancha.jpg'),
+  },
+  {
+    id: 'Alitas',
+    label: 'Alitas',
+    image: require('../../assets/categories/alitas.jpg'),
+  },
+  {
     id: 'Sopas',
     label: 'Sopas',
-    image: require('../../assets/quesadilla-birria.png'),
+    image: require('../../assets/categories/sopas.jpg'),
+  },
+  {
+    id: 'Postres',
+    label: 'Postres',
+    image: require('../../assets/categories/postres.jpg'),
   },
   {
     id: 'Especiales',
     label: 'Especiales',
-    image: require('../../assets/promo-tacos-pastor.png'),
+    image: require('../../assets/categories/especiales.jpg'),
   },
 ];
 
