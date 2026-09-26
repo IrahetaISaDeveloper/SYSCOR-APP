@@ -171,17 +171,6 @@ const AddressesScreen = () => {
               SUCURSAL Y DIRECCIONES
             </Text>
           </View>
-          <TouchableOpacity
-            onPress={() => locate()}
-            style={[
-              ordersStyles.roundButton,
-              { backgroundColor: c.surface, borderColor: c.border, width: ms(44), height: ms(44), borderRadius: ms(22) },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Actualizar mi ubicación"
-          >
-            <Icon name="navigate-outline" size={ms(19)} color={c.primary} />
-          </TouchableOpacity>
         </View>
 
         {/* ── FILTROS ── */}

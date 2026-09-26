@@ -96,20 +96,6 @@ const FavoritesScreen = ({ navigation }) => {
               {plural(combinations.length, 'COMBINACIÓN', 'COMBINACIONES')}
             </Text>
           </View>
-          <View
-            style={[
-              ordersStyles.roundButton,
-              {
-                backgroundColor: c.surface,
-                borderColor: c.border,
-                width: ms(44),
-                height: ms(44),
-                borderRadius: ms(22),
-              },
-            ]}
-          >
-            <Icon name="heart-outline" size={ms(19)} color={c.primary} />
-          </View>
         </View>
 
         {/* ── FILTROS ── */}

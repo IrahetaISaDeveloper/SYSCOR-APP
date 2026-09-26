@@ -30,19 +30,12 @@ import ordersStyles, { getOrderBandColor } from '../styles/Orders';
 import { usePreferences } from '../context/PreferencesContext';
 import { useTabBarVisibility } from '../context/TabBarVisibilityContext';
 import Sheet from '../components/Sheet';
+import { usePanchita } from '../context/PanchitaContext';
 
 const THEME_LABELS = { system: 'Sistema', light: 'Claro', dark: 'Oscuro' };
 const THEME_ICONS = { system: 'phone-portrait-outline', light: 'sunny-outline', dark: 'moon-outline' };
 
 const APP_VERSION = Constants.expoConfig?.version || '1.0.0';
-
-// Formas de pago que acepta el restaurante. El backend no guarda tarjetas
-// (se pagan en línea con Wompi en cada compra), así que es informativo.
-const PAYMENT_METHODS = [
-  { icon: 'card-outline', title: 'Tarjeta en línea', text: 'Pagas al confirmar tu pedido, de forma segura con Wompi.' },
-  { icon: 'cash-outline', title: 'Efectivo', text: 'Al recibir tu pedido o al pasar a recogerlo.' },
-  { icon: 'card', title: 'Tarjeta contra entrega', text: 'El repartidor lleva el POS a tu puerta.' },
-];
 
 // ── PANTALLA ────────────────────────────────────────────────────────────
 const MoreScreen = ({ navigation }) => {
@@ -53,9 +46,11 @@ const MoreScreen = ({ navigation }) => {
   const ms = m.ms;
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
+  // Saldo a favor, para mostrarlo junto a "Mi saldo".
+  const walletBalance = Number(usePanchita().wallet?.balance) || 0;
   const prefs = usePreferences();
 
-  // null | 'payments' | 'support' | 'theme'
+  // null | 'support' | 'theme'
   const [sheet, setSheet] = useState(null);
 
   const { handleScroll, reset: resetTabBar } = useTabBarVisibility();
@@ -145,9 +140,35 @@ const MoreScreen = ({ navigation }) => {
         {/* ── CUENTA ── */}
         <View style={[card, { paddingHorizontal: ms(14) }]}>
           <Row
+            icon="chatbubbles-outline"
+            label="Chef Panchita: seguimiento y ayuda"
+            onPress={() => navigation.navigate('Panchita')}
+            tint
+            colors={c}
+            bandColor={bandColor}
+            ms={ms}
+          />
+          <Row
+            icon="wallet-outline"
+            label="Mi saldo"
+            onPress={() => navigation.navigate('Wallet')}
+            right={
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: ms(4) }}>
+                <Text style={[textStyles.num, { color: walletBalance > 0 ? '#1FC47A' : c.textGray, fontSize: ms(13.5) }]}>
+                  ${walletBalance.toFixed(2)}
+                </Text>
+                <Icon name="chevron-forward" size={ms(17)} color={c.textGray} />
+              </View>
+            }
+            tint
+            colors={c}
+            bandColor={bandColor}
+            ms={ms}
+          />
+          <Row
             icon="card-outline"
             label="Métodos de pago"
-            onPress={() => setSheet('payments')}
+            onPress={() => navigation.navigate('SavedCards')}
             tint
             colors={c}
             bandColor={bandColor}
@@ -243,13 +264,6 @@ const MoreScreen = ({ navigation }) => {
       </ScrollView>
 
       {/* ── HOJAS ── */}
-      <Sheet visible={sheet === 'payments'} onClose={() => setSheet(null)} colors={c} ms={ms} bottomInset={insets.bottom}>
-        <SheetTitle title="Métodos de pago" subtitle="Eliges cómo pagar al confirmar cada pedido." colors={c} ms={ms} />
-        {PAYMENT_METHODS.map((method) => (
-          <InfoItem key={method.title} {...method} colors={c} bandColor={bandColor} ms={ms} />
-        ))}
-      </Sheet>
-
       <Sheet visible={sheet === 'support'} onClose={() => setSheet(null)} colors={c} ms={ms} bottomInset={insets.bottom}>
         <SheetTitle title="Ayuda y soporte" subtitle="Escríbenos o llámanos, con gusto te ayudamos." colors={c} ms={ms} />
         <InfoItem

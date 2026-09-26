@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -179,6 +179,18 @@ const CustomerMenu = ({ navigation }) => {
     setOpenCategory(null);
     scrollRef.current?.scrollTo({ y: 0, animated: false });
   }, []);
+
+  // El botón "Menú" de la barra inferior siempre lleva a la portada del menú.
+  // (En el menú de invitado no hay pestañas y este evento nunca llega.)
+  useEffect(
+    () =>
+      navigation.addListener('tabPress', () => {
+        setSearchText('');
+        setSubFilter('all');
+        closeCategory();
+      }),
+    [navigation, closeCategory],
+  );
 
   // El botón "atrás" de Android regresa a las categorías en vez de salir.
   useFocusEffect(
@@ -521,7 +533,6 @@ const CustomerMenu = ({ navigation }) => {
               <CategoryCard
                 key={cat.id}
                 category={cat}
-                count={countByCategory[cat.id] || 0}
                 colors={c}
                 ms={ms}
                 cardWidth={(width - m.gutter * 2 - ms(14)) / 2}
@@ -914,7 +925,7 @@ const SHADE_STEPS = Array.from({ length: 14 }, (_, i) => `${Math.round(75 - i * 
 
 // Tarjeta de una categoría: la foto ocupa toda la tarjeta y el nombre va
 // encima, sobre un degradado oscuro. Al tocarla se abren sus platillos.
-const CategoryCard = ({ category, count, colors: c, ms, cardWidth, onPress }) => {
+const CategoryCard = ({ category, colors: c, ms, cardWidth, onPress }) => {
   const cardHeight = Math.round(cardWidth * 1.1);
 
   return (
@@ -931,7 +942,7 @@ const CategoryCard = ({ category, count, colors: c, ms, cardWidth, onPress }) =>
       activeOpacity={0.85}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${category.label}, ${count} platillos`}
+      accessibilityLabel={`Ver ${category.label}`}
     >
       {/* Medidas en números y no en %: con % Android dejaba la foto a media
           tarjeta y abajo se veía el fondo claro. */}
@@ -945,19 +956,14 @@ const CategoryCard = ({ category, count, colors: c, ms, cardWidth, onPress }) =>
         <View key={h} style={[menuStyles.categoryShade, { height: h }]} />
       ))}
 
-      <View style={[menuStyles.categoryContent, { padding: ms(14), gap: ms(4) }]}>
-        <Text
-          style={[textStyles.title, menuStyles.categoryTitle, { fontSize: ms(20) }]}
-          numberOfLines={1}
-        >
-          {category.label}
-        </Text>
-        <View style={[menuStyles.categoryMeta, { gap: ms(6) }]}>
+      {/* Solo el nombre de la categoría, con la flecha al lado */}
+      <View style={[menuStyles.categoryContent, { padding: ms(14) }]}>
+        <View style={[menuStyles.categoryMeta, { gap: ms(8) }]}>
           <Text
-            style={[textStyles.body, menuStyles.categoryCount, { fontSize: ms(12) }]}
-            numberOfLines={1}
+            style={[textStyles.title, menuStyles.categoryTitle, { flex: 1, fontSize: ms(20) }]}
+            numberOfLines={2}
           >
-            {count > 0 ? `${count} ${count === 1 ? 'platillo' : 'platillos'}` : 'Ver platillos'}
+            {category.label}
           </Text>
           <View
             style={[

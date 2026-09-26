@@ -16,13 +16,17 @@ import { fontAssets } from '@syscor/shared/src/styles/typography';
 import { getMenuColors } from './src/styles/CustomerMenu';
 import { ROLES } from '@syscor/shared/src/constants/roles';
 import CustomerTabBar from './src/navigation/CustomerTabBar';
-import BootGate from '@syscor/shared/src/navigation/BootGate';
+import CustomerBootGate from './src/navigation/CustomerBootGate';
 import UnsupportedRoleScreen from '@syscor/shared/src/screens/UnsupportedRoleScreen';
 
 import { CartProvider } from './src/context/CartContext';
 import { TabBarVisibilityProvider } from './src/context/TabBarVisibilityContext';
 import { FavoritesProvider } from './src/context/FavoritesContext';
 import { PreferencesProvider } from './src/context/PreferencesContext';
+import { PanchitaProvider } from './src/context/PanchitaContext';
+import PanchitaAlertBanner from './src/components/PanchitaAlertBanner';
+import CartAddedToast from './src/components/CartAddedToast';
+import { navigationRef } from './src/navigation/navigationRef';
 
 // Auth (solo cliente)
 import LoginCustomerScreen from './src/screens/auth/LoginCustomerScreen';
@@ -40,6 +44,9 @@ import CustomerMenu from './src/screens/CustomerMenu';
 import CartScreen from './src/screens/CartScreen';
 import MoreScreen from './src/screens/MoreScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
+import SavedCardsScreen from './src/screens/SavedCardsScreen';
+import WalletScreen from './src/screens/WalletScreen';
+import PanchitaScreen from './src/screens/PanchitaScreen';
 import OrdersScreen from './src/screens/OrdersScreen';
 import FavoritesScreen from './src/screens/FavoritesScreen';
 import AddressesScreen from './src/screens/AddressesScreen';
@@ -51,9 +58,9 @@ const AuthStack = createNativeStackNavigator();
 const CustomerStack = createNativeStackNavigator();
 const CustomerTab = createBottomTabNavigator();
 
-function AuthNavigator({ initialRouteName = 'Login' }) {
+function AuthNavigator() {
   return (
-    <AuthStack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
+    <AuthStack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
       <AuthStack.Screen name="Login" component={LoginCustomerScreen} />
       <AuthStack.Screen name="RegisterCustomer" component={RegisterCustomerScreen} />
       <AuthStack.Screen name="RegisterAddress" component={RegisterAddressScreen} />
@@ -116,18 +123,27 @@ function CustomerRootNavigator() {
   return (
     <CartProvider>
       <FavoritesProvider>
+        <PanchitaProvider>
         <CustomerStack.Navigator screenOptions={{ headerShown: false }}>
           <CustomerStack.Screen name="CustomerTabs" component={CustomerTabNavigator} />
           <CustomerStack.Screen name="ProductDetails" component={ProductDetailsScreen} />
           <CustomerStack.Screen name="EditProfile" component={EditProfileScreen} />
+          <CustomerStack.Screen name="SavedCards" component={SavedCardsScreen} />
+          <CustomerStack.Screen name="Wallet" component={WalletScreen} />
+          <CustomerStack.Screen name="Panchita" component={PanchitaScreen} />
           <CustomerStack.Screen name="PaymentVerification" component={PaymentScreenWrapper} />
         </CustomerStack.Navigator>
+        {/* Avisos de Panchita encima de cualquier pantalla */}
+        <PanchitaAlertBanner />
+        {/* "Se agregó a tu bolsa", también encima de todo */}
+        <CartAddedToast />
+        </PanchitaProvider>
       </FavoritesProvider>
     </CartProvider>
   );
 }
 
-function RootNavigator({ entryRoute }) {
+function RootNavigator() {
   const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
@@ -138,11 +154,8 @@ function RootNavigator({ entryRoute }) {
     );
   }
 
-  if (!isAuthenticated) {
-    // La bienvenida usa 'Menu' para explorar sin cuenta.
-    const initialRoute = entryRoute === 'Menu' ? 'GuestMenu' : entryRoute || 'Login';
-    return <AuthNavigator initialRouteName={initialRoute} />;
-  }
+  // Sin sesión se abre el login: desde ahí se crea la cuenta o se explora el menú.
+  if (!isAuthenticated) return <AuthNavigator />;
 
   // Esta app es exclusiva de clientes: un empleado autenticado debe usar la app de empleados.
   if (user.role === ROLES.CUSTOMER) return <CustomerRootNavigator />;
@@ -187,14 +200,12 @@ export default function App() {
       {/* Va arriba de todo: el tema elegido en "Más" aplica también al login. */}
       <PreferencesProvider>
         <AuthProvider>
-          <BootGate>
-            {({ entryRoute }) => (
-              <NavigationContainer theme={navigationTheme}>
-                <StatusBar style="auto" />
-                <RootNavigator entryRoute={entryRoute} />
-              </NavigationContainer>
-            )}
-          </BootGate>
+          <CustomerBootGate>
+            <NavigationContainer ref={navigationRef} theme={navigationTheme}>
+              <StatusBar style="auto" />
+              <RootNavigator />
+            </NavigationContainer>
+          </CustomerBootGate>
         </AuthProvider>
       </PreferencesProvider>
     </SafeAreaProvider>

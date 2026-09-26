@@ -1,12 +1,13 @@
 import React from 'react';
-import { Modal, View, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { Modal, View, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
 
 // Hoja inferior genérica: fondo oscuro, esquinas redondeadas y un asa arriba.
-// Tocar fuera la cierra.
+// Tocar fuera la cierra. El padding del teclado va en las dos plataformas:
+// con edge-to-edge, Android ya no redimensiona la ventana solo.
 const Sheet = ({ visible, onClose, colors: c, ms, bottomInset, children }) => (
   <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior="padding"
       style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}
     >
       <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />

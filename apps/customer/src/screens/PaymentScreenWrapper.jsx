@@ -3,7 +3,7 @@ import { useCart } from '../context/CartContext';
 import PaymentScreen from './PaymentVerfication';
 
 export default function PaymentScreenWrapper({ navigation }) {
-  const { items, subtotal, tip, total, clearCart } = useCart();
+  const { items, subtotal, total, clearCart } = useCart();
 
   const cartItems = items.map((item) => ({
     id: item.cartItemId,
@@ -15,8 +15,8 @@ export default function PaymentScreenWrapper({ navigation }) {
   return (
     <PaymentScreen
       cartItems={cartItems}
+      rawItems={items}
       subtotal={subtotal}
-      tip={tip}
       total={total}
       onBack={() => navigation.goBack()}
       onGoHome={() => {

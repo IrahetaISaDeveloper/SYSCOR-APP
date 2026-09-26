@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getSaucersList, getCombosList } from '../services/api';
+import { getSaucersList, getCombosList, getDrinksList } from '../services/api';
 
 // Consulta el menú y lo entrega ya formateado para la pantalla.
 //
@@ -21,9 +21,13 @@ const useMenu = () => {
 
     // Se usa `getSaucersList` (apiClient) y no `fetch` directo: manda la
     // cookie de sesión, que el backend exige en /menu/saucers.
-    // Platillos y combos se piden juntos; los combos van a su propia
-    // categoría ("Combos"). Si solo fallan los combos, el menú sigue.
-    const [res, combosRes] = await Promise.all([getSaucersList(), getCombosList()]);
+    // Platillos, combos y bebidas se piden juntos; combos y bebidas van a su
+    // propia categoría ("Combos", "Bebidas"). Si solo fallan esos, el menú sigue.
+    const [res, combosRes, drinksRes] = await Promise.all([
+      getSaucersList(),
+      getCombosList(),
+      getDrinksList(),
+    ]);
 
     if (!res.success) {
       setError(res.error || 'No se pudieron cargar los platillos.');
@@ -36,6 +40,7 @@ const useMenu = () => {
     setDishes([
       ...(res.data || []).map(normalizeDish),
       ...(combosRes.success ? (combosRes.data || []).map(normalizeCombo) : []),
+      ...(drinksRes.success ? (drinksRes.data || []).map(normalizeDrink) : []),
     ]);
     setIsLoading(false);
   }, []);
@@ -96,6 +101,17 @@ const normalizeCombo = (item) => ({
   itemType: 'combo',
   category: 'Combos',
   subcategory: COMBO_SIZES[item.category] || null,
+});
+
+// Las bebidas se separan en las que se preparan aquí y las embotelladas.
+const DRINK_KINDS = { casa: 'De la casa', tercero: 'Embotelladas' };
+
+const normalizeDrink = (item) => ({
+  ...normalizeDish({ ...item, category: null, subcategory: null, quantity: null }),
+  itemType: 'drink',
+  category: 'Bebidas',
+  subcategory: DRINK_KINDS[item.category] || null,
+  description: item.description || (item.category === 'casa' ? 'Preparada en casa.' : 'Bien fría.'),
 });
 
 const toNumber = (raw) => {

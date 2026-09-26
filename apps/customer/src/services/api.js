@@ -101,3 +101,21 @@ export const getSaucerById = (id) =>
 // Pedidos del cliente con sesión, del más reciente al más antiguo. El backend
 // toma el cliente del token (cookie), así que no hace falta mandar su ID.
 export const getMyOrders = () => request('/orders/mine');
+
+// El cliente cancela su pedido en línea (hasta 15 min después de pedirlo).
+// El backend dice qué pasa con el dinero en `title` / `message`.
+export const cancelMyOrder = async (orderId, reason = '') => {
+  try {
+    const { data } = await apiClient.post(`/orders/${orderId}/customer-cancel`, { reason });
+    return { success: true, title: data?.title, message: data?.message };
+  } catch (error) {
+    return {
+      success: false,
+      title: error.response?.data?.title || 'No se pudo cancelar',
+      error:
+        error.response?.status === 404 && !error.response?.data?.message
+          ? 'El servidor todavía no tiene esta función.'
+          : error.response?.data?.message || 'No se pudo conectar. Inténtalo de nuevo.',
+    };
+  }
+};

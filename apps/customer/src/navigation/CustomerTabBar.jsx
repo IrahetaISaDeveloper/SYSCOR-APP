@@ -69,7 +69,12 @@ export default function CustomerTabBar({ state, navigation }) {
   const currentRoute = state.routes[state.index]?.name;
 
   const go = (item) => {
-    if (!item.route || item.route === currentRoute) return;
+    if (!item.route) return;
+    // El menú escucha `tabPress` para volver a su portada (cierra la
+    // categoría y la búsqueda), aunque ya se esté en esa pestaña.
+    const route = state.routes.find((r) => r.name === item.route);
+    if (route) navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+    if (item.route === currentRoute) return;
     navigation.navigate(item.route);
   };
 

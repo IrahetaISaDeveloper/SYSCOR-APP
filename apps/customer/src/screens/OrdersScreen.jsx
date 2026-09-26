@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Alert,
   useColorScheme,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -13,12 +14,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { textStyles } from '@syscor/shared/src/styles/typography';
-import { useAuthMetrics } from '@syscor/shared/src/styles/authTheme';
+import { useAuthMetrics, getAuthTokens } from '@syscor/shared/src/styles/authTheme';
+import PanchitaBubble from '@syscor/shared/src/components/panchita/PanchitaBubble';
 import { getMenuColors } from '../styles/CustomerMenu';
 import ordersStyles, { orderStatusColors as sc, getOrderBandColor } from '../styles/Orders';
 import useMyOrders from '../hooks/useMyOrders';
 import { useCart } from '../context/CartContext';
 import { useTabBarVisibility } from '../context/TabBarVisibilityContext';
+import { usePanchita } from '../context/PanchitaContext';
+import { cancelMyOrder } from '../services/api';
 
 // Etiqueta y color de la insignia de cada estado del backend.
 const STATUS_BADGES = {
@@ -74,6 +78,31 @@ const OrdersScreen = ({ navigation }) => {
   const { orders, isLoading, isRefreshing, error, refetch } = useMyOrders();
   const { addItem } = useCart();
   const { handleScroll, reset: resetTabBar } = useTabBarVisibility();
+  const panchita = usePanchita();
+  const [cancellingId, setCancellingId] = useState(null);
+
+  // Cancelar un pedido en línea (hasta 15 min). Qué pasa con el dinero lo
+  // decide y lo explica el backend.
+  const confirmCancel = (order) =>
+    Alert.alert(
+      `¿Cancelar el pedido ${order.code}?`,
+      'Lo que pagaste con saldo regresa a tu saldo al instante. Lo pagado con tarjeta te lo reembolsamos a la tarjeta (puede tardar unos días según tu banco).',
+      [
+        { text: 'No, mantenerlo', style: 'cancel' },
+        {
+          text: 'Sí, cancelar',
+          style: 'destructive',
+          onPress: async () => {
+            setCancellingId(order.id);
+            const res = await cancelMyOrder(order.id);
+            setCancellingId(null);
+            refetch();
+            panchita.refresh();
+            Alert.alert(res.title || (res.success ? 'Pedido cancelado' : 'No se pudo cancelar'), res.success ? res.message : res.error);
+          },
+        },
+      ],
+    );
 
   // Al salir de la pestaña la barra vuelve a verse.
   useFocusEffect(useCallback(() => () => resetTabBar?.(), [resetTabBar]));
@@ -145,23 +174,6 @@ const OrdersScreen = ({ navigation }) => {
               </Text>
             ) : null}
           </View>
-          <TouchableOpacity
-            onPress={() => setTab('history')}
-            style={[
-              ordersStyles.roundButton,
-              {
-                backgroundColor: c.surface,
-                borderColor: c.border,
-                width: ms(44),
-                height: ms(44),
-                borderRadius: ms(22),
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Ver historial de pedidos"
-          >
-            <Icon name="receipt-outline" size={ms(19)} color={c.textDark} />
-          </TouchableOpacity>
         </View>
 
         {/* ── EN CURSO / HISTORIAL ── */}
@@ -294,13 +306,34 @@ const OrdersScreen = ({ navigation }) => {
             ) : (
               <View style={{ gap: ms(14), marginTop: ms(16) }}>
                 {active.map((order) => (
-                  <ActiveOrderCard
-                    key={order.id}
-                    order={order}
-                    colors={c}
-                    bandColor={bandColor}
-                    ms={ms}
-                  />
+                  <View key={order.id} style={{ gap: ms(8) }}>
+                    <ActiveOrderCard order={order} colors={c} bandColor={bandColor} ms={ms} />
+                    {order.cancelDeadline ? (
+                      <CancelOrderButton
+                        deadline={order.cancelDeadline}
+                        busy={cancellingId === order.id}
+                        onPress={() => confirmCancel(order)}
+                        onExpire={refetch}
+                        colors={c}
+                        ms={ms}
+                      />
+                    ) : null}
+                    {/* Estimación con tráfico y clima, mensajes al repartidor y ayuda */}
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate('Panchita')}
+                      activeOpacity={0.85}
+                      style={[
+                        ordersStyles.outlineButton,
+                        { backgroundColor: c.surface, borderColor: c.border, borderRadius: ms(14), height: ms(44), gap: ms(8) },
+                      ]}
+                      accessibilityRole="button"
+                    >
+                      <Icon name="chatbubbles-outline" size={ms(16)} color={c.primary} />
+                      <Text style={[textStyles.link, { color: c.primary, fontSize: ms(13.5) }]}>
+                        Seguimiento y ayuda con Panchita
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 ))}
               </View>
             )}
@@ -362,6 +395,8 @@ const OrdersScreen = ({ navigation }) => {
           ))
         )}
       </ScrollView>
+      {/* Chef Panchita, siempre a mano en Pedidos */}
+      <PanchitaBubble tokens={getAuthTokens(isDark)} isDark={isDark} onPress={() => navigation.navigate('Panchita')} />
     </View>
   );
 };
@@ -399,6 +434,54 @@ const SectionLabel = ({ label, colors: c, ms }) => (
     {label}
   </Text>
 );
+
+// "Cancelar pedido" con los minutos que quedan para hacerlo. Al acabarse el
+// plazo se esconde solo (y se vuelve a consultar la lista).
+const CancelOrderButton = ({ deadline, busy, onPress, onExpire, colors: c, ms }) => {
+  const [now, setNow] = useState(Date.now());
+  const remaining = Math.max(0, deadline.getTime() - now);
+
+  useEffect(() => {
+    if (remaining <= 0) return undefined;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [remaining <= 0]);
+
+  useEffect(() => {
+    if (remaining <= 0) onExpire?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remaining <= 0]);
+
+  if (remaining <= 0) return null;
+
+  const minutes = Math.floor(remaining / 60000);
+  const seconds = Math.floor((remaining % 60000) / 1000);
+  const left = `${minutes}:${String(seconds).padStart(2, '0')}`;
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={busy}
+      activeOpacity={0.85}
+      style={[
+        ordersStyles.outlineButton,
+        { borderColor: c.error, borderRadius: ms(14), height: ms(44), gap: ms(8), opacity: busy ? 0.6 : 1 },
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={`Cancelar pedido. Quedan ${minutes} minutos para hacerlo.`}
+    >
+      {busy ? (
+        <ActivityIndicator size="small" color={c.error} />
+      ) : (
+        <>
+          <Icon name="close-circle-outline" size={ms(16)} color={c.error} />
+          <Text style={[textStyles.link, { color: c.error, fontSize: ms(13.5) }]}>Cancelar pedido</Text>
+          <Text style={[textStyles.num, { color: c.textGray, fontSize: ms(12.5) }]}>· quedan {left}</Text>
+        </>
+      )}
+    </TouchableOpacity>
+  );
+};
 
 // Tarjeta grande del pedido en curso: estado, progreso, tiempo y detalle.
 const ActiveOrderCard = ({ order, colors: c, bandColor, ms }) => {

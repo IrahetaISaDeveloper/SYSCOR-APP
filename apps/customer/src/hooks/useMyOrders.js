@@ -83,6 +83,9 @@ const normalizeOrder = (raw) => {
     items,
     itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
     createdAt: raw.createdAt ? new Date(raw.createdAt) : null,
+    // Hasta cuándo se puede cancelar desde la app (null = ya no se puede).
+    cancelDeadline: raw.cancelDeadline ? new Date(raw.cancelDeadline) : null,
+    cancelledByCustomer: raw.cancellation?.by === 'customer',
   };
 };
 

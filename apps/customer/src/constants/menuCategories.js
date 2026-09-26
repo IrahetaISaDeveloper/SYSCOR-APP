@@ -70,6 +70,12 @@ export const MENU_CATEGORIES = [
     id: 'Especiales',
     label: 'Especiales',
     image: require('../../assets/categories/especiales.jpg'),
+  },  // Tampoco son platillos: vienen de /menu/drinks y useMenu les pone esta
+  // categoría (las de la casa y las embotelladas, como subcategorías).
+  {
+    id: 'Bebidas',
+    label: 'Bebidas',
+    image: require('../../assets/agua-jamaica.png'),
   },
 ];
 
