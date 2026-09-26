@@ -1,17 +1,15 @@
 import { StyleSheet } from "react-native";
-import { employeePalette } from '@syscor/shared/src/styles/employeePalette';
+import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { fonts } from "./fonts";
 
 export default StyleSheet.create({
-  scrollContent: {
-    paddingBottom: 40,
-  },
   legendRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    paddingHorizontal: 18,
-    paddingTop: 4,
-    paddingBottom: 12,
     gap: 7,
+    paddingTop: 4,
+    paddingHorizontal: 18,
+    paddingBottom: 12,
   },
   legendItem: {
     flexDirection: "row",
@@ -30,23 +28,39 @@ export default StyleSheet.create({
     borderRadius: 4,
   },
   legendLabel: {
-    fontFamily: "monospace",
+    fontFamily: fonts.mono,
     fontSize: 10,
     letterSpacing: 0.4,
     color: employeePalette.ink,
+    includeFontPadding: false,
   },
   floor: {
+    flex: 1,
     marginHorizontal: 18,
+    marginBottom: 14,
     backgroundColor: employeePalette.surface2,
-    borderRadius: 22,
-    paddingVertical: 22,
-    paddingHorizontal: 18,
     borderWidth: 1,
     borderColor: employeePalette.line,
+    borderRadius: 22,
+    overflow: "hidden",
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "center",
+    rowGap: 26,
+    paddingVertical: 22,
+    paddingHorizontal: 18,
+  },
+  emptyBox: {
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 40,
+    paddingHorizontal: 24,
+  },
+  emptyText: {
+    fontFamily: fonts.sans,
+    fontSize: 12.5,
+    color: employeePalette.muted,
+    textAlign: "center",
   },
 });

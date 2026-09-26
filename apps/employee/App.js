@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useFonts } from 'expo-font';
 
 import { AuthProvider, useAuth } from '@syscor/shared/src/context/AuthContext';
 import { ROLES, EMPLOYEE_TYPES } from '@syscor/shared/src/constants/roles';
@@ -17,13 +18,18 @@ import LoginEmployeeScreen from './src/screens/auth/LoginEmployeeScreen';
 
 // Mesero
 import WaiterDashboardScreen from './src/screens/waiter/WaiterDashboardScreen';
+import WaiterOrdersScreen from './src/screens/waiter/WaiterOrdersScreen';
+import WaiterNewOrderScreen from './src/screens/waiter/WaiterNewOrderScreen';
 import WaiterProfileScreen from './src/screens/waiter/WaiterProfileScreen';
+import WaiterTabBar from './src/components/waiter/WaiterTabBar';
+import { fontAssets } from './src/styles/fonts';
 
 // Cocina
 import Orders from './src/screens/chef/Orders';
 import KitchenProfileScreen from './src/screens/chef/KitchenProfileScreen';
 
 const AuthStack = createNativeStackNavigator();
+const WaiterStack = createNativeStackNavigator();
 const WaiterTab = createBottomTabNavigator();
 const KitchenTab = createBottomTabNavigator();
 
@@ -38,20 +44,38 @@ function AuthNavigator() {
 function WaiterTabNavigator() {
   return (
     <WaiterTab.Navigator
-      tabBar={(props) => <AppTabBar {...props} accentColor="#8E2222" />}
+      tabBar={(props) => <WaiterTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
       <WaiterTab.Screen
         name="Dashboard"
         component={WaiterDashboardScreen}
-        options={{ tabBarLabel: 'Mesas', tabBarIcon: 'restaurant-outline' }}
+        options={{ tabBarLabel: 'Mesas', tabBarIcon: 'table_restaurant' }}
+      />
+      <WaiterTab.Screen
+        name="Orders"
+        component={WaiterOrdersScreen}
+        options={{ tabBarLabel: 'Comandas', tabBarIcon: 'receipt_long' }}
       />
       <WaiterTab.Screen
         name="Profile"
         component={WaiterProfileScreen}
-        options={{ tabBarLabel: 'Mi perfil', tabBarIcon: 'person-outline' }}
+        options={{ tabBarLabel: 'Perfil', tabBarIcon: 'person' }}
       />
     </WaiterTab.Navigator>
+  );
+}
+
+function WaiterNavigator() {
+  return (
+    <WaiterStack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F7F3E9' } }}>
+      <WaiterStack.Screen name="WaiterTabs" component={WaiterTabNavigator} />
+      <WaiterStack.Screen
+        name="NewOrder"
+        component={WaiterNewOrderScreen}
+        options={{ animation: 'slide_from_bottom', gestureEnabled: false }}
+      />
+    </WaiterStack.Navigator>
   );
 }
 
@@ -90,7 +114,7 @@ function RootNavigator() {
 
   // Esta app es exclusiva de empleados: un cliente autenticado debe usar la app de clientes.
   if (user.role === ROLES.EMPLOYEE) {
-    if (user.type === EMPLOYEE_TYPES.WAITER) return <WaiterTabNavigator />;
+    if (user.type === EMPLOYEE_TYPES.WAITER) return <WaiterNavigator />;
     if (user.type === EMPLOYEE_TYPES.KITCHEN) return <KitchenTabNavigator />;
   }
 
@@ -98,6 +122,10 @@ function RootNavigator() {
 }
 
 export default function App() {
+  const [fontsLoaded, fontError] = useFonts(fontAssets);
+
+  if (!fontsLoaded && !fontError) return null;
+
   return (
     <SafeAreaProvider>
       <AuthProvider>

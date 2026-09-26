@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native";
-import { employeePalette } from '@syscor/shared/src/styles/employeePalette';
+import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { fonts } from "./fonts";
 
 export default StyleSheet.create({
   container: {
@@ -11,33 +12,29 @@ export default StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    backgroundColor: employeePalette.bg,
   },
   loadingText: {
-    color: employeePalette.muted,
+    fontFamily: fonts.sans,
     fontSize: 13,
+    color: employeePalette.muted,
   },
   errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     marginHorizontal: 18,
-    marginTop: 4,
+    marginBottom: 10,
     backgroundColor: employeePalette.warnSurface,
+    borderWidth: 1,
+    borderColor: employeePalette.warnLine,
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
   errorText: {
-    color: employeePalette.warnText,
+    flex: 1,
+    fontFamily: fonts.sansMedium,
     fontSize: 12,
-    fontWeight: "600",
-  },
-  tablesButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: employeePalette.surface,
-    borderWidth: 1,
-    borderColor: employeePalette.line,
-    alignItems: "center",
-    justifyContent: "center",
+    color: employeePalette.warnText,
   },
 });

@@ -1,13 +1,12 @@
 import apiClient from '@syscor/shared/src/services/apiClient';
 
-// Trae el dashboard combinando mesas + comandas activas del mesero autenticado
+// Mesas con los datos de su ocupación y el detalle de su cuenta abierta
 export const fetchWaiterDashboard = async () => {
-  console.log('🌐 URL completa:', apiClient.defaults.baseURL + "/orders/waiter/dashboard");
   const { data } = await apiClient.get("/orders/waiter/dashboard");
-  return data;
+  return Array.isArray(data) ? data : [];
 };
 
-// Trae el menú (combos, bebidas, extras) para armar la comanda
+// Menú activo (combos, bebidas, extras) para armar la comanda
 export const fetchMenu = async () => {
   const [combos, drinks, extras] = await Promise.all([
     apiClient.get("/menu/combos/active"),
@@ -15,30 +14,29 @@ export const fetchMenu = async () => {
     apiClient.get("/menu/extras/active"),
   ]);
 
-  console.log('combos:', JSON.stringify(combos.data).slice(0, 300));
-  console.log('drinks:', JSON.stringify(drinks.data).slice(0, 300));
-  console.log('extras:', JSON.stringify(extras.data).slice(0, 300));
+  const asList = (payload) => (Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : []);
 
   return {
-    combos: combos.data,
-    drinks: drinks.data,
-    extras: extras.data,
+    combos: asList(combos.data),
+    drinks: asList(drinks.data),
+    extras: asList(extras.data),
   };
 };
 
-// Cambia el estado de una mesa (libre, ocupada, limpieza, reservada)
-export const updateTableStatus = async (tableId, status) => {
-  const { data } = await apiClient.put(`/tables/${tableId}`, { status });
+// Cambia el estado de una mesa; al ocuparla se pueden mandar cliente y personas
+export const updateTableStatus = async (tableId, status, occupation = {}) => {
+  const { data } = await apiClient.put(`/tables/${tableId}`, { status, ...occupation });
   return data;
 };
 
-// Crea una nueva comanda para una mesa ya ocupada
-export const createOrder = async ({ table, items, customerName, peopleCount }) => {
+// Crea una comanda para una mesa ocupada
+export const createOrder = async ({ table, items, customerName, notes }) => {
   const { data } = await apiClient.post("/orders", {
     orderType: "local",
     table,
     items,
-    localCustomerName: customerName,
+    localCustomerName: customerName || undefined,
+    notes: notes || undefined,
   });
   return data;
 };
@@ -46,5 +44,11 @@ export const createOrder = async ({ table, items, customerName, peopleCount }) =
 // Cambia el estado de una comanda (pending, preparing, ready, delivered, cancelled)
 export const updateOrderStatus = async (orderId, status) => {
   const { data } = await apiClient.put(`/orders/${orderId}/status`, { status });
+  return data;
+};
+
+// Cobra la cuenta abierta de una mesa ('cash' o 'card')
+export const checkoutTable = async (tableId, paymentMethod) => {
+  const { data } = await apiClient.post(`/orders/table/${tableId}/checkout`, { paymentMethod });
   return data;
 };

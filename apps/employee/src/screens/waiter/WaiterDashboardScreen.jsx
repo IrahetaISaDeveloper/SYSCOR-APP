@@ -1,20 +1,22 @@
-import React from "react";
-import { View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
+import React, { useCallback, useRef } from "react";
+import { View, Text, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons as Icon } from "@expo/vector-icons";
-import { useAuth } from '@syscor/shared/src/context/AuthContext';
-import { getFirstName } from '@syscor/shared/src/utils/userDisplay';
+import { useAuth } from "@syscor/shared/src/context/AuthContext";
+import { getFirstName } from "@syscor/shared/src/utils/userDisplay";
+import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import useWaiterDashboard from "../../hooks/useWaiterDashboard";
 import useTableManagement from "../../hooks/useTableManagement";
-import AppHeader from '@syscor/shared/src/components/commons/AppHeader';
+import WaiterHeader from "../../components/waiter/WaiterHeader";
+import WaiterSheet from "../../components/waiter/WaiterSheet";
+import SymbolIcon from "../../components/commons/SymbolIcon";
 import TableMap from "../../components/waiterDashboard/TableMap";
-import AssignCustomerModal from "../../components/waiterDashboard/AssignCustomerModal";
-import OrderModal from "../../components/waiterDashboard/OrderModal";
-import TableActionsModal from "../../components/waiterDashboard/TableActionsModal";
+import TableActionsSheet from "../../components/waiterDashboard/TableActionsSheet";
+import AssignTableSheet from "../../components/waiterDashboard/AssignTableSheet";
+import ChargeTableSheet from "../../components/waiterDashboard/ChargeTableSheet";
 import TableManagementModal from "../../components/waiterDashboard/TableManagementModal";
 import waiterDashboardScreenStyles from "../../styles/waiterDashboardScreenStyles";
 
-export default function WaiterDashboardScreen() {
+export default function WaiterDashboardScreen({ navigation }) {
   const { user } = useAuth();
   const firstName = getFirstName(user);
 
@@ -24,94 +26,99 @@ export default function WaiterDashboardScreen() {
     refreshing,
     error,
     onRefresh,
-
-    menu,
-    menuLoading,
-
     selectedTable,
-    isActionsModalVisible,
-    isAssignModalVisible,
-    isOrderModalVisible,
-
+    activeSheet,
+    busy,
     openTable,
-    setActionsModalVisible,
-    setAssignModalVisible,
-    setOrderModalVisible,
-    openOrderModal,
-
-    assignCustomer,
-    addItemsToOrder,
+    closeSheet,
+    openCharge,
+    backToActions,
+    occupyTable,
     sendTableToCleaning,
     freeTable,
+    chargeTable,
   } = useWaiterDashboard();
 
   const tableManagement = useTableManagement();
+  const lastSheetRef = useRef(null);
 
-  if (loading) {
+  const goToNewOrder = useCallback(
+    (table) =>
+      navigation.navigate("NewOrder", {
+        table: {
+          _id: table._id,
+          number: table.number,
+          customerName: table.customerName || null,
+          peopleCount: table.peopleCount || null,
+        },
+      }),
+    [navigation]
+  );
+
+  const handleOpenOrder = () => {
+    if (!selectedTable) return;
+    closeSheet();
+    goToNewOrder(selectedTable);
+  };
+
+  const handleOccupy = async (occupation, takeOrder) => {
+    const occupied = await occupyTable(occupation);
+    if (occupied && takeOrder) goToNewOrder(occupied);
+  };
+
+  if (activeSheet) lastSheetRef.current = activeSheet;
+  const sheetType = activeSheet || lastSheetRef.current;
+
+  const renderSheetContent = () => {
+    if (!selectedTable) return null;
+    if (sheetType === "assign") {
+      return <AssignTableSheet table={selectedTable} busy={busy} onOccupy={handleOccupy} />;
+    }
+    if (sheetType === "charge") {
+      return <ChargeTableSheet table={selectedTable} busy={busy} onBack={backToActions} onConfirm={chargeTable} />;
+    }
     return (
-      <SafeAreaView style={waiterDashboardScreenStyles.centered} edges={['top', 'left', 'right']}>
-        <ActivityIndicator size="large" color="#8E2222" />
-        <Text style={waiterDashboardScreenStyles.loadingText}>Cargando mesas...</Text>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={waiterDashboardScreenStyles.container} edges={['top', 'left', 'right']}>
-      <AppHeader
-        eyebrow={firstName ? `HOLA, ${firstName.toUpperCase()} · MESERA` : 'MESERA'}
-        title="Mis mesas"
-        subtitle="Toca una mesa para asignar o ver la comanda"
-        accessory={
-          <TouchableOpacity
-            onPress={tableManagement.openManagement}
-            style={waiterDashboardScreenStyles.tablesButton}
-            activeOpacity={0.8}
-          >
-            <Icon name="restaurant-outline" size={19} color="#8E2222" />
-          </TouchableOpacity>
-        }
-      />
-
-      {error && (
-        <View style={waiterDashboardScreenStyles.errorBanner}>
-          <Text style={waiterDashboardScreenStyles.errorText}>{error}</Text>
-        </View>
-      )}
-
-      <TableMap
-        tables={tables}
-        onTablePress={openTable}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-      />
-
-      <AssignCustomerModal
-        visible={isAssignModalVisible}
+      <TableActionsSheet
         table={selectedTable}
-        menu={menu}
-        menuLoading={menuLoading}
-        onClose={() => setAssignModalVisible(false)}
-        onConfirm={assignCustomer}
-      />
-
-      <TableActionsModal
-        visible={isActionsModalVisible}
-        table={selectedTable}
-        onClose={() => setActionsModalVisible(false)}
-        onOpenOrder={openOrderModal}
+        busy={busy}
+        onOpenOrder={handleOpenOrder}
+        onCharge={openCharge}
         onSendToCleaning={sendTableToCleaning}
         onFreeTable={freeTable}
       />
+    );
+  };
 
-      <OrderModal
-        visible={isOrderModalVisible}
-        table={selectedTable}
-        menu={menu}
-        menuLoading={menuLoading}
-        onClose={() => setOrderModalVisible(false)}
-        onAddItems={addItemsToOrder}
+  return (
+    <SafeAreaView style={waiterDashboardScreenStyles.container} edges={["top", "left", "right"]}>
+      <WaiterHeader
+        eyebrow={firstName ? `HOLA, ${firstName.toUpperCase()} · MESERA` : "MESERA"}
+        title="Mis mesas"
+        subtitle="Toca una mesa para asignar o ver la comanda"
+        accessoryIcon="table_restaurant"
+        onAccessoryPress={tableManagement.openManagement}
       />
+
+      {loading ? (
+        <View style={waiterDashboardScreenStyles.centered}>
+          <ActivityIndicator size="large" color={employeePalette.accent} />
+          <Text style={waiterDashboardScreenStyles.loadingText}>Cargando mesas...</Text>
+        </View>
+      ) : (
+        <>
+          {error && (
+            <View style={waiterDashboardScreenStyles.errorBanner}>
+              <SymbolIcon name="warning" size={16} color={employeePalette.warnInk} />
+              <Text style={waiterDashboardScreenStyles.errorText}>{error}</Text>
+            </View>
+          )}
+          <TableMap tables={tables} onTablePress={openTable} refreshing={refreshing} onRefresh={onRefresh} />
+        </>
+      )}
+
+      <WaiterSheet visible={!!activeSheet && !!selectedTable} onClose={closeSheet}>
+        {renderSheetContent()}
+      </WaiterSheet>
 
       <TableManagementModal
         visible={tableManagement.isModalVisible}

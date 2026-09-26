@@ -267,6 +267,16 @@ const mapOrderToKitchen = (order) => {
     hasNotes: !!(item.notes && item.notes.trim()),
   }));
 
+  if (order.notes && order.notes.trim()) {
+    items.push({
+      id:       `${order._id}-notes`,
+      name:     'Especificaciones del mesero',
+      notes:    order.notes.trim(),
+      itemType: 'extra',
+      hasNotes: true,
+    });
+  }
+
   const rawId    = String(order._id || Math.random());
   const displayId = rawId.length > 6 ? rawId.slice(-4).toUpperCase() : rawId;
 
