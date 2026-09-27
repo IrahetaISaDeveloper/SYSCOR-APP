@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity, SafeAreaView } from "react-native";
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from '@syscor/shared/src/context/AuthContext';
 import useKitchenProfile from "../../hooks/useKitchenProfile";
 import ProfileHeader from '@syscor/shared/src/components/commons/ProfileHeader';
@@ -15,7 +16,7 @@ export default function KitchenProfileScreen({ navigation }) {
   const workInfo = user?.workInfo || {};
 
   return (
-    <SafeAreaView style={kitchenProfileScreenStyles.container}>
+    <SafeAreaView style={kitchenProfileScreenStyles.container} edges={['top', 'left', 'right']}>
       <View style={kitchenProfileScreenStyles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={kitchenProfileScreenStyles.backText}>‹ Volver</Text>

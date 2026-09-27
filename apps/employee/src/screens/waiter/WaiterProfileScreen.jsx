@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity, SafeAreaView, Alert } from "react-native";
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from '@syscor/shared/src/context/AuthContext';
 import useWaiterProfile from "../../hooks/useWaiterProfile";
 import ProfileHeader from '@syscor/shared/src/components/commons/ProfileHeader';
@@ -22,7 +23,7 @@ export default function WaiterProfileScreen({ navigation  }) {
   const workInfo = user?.workInfo || {};
 
   return (
-    <SafeAreaView style={waiterProfileScreenStyles.container}>
+    <SafeAreaView style={waiterProfileScreenStyles.container} edges={['top', 'left', 'right']}>
       <View style={waiterProfileScreenStyles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
       <Text style={waiterProfileScreenStyles.backText}>‹ Volver</Text>

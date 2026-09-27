@@ -1,74 +1,99 @@
 import { StyleSheet } from "react-native";
+import { fonts } from "./fonts";
 
-const TABLE_SIZE = 78;
-const CHAIR_SIZE = 18;
-const WRAPPER_SIZE = TABLE_SIZE + CHAIR_SIZE * 2 + 8;
+const TABLE_SIZE = 74;
+
+const chair = {
+  position: "absolute",
+  borderRadius: 4,
+  backgroundColor: "#D8CFC2",
+  borderWidth: 1,
+  borderColor: "#C2B8A8",
+};
 
 export default StyleSheet.create({
-  wrapper: {
-    width: WRAPPER_SIZE,
-    height: WRAPPER_SIZE,
-    margin: 18, // antes: 10 — más aire entre mesas para que las sillas no se toquen
+  cell: {
+    width: "33.333%",
     alignItems: "center",
-    justifyContent: "center",
   },
-  chair: {
-    position: "absolute",
-    width: CHAIR_SIZE,
-    height: CHAIR_SIZE,
-    borderRadius: CHAIR_SIZE / 2,
-    backgroundColor: "#D8CFC2",
-    borderWidth: 1,
-    borderColor: "#C2B8A8",
+  wrapper: {
+    width: TABLE_SIZE,
+    height: TABLE_SIZE,
+  },
+  chairTop: {
+    ...chair,
+    top: -6,
+    left: "50%",
+    marginLeft: -9,
+    width: 18,
+    height: 7,
+  },
+  chairBottom: {
+    ...chair,
+    bottom: -6,
+    left: "50%",
+    marginLeft: -9,
+    width: 18,
+    height: 7,
+  },
+  chairLeft: {
+    ...chair,
+    top: "50%",
+    left: -6,
+    marginTop: -9,
+    width: 7,
+    height: 18,
+  },
+  chairRight: {
+    ...chair,
+    top: "50%",
+    right: -6,
+    marginTop: -9,
+    width: 7,
+    height: 18,
   },
   tableCircle: {
     width: TABLE_SIZE,
     height: TABLE_SIZE,
     borderRadius: TABLE_SIZE / 2,
-    borderWidth: 3,
+    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  statusIcon: {
-    fontSize: 14,
-    marginBottom: 1,
+    gap: 1,
   },
   tableNumber: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    fontFamily: fonts.monoMedium,
+    fontSize: 19,
     lineHeight: 22,
+    color: "#FFFFFF",
+    includeFontPadding: false,
   },
   statusLabel: {
-    fontSize: 9,
-    fontWeight: "700",
+    fontFamily: fonts.mono,
+    fontSize: 8.5,
+    lineHeight: 11,
+    letterSpacing: 0.51,
     color: "#FFFFFF",
-    opacity: 0.9,
-    textTransform: "uppercase",
-    letterSpacing: 0.3,
+    includeFontPadding: false,
   },
   itemsPill: {
     position: "absolute",
-    top: 4,
-    right: 4,
+    top: -6,
+    right: -8,
+    minWidth: 22,
+    height: 22,
+    paddingHorizontal: 4,
+    borderRadius: 11,
     backgroundColor: "#2C3E50",
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 5,
     borderWidth: 2,
     borderColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
   },
   itemsPillText: {
+    fontFamily: fonts.monoMedium,
+    fontSize: 11,
     color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "800",
+    includeFontPadding: false,
   },
 });
