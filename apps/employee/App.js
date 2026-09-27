@@ -28,6 +28,9 @@ import Orders from './src/screens/chef/Orders';
 import KitchenHistoryScreen from './src/screens/chef/KitchenHistoryScreen';
 import KitchenProfileScreen from './src/screens/chef/KitchenProfileScreen';
 
+// Reparto
+import DeliveryNavigator from './src/navigation/DeliveryNavigator';
+
 const AuthStack = createNativeStackNavigator();
 const WaiterStack = createNativeStackNavigator();
 const WaiterTab = createBottomTabNavigator();
@@ -121,6 +124,7 @@ function RootNavigator() {
   if (user.role === ROLES.EMPLOYEE) {
     if (user.type === EMPLOYEE_TYPES.WAITER) return <WaiterNavigator />;
     if (user.type === EMPLOYEE_TYPES.KITCHEN) return <KitchenTabNavigator />;
+    if (user.type === EMPLOYEE_TYPES.DELIVERY) return <DeliveryNavigator />;
   }
 
   return <UnsupportedRoleScreen />;

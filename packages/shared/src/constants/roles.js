@@ -6,4 +6,5 @@ export const ROLES = {
 export const EMPLOYEE_TYPES = {
   WAITER: 'waiter',
   KITCHEN: 'kitchen',
+  DELIVERY: 'delivery',
 };

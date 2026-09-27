@@ -9,6 +9,7 @@ export default function PrimaryButton({
   loading = false,
   disabled = false,
   icon = null,
+  color = null, // color de fondo opcional, sobreescribe el del variant (no aplica a "ghost")
 }) {
   const isDisabled = disabled || loading;
 
@@ -20,6 +21,7 @@ export default function PrimaryButton({
       style={[
         primaryButtonStyles.base,
         primaryButtonStyles[variant],
+        color && variant !== "ghost" && { backgroundColor: color },
         isDisabled && primaryButtonStyles.disabled,
       ]}
     >

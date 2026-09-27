@@ -1,6 +1,8 @@
 import { StyleSheet } from 'react-native';
 
-// Paleta de colores globales utilizada en la pantalla de comandas de cocina
+// Paleta de colores globales utilizada en la pantalla de comandas de cocina.
+// NOTA: se mantiene sin cambios porque otras pantallas (ej. Profile del cliente)
+// importan `colors` desde este archivo.
 const colors = {
   primary: '#C62828',       // Rojo corporativo El Corral
   primaryDark: '#9B1B1B',   // Rojo oscuro para estados presionados o bordes
@@ -20,32 +22,60 @@ const colors = {
   disabledText: '#8A8A8A',  // Texto deshabilitado
 };
 
+// Paleta del diseño "Cocina · Comandas" (mockup) — usada por la pantalla de
+// comandas de cocina y su tarjeta (OrderCard). Local a esta pantalla, no
+// reemplaza `colors` para no afectar otras pantallas que ya lo consumen.
+const kitchenPalette = {
+  bg: '#F7F3E9',
+  ink: '#1B1613',
+  surface: '#FFFFFF',
+  surface2: '#F1EAD9',
+  line: '#E3DACA',
+  muted: '#6E665C',
+  accent: '#8E2222',
+  price: '#A8261C',
+  white: '#FFFFFF',
+  late: '#C62828',
+  pending: '#3A3A3A',
+  preparing: '#E38B29',
+  ready: '#2E8B57',
+  comboDot: '#8E2222',
+  extraDot: '#E38B29',
+  drinkDot: '#2E8B57',
+  warnInk: '#8A5A00',
+  warnSurface: '#FBF0D3',
+  warnLine: '#EDD9A3',
+  warnText: '#6B4E00',
+};
+
 // Hoja de estilos de la pantalla de comandas de cocina
 const ordersStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: kitchenPalette.bg,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    alignItems: 'flex-start',
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    paddingBottom: 8,
   },
   headerTitleRow: {
     flexDirection: 'column',
-    alignItems: 'center',
+    gap: 2,
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: '700',
-    color: colors.primary,
-    marginTop: 2,
+    color: kitchenPalette.ink,
+    letterSpacing: -0.3,
+  },
+  headerSubtitle: {
+    fontFamily: 'monospace',
+    fontSize: 10.5,
+    color: kitchenPalette.muted,
   },
   headerLogo: {
     width: 70,
@@ -54,260 +84,191 @@ const ordersStyles = StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 9,
   },
   activeBadge: {
-    backgroundColor: colors.primary,
-    borderRadius: 16,
-    paddingHorizontal: 10,
+    backgroundColor: kitchenPalette.accent,
+    borderRadius: 999,
+    paddingHorizontal: 11,
     paddingVertical: 6,
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 12,
+    gap: 6,
   },
   activeBadgeText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 4,
+    fontFamily: 'monospace',
+    color: kitchenPalette.white,
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  notificationButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: kitchenPalette.surface,
+    borderWidth: 1,
+    borderColor: kitchenPalette.line,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   filtersContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: colors.white,
+    paddingHorizontal: 16,
+    paddingTop: 2,
+    paddingBottom: 10,
   },
   filtersRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 8,
   },
   filterChip: {
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 14,
+    borderColor: kitchenPalette.line,
+    borderRadius: 999,
+    paddingHorizontal: 13,
     paddingVertical: 8,
-    marginRight: 8,
-    marginBottom: 8,
-    backgroundColor: colors.white,
+    backgroundColor: kitchenPalette.surface,
   },
   filterChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: kitchenPalette.accent,
+    borderColor: kitchenPalette.accent,
   },
   filterChipText: {
-    color: colors.textDark,
-    fontSize: 13,
+    color: kitchenPalette.muted,
+    fontSize: 12,
     fontWeight: '600',
   },
   filterChipTextActive: {
-    color: colors.white,
+    color: kitchenPalette.white,
+    fontWeight: '700',
   },
   listContent: {
-    padding: 12,
+    paddingHorizontal: 18,
+    paddingTop: 0,
     paddingBottom: 90,
+    gap: 12,
   },
   card: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    marginBottom: 14,
+    backgroundColor: kitchenPalette.surface,
+    borderRadius: 20,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: kitchenPalette.line,
     overflow: 'hidden',
   },
   cardLate: {
-    borderColor: colors.danger,
+    borderColor: kitchenPalette.price,
     borderWidth: 1.5,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    gap: 10,
     paddingHorizontal: 14,
-    paddingTop: 12,
+    paddingTop: 13,
     paddingBottom: 10,
   },
-  cardHeaderLeft: {},
+  cardHeaderLeft: {
+    gap: 4,
+  },
   orderNumberRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   orderNumber: {
+    fontFamily: 'monospace',
     fontSize: 16,
-    fontWeight: '700',
-    color: colors.textDark,
-    marginRight: 8,
+    fontWeight: '500',
+    color: kitchenPalette.ink,
   },
   statusBadge: {
-    borderRadius: 6,
+    borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
   statusBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.white,
+    fontFamily: 'monospace',
+    fontSize: 9.5,
+    letterSpacing: 0.7,
+    fontWeight: '500',
+    color: kitchenPalette.white,
   },
-  statusLate: { backgroundColor: colors.danger },
-  statusInProgress: { backgroundColor: colors.warning },
-  statusPending: { backgroundColor: colors.pendingBg },
-  statusReady: { backgroundColor: colors.success },
+  statusLate: { backgroundColor: kitchenPalette.late },
+  statusInProgress: { backgroundColor: kitchenPalette.preparing },
+  statusPending: { backgroundColor: kitchenPalette.pending },
+  statusReady: { backgroundColor: kitchenPalette.ready },
   customerName: {
-    fontSize: 13,
-    color: colors.textGray,
-    marginTop: 4,
+    fontSize: 11.5,
+    color: kitchenPalette.muted,
   },
   cardHeaderRight: {
     alignItems: 'flex-end',
+    gap: 2,
   },
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 5,
   },
   timeText: {
+    fontFamily: 'monospace',
     fontSize: 15,
-    fontWeight: '700',
-    marginLeft: 4,
+    fontWeight: '500',
   },
   timeAgoText: {
-    fontSize: 11,
-    color: colors.textGray,
-    marginTop: 2,
+    fontFamily: 'monospace',
+    fontSize: 10,
+    color: kitchenPalette.muted,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
-  },
-  itemsContainer: {
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 6,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  itemName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textDark,
-  },
-  itemNameDone: {
-    textDecorationLine: 'line-through',
-    color: colors.textGray,
-  },
-  itemCountBadge: {
-    backgroundColor: colors.border,
-    borderRadius: 12,
-    minWidth: 22,
-    height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-  },
-  itemCountText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textDark,
-  },
-  noteBox: {
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 8,
-  },
-  noteBoxDanger: { backgroundColor: colors.dangerBg },
-  noteBoxWarning: { backgroundColor: colors.warningBg },
-  noteBoxNeutral: { backgroundColor: '#EFEFEF' },
-  noteText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  noteTextDanger: { color: colors.danger },
-  noteTextWarning: { color: colors.warning },
-  noteTextNeutral: { color: colors.textGray },
-  noteTextItalic: {
-    fontStyle: 'italic',
-    color: colors.textGray,
-    fontSize: 12,
+    backgroundColor: kitchenPalette.line,
   },
   actionsRow: {
     flexDirection: 'row',
-    padding: 12,
+    gap: 9,
+    paddingHorizontal: 14,
+    paddingBottom: 13,
   },
   actionButton: {
     flex: 1,
     flexDirection: 'row',
-    borderRadius: 8,
+    borderRadius: 14,
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionButtonSpacing: {
-    marginRight: 8,
-  },
   primaryButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: kitchenPalette.accent,
   },
   secondaryButton: {
-    backgroundColor: '#DCE3F2',
+    backgroundColor: kitchenPalette.surface,
+    borderWidth: 1,
+    borderColor: kitchenPalette.line,
   },
   darkButton: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: kitchenPalette.ink,
   },
   disabledButton: {
-    backgroundColor: colors.disabledBg,
+    backgroundColor: kitchenPalette.surface2,
   },
   actionButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    color: colors.white,
+    color: kitchenPalette.white,
   },
   secondaryButtonText: {
-    color: '#3E5B9E',
+    color: kitchenPalette.muted,
   },
-  disabledButtonText: {
-    color: colors.disabledText,
+  darkButtonText: {
+    color: kitchenPalette.bg,
   },
   readyCard: {
-    backgroundColor: colors.successBg,
-    borderColor: '#BFE3CC',
-  },
-  readyCheckIcon: {
-    marginRight: 4,
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    backgroundColor: colors.white,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingVertical: 8,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  bottomNavItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bottomNavItemActive: {
-    backgroundColor: colors.primary,
-    marginHorizontal: 12,
-    borderRadius: 8,
-    paddingVertical: 8,
-  },
-  bottomNavText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textGray,
-    marginTop: 2,
-  },
-  bottomNavTextActive: {
-    color: colors.white,
+    borderColor: kitchenPalette.line,
   },
 });
 
 export default ordersStyles;
-export { colors };
+export { colors, kitchenPalette };
