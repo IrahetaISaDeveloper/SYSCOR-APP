@@ -1,0 +1,145 @@
+import { StyleSheet } from "react-native";
+import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { fonts } from "./fonts";
+
+export default StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: employeePalette.bg,
+  },
+  stats: {
+    flexDirection: "row",
+    gap: 8,
+    paddingTop: 2,
+    paddingHorizontal: 18,
+    paddingBottom: 12,
+  },
+  statTile: {
+    flex: 1,
+    backgroundColor: employeePalette.surface,
+    borderWidth: 1,
+    borderColor: employeePalette.line,
+    borderRadius: 16,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    gap: 4,
+  },
+  statLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 9,
+    letterSpacing: 0.5,
+    color: employeePalette.muted,
+  },
+  statValue: {
+    fontFamily: fonts.monoMedium,
+    fontSize: 20,
+    color: employeePalette.ink,
+  },
+  statUnit: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: employeePalette.muted,
+  },
+  sectionLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 0.8,
+    color: employeePalette.muted,
+    paddingHorizontal: 18,
+    paddingBottom: 8,
+  },
+  list: {
+    flexGrow: 1,
+    paddingHorizontal: 18,
+    paddingBottom: 18,
+    gap: 9,
+  },
+  card: {
+    backgroundColor: employeePalette.surface,
+    borderWidth: 1,
+    borderColor: employeePalette.line,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 7,
+  },
+  cardTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  displayId: {
+    fontFamily: fonts.monoMedium,
+    fontSize: 14,
+    color: employeePalette.ink,
+  },
+  badge: {
+    borderRadius: 999,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+  },
+  badgeText: {
+    fontFamily: fonts.mono,
+    fontSize: 9,
+    letterSpacing: 0.63,
+    color: "#FFFFFF",
+    includeFontPadding: false,
+  },
+  readyClock: {
+    marginLeft: "auto",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  readyClockText: {
+    fontFamily: fonts.monoMedium,
+    fontSize: 13,
+    color: employeePalette.okInk,
+  },
+  contextRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  contextText: {
+    flexShrink: 1,
+    fontFamily: fonts.sans,
+    fontSize: 11.5,
+    color: employeePalette.muted,
+  },
+  itemsText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 12.5,
+    lineHeight: 17,
+    color: employeePalette.ink,
+  },
+  prepRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    borderTopWidth: 1,
+    borderTopColor: employeePalette.line,
+    paddingTop: 8,
+  },
+  prepText: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 0.4,
+    color: employeePalette.muted,
+  },
+  stateBox: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingHorizontal: 32,
+    paddingVertical: 40,
+  },
+  stateText: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    lineHeight: 18,
+    color: employeePalette.muted,
+    textAlign: "center",
+  },
+});

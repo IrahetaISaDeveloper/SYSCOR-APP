@@ -1,17 +1,17 @@
 import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import SymbolIcon from "../commons/SymbolIcon";
+import SymbolIcon from "./SymbolIcon";
 import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
-import waiterTabBarStyles from "../../styles/waiterTabBarStyles";
+import employeeTabBarStyles from "../../styles/employeeTabBarStyles";
 
-export default function WaiterTabBar({ state, descriptors, navigation }) {
+export default function EmployeeTabBar({ state, descriptors, navigation }) {
   const insets = useSafeAreaInsets();
 
   return (
     <View
       style={[
-        waiterTabBarStyles.container,
+        employeeTabBarStyles.container,
         { paddingBottom: Math.max(16, insets.bottom + 6), paddingLeft: 8 + insets.left, paddingRight: 8 + insets.right },
       ]}
     >
@@ -28,7 +28,7 @@ export default function WaiterTabBar({ state, descriptors, navigation }) {
           <Pressable
             key={route.key}
             onPress={onPress}
-            style={({ pressed }) => [waiterTabBarStyles.item, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [employeeTabBarStyles.item, pressed && { opacity: 0.7 }]}
             accessibilityRole="tab"
             accessibilityState={{ selected: focused }}
           >
@@ -37,7 +37,7 @@ export default function WaiterTabBar({ state, descriptors, navigation }) {
               size={21}
               color={focused ? employeePalette.accent : employeePalette.muted}
             />
-            <Text style={[waiterTabBarStyles.label, focused && waiterTabBarStyles.labelActive]}>
+            <Text style={[employeeTabBarStyles.label, focused && employeeTabBarStyles.labelActive]}>
               {options.tabBarLabel ?? route.name}
             </Text>
           </Pressable>

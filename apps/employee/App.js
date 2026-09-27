@@ -9,7 +9,6 @@ import { useFonts } from 'expo-font';
 
 import { AuthProvider, useAuth } from '@syscor/shared/src/context/AuthContext';
 import { ROLES, EMPLOYEE_TYPES } from '@syscor/shared/src/constants/roles';
-import AppTabBar from '@syscor/shared/src/navigation/AppTabBar';
 import BootGate from '@syscor/shared/src/navigation/BootGate';
 import UnsupportedRoleScreen from '@syscor/shared/src/screens/UnsupportedRoleScreen';
 
@@ -21,11 +20,12 @@ import WaiterDashboardScreen from './src/screens/waiter/WaiterDashboardScreen';
 import WaiterOrdersScreen from './src/screens/waiter/WaiterOrdersScreen';
 import WaiterNewOrderScreen from './src/screens/waiter/WaiterNewOrderScreen';
 import WaiterProfileScreen from './src/screens/waiter/WaiterProfileScreen';
-import WaiterTabBar from './src/components/waiter/WaiterTabBar';
+import EmployeeTabBar from './src/components/commons/EmployeeTabBar';
 import { fontAssets } from './src/styles/fonts';
 
 // Cocina
 import Orders from './src/screens/chef/Orders';
+import KitchenHistoryScreen from './src/screens/chef/KitchenHistoryScreen';
 import KitchenProfileScreen from './src/screens/chef/KitchenProfileScreen';
 
 const AuthStack = createNativeStackNavigator();
@@ -44,7 +44,7 @@ function AuthNavigator() {
 function WaiterTabNavigator() {
   return (
     <WaiterTab.Navigator
-      tabBar={(props) => <WaiterTabBar {...props} />}
+      tabBar={(props) => <EmployeeTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
       <WaiterTab.Screen
@@ -82,18 +82,23 @@ function WaiterNavigator() {
 function KitchenTabNavigator() {
   return (
     <KitchenTab.Navigator
-      tabBar={(props) => <AppTabBar {...props} accentColor="#8E2222" />}
+      tabBar={(props) => <EmployeeTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
       <KitchenTab.Screen
         name="Dashboard"
         component={Orders}
-        options={{ tabBarLabel: 'Comandas', tabBarIcon: 'receipt-outline' }}
+        options={{ tabBarLabel: 'Comandas', tabBarIcon: 'receipt_long' }}
+      />
+      <KitchenTab.Screen
+        name="History"
+        component={KitchenHistoryScreen}
+        options={{ tabBarLabel: 'Historial', tabBarIcon: 'history' }}
       />
       <KitchenTab.Screen
         name="Profile"
         component={KitchenProfileScreen}
-        options={{ tabBarLabel: 'Perfil', tabBarIcon: 'person-outline' }}
+        options={{ tabBarLabel: 'Perfil', tabBarIcon: 'person' }}
       />
     </KitchenTab.Navigator>
   );
