@@ -160,6 +160,15 @@ export default StyleSheet.create({
     fontSize: 12.5,
     color: employeePalette.muted,
   },
+  noteInput: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: employeePalette.ink,
+    minHeight: 48,
+    paddingTop: 4,
+    paddingBottom: 4,
+    textAlignVertical: "top",
+  },
 
   footerNote: {
     fontFamily: fonts.mono,

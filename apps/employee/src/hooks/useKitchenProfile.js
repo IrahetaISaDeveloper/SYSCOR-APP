@@ -6,6 +6,7 @@ import { refreshMyProfile } from "../services/waiterProfileApi"; // /auth/me es 
 export const EMPLOYEE_TYPE_LABELS = {
   kitchen: "Cocinero",
   waiter: "Mesero",
+  delivery: "Repartidor",
   cashier: "Cajero",
   manager: "Gerente",
   cleaner: "Personal de limpieza",

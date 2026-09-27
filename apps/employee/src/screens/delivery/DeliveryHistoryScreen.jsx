@@ -1,17 +1,24 @@
 import React from "react";
-import { View, Text, FlatList, TouchableOpacity } from "react-native";
+import { View, Text, FlatList, RefreshControl, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { StyleSheet } from "react-native";
 import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import SymbolIcon from "../../components/commons/SymbolIcon";
-import { MOCK_HISTORY } from "../../mocks/deliveryMock";
-import { PAYMENT_LABELS, formatMoney } from "../../constants/deliveryStatus";
+import { formatMoney } from "../../constants/deliveryStatus";
+import useDelivery from "../../hooks/useDelivery";
 import { fonts } from "../../styles/fonts";
+import commonStyles from "../../styles/deliveryCommonStyles";
 
 const METHOD_LABELS = { hand: "En mano", reception: "Recepción" };
 
 function HistoryRow({ item }) {
-  const isCard = item.paymentMethod === "card" || item.paymentMethod === "online";
+  const methodKey = item.deliveryMethod || item.method || "hand";
+  const address = item.dropoff?.address || item.address || "Sin dirección";
+  const time =
+    item.deliveredAt ||
+    (item.updatedAt
+      ? new Date(item.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      : "Hoy");
+
   return (
     <View style={s.row}>
       <View style={s.iconBox}>
@@ -20,31 +27,48 @@ function HistoryRow({ item }) {
       <View style={s.texts}>
         <View style={s.codeRow}>
           <Text style={s.code}>{item.code}</Text>
-          <Text style={s.chip}>{METHOD_LABELS[item.method] || item.method}</Text>
+          <Text style={s.chip}>{METHOD_LABELS[methodKey] || methodKey}</Text>
         </View>
-        <Text style={s.address} numberOfLines={1}>{item.address}</Text>
+        <Text style={s.address} numberOfLines={1}>
+          {address}
+        </Text>
       </View>
       <View style={s.right}>
         <Text style={s.amount}>{formatMoney(item.total)}</Text>
-        <Text style={s.time}>{item.deliveredAt}</Text>
+        <Text style={s.time}>{time}</Text>
       </View>
     </View>
   );
 }
 
 export default function DeliveryHistoryScreen() {
+  const { history, refreshing, onRefresh } = useDelivery();
+
   return (
     <SafeAreaView style={s.screen} edges={["top", "left", "right"]}>
       <View style={s.header}>
         <Text style={s.title}>Historial</Text>
       </View>
       <FlatList
-        data={MOCK_HISTORY}
-        keyExtractor={(item) => item.id}
+        data={history}
+        keyExtractor={(item) => String(item.id || item._id)}
         renderItem={({ item }) => <HistoryRow item={item} />}
         contentContainerStyle={s.list}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={s.sep} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={employeePalette.accent}
+          />
+        }
+        ListEmptyComponent={
+          <View style={[commonStyles.emptyBox, { marginTop: 40 }]}>
+            <SymbolIcon name="history" size={28} color={employeePalette.muted} />
+            <Text style={commonStyles.emptyText}>No tienes entregas registradas aún.</Text>
+          </View>
+        }
       />
     </SafeAreaView>
   );
@@ -59,7 +83,7 @@ const s = StyleSheet.create({
     letterSpacing: -0.525,
     color: employeePalette.ink,
   },
-  list: { paddingHorizontal: 18, paddingBottom: 24 },
+  list: { paddingHorizontal: 18, paddingBottom: 24, flexGrow: 1 },
   sep: { height: 8 },
   row: {
     flexDirection: "row",

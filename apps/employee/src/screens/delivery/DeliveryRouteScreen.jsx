@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Alert, Linking, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import SymbolIcon from "../../components/commons/SymbolIcon";
@@ -8,7 +8,7 @@ import DeliveryFooter from "../../components/delivery/DeliveryFooter";
 import NavigationCard from "../../components/delivery/NavigationCard";
 import DeliveryProgress from "../../components/delivery/DeliveryProgress";
 import { callPhone, sendSms } from "../../utils/deliveryContact";
-import { findMockDelivery, MOCK_ACTIVE_DELIVERY } from "../../mocks/deliveryMock";
+import useDelivery from "../../hooks/useDelivery";
 import commonStyles from "../../styles/deliveryCommonStyles";
 import styles from "../../styles/deliveryRouteScreenStyles";
 
@@ -19,9 +19,27 @@ const PROBLEM_OPTIONS = [
 ];
 
 export default function DeliveryRouteScreen({ navigation, route }) {
-  const delivery = findMockDelivery(route.params?.deliveryId);
-  const nav = delivery.navigation || MOCK_ACTIVE_DELIVERY.navigation;
-  const arrivalClock = delivery.arrivalClock || MOCK_ACTIVE_DELIVERY.arrivalClock;
+  const { getDeliveryById } = useDelivery();
+  const delivery = getDeliveryById(route.params?.deliveryId);
+
+  if (!delivery) {
+    return (
+      <SafeAreaView style={commonStyles.screen} edges={["top", "left", "right"]}>
+        <DeliveryTopBar title="En ruta" onBack={() => navigation.goBack()} />
+        <View style={[commonStyles.emptyBox, { marginTop: 40 }]}>
+          <Text style={commonStyles.emptyText}>Entrega no encontrada.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const nav = delivery.navigation || {
+    icon: "turn_right",
+    instruction: "Gira a la derecha",
+    street: "hacia el destino de entrega",
+    distance: "450 m",
+  };
+  const arrivalClock = delivery.arrivalClock || "18:41";
 
   const handleProblem = () => {
     Alert.alert("Reportar un problema", "Se avisará a la sucursal.", [
@@ -31,6 +49,18 @@ export default function DeliveryRouteScreen({ navigation, route }) {
       })),
       { text: "Cancelar", style: "cancel" },
     ]);
+  };
+
+  const handleOpenMap = () => {
+    const address = delivery.dropoff?.address;
+    if (!address) return;
+    const url = Platform.select({
+      ios: `maps:0,0?q=${encodeURIComponent(address)}`,
+      android: `geo:0,0?q=${encodeURIComponent(address)}`,
+    });
+    Linking.openURL(url).catch(() => {
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`);
+    });
   };
 
   return (
@@ -43,39 +73,57 @@ export default function DeliveryRouteScreen({ navigation, route }) {
         onBack={() => navigation.goBack()}
         rightIcon="call"
         rightLabel="Llamar al cliente"
-        onRightPress={() => callPhone(delivery.customer.phone)}
+        onRightPress={() => callPhone(delivery.customer?.phone)}
       />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <NavigationCard
-          navigation={nav}
-          arrivalClock={arrivalClock}
-          distanceKm={delivery.distanceKm}
-          etaMinutes={delivery.etaMinutes}
-        />
+        <TouchableOpacity activeOpacity={0.9} onPress={handleOpenMap}>
+          <NavigationCard
+            navigation={nav}
+            arrivalClock={arrivalClock}
+            distanceKm={delivery.distanceKm || 3.2}
+            etaMinutes={delivery.etaMinutes || 12}
+          />
+        </TouchableOpacity>
 
         <DeliveryProgress stage="on_route" />
 
-        <View style={styles.destinationCard}>
+        <TouchableOpacity
+          style={styles.destinationCard}
+          activeOpacity={0.85}
+          onPress={handleOpenMap}
+        >
           <View style={styles.destinationHeader}>
             <SymbolIcon name="home_pin" size={16} color={employeePalette.accent} />
-            <Text style={styles.destinationLabel}>DESTINO</Text>
+            <Text style={styles.destinationLabel}>DESTINO (TOCA PARA ABRIR MAPA)</Text>
           </View>
-          <Text style={styles.destinationAddress}>{delivery.dropoff.address}</Text>
-          {delivery.dropoff.detail ? <Text style={styles.destinationDetail}>{delivery.dropoff.detail}</Text> : null}
+          <Text style={styles.destinationAddress}>{delivery.dropoff?.address || "Sin dirección"}</Text>
+          {delivery.dropoff?.detail ? (
+            <Text style={styles.destinationDetail}>{delivery.dropoff.detail}</Text>
+          ) : null}
           <View style={styles.destinationContact}>
             <SymbolIcon name="person" size={15} color={employeePalette.muted} />
-            <Text style={styles.destinationName} numberOfLines={1}>{delivery.customer.name}</Text>
-            {delivery.customer.phone ? <Text style={styles.destinationPhone}>{delivery.customer.phone}</Text> : null}
+            <Text style={styles.destinationName} numberOfLines={1}>{delivery.customer?.name}</Text>
+            {delivery.customer?.phone ? (
+              <Text style={styles.destinationPhone}>{delivery.customer.phone}</Text>
+            ) : null}
           </View>
-        </View>
+        </TouchableOpacity>
 
         <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => sendSms(delivery.customer.phone)} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => sendSms(delivery.customer?.phone)}
+            activeOpacity={0.8}
+          >
             <SymbolIcon name="chat" size={16} color={employeePalette.muted} />
             <Text style={[styles.actionLabel, { color: employeePalette.muted }]}>Mensaje</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={handleProblem} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleProblem}
+            activeOpacity={0.8}
+          >
             <SymbolIcon name="report" size={16} color={employeePalette.warnInk} />
             <Text style={[styles.actionLabel, { color: employeePalette.warnInk }]}>Problema</Text>
           </TouchableOpacity>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@syscor/shared/src/context/AuthContext";
 import { getFirstName } from "@syscor/shared/src/utils/userDisplay";
@@ -9,7 +9,7 @@ import DeliveryStatTiles from "../../components/delivery/DeliveryStatTiles";
 import ActiveDeliveryCard from "../../components/delivery/ActiveDeliveryCard";
 import AvailableDeliveryRow from "../../components/delivery/AvailableDeliveryRow";
 import { formatMoney, formatKm } from "../../constants/deliveryStatus";
-import { MOCK_ACTIVE_DELIVERY, MOCK_AVAILABLE_DELIVERIES, MOCK_STATS } from "../../mocks/deliveryMock";
+import useDelivery from "../../hooks/useDelivery";
 import commonStyles from "../../styles/deliveryCommonStyles";
 import styles from "../../styles/deliveriesScreenStyles";
 
@@ -18,8 +18,14 @@ export default function DeliveriesScreen({ navigation }) {
   const firstName = getFirstName(user);
   const [onShift, setOnShift] = useState(true);
 
-  const activeDelivery = MOCK_ACTIVE_DELIVERY;
-  const available = MOCK_AVAILABLE_DELIVERIES;
+  const {
+    activeDelivery,
+    available,
+    stats,
+    loading,
+    refreshing,
+    onRefresh,
+  } = useDelivery();
 
   return (
     <SafeAreaView style={commonStyles.screen} edges={["top", "left", "right"]}>
@@ -40,15 +46,29 @@ export default function DeliveriesScreen({ navigation }) {
 
       <DeliveryStatTiles
         tiles={[
-          { label: "ENTREGADAS", value: String(MOCK_STATS.delivered) },
-          { label: "POR COBRAR", value: formatMoney(MOCK_STATS.toCollect), color: employeePalette.price },
-          { label: "RECORRIDO", value: formatKm(MOCK_STATS.distanceKm) },
+          { label: "ENTREGADAS", value: String(stats.delivered) },
+          { label: "POR COBRAR", value: formatMoney(stats.toCollect), color: employeePalette.price },
+          { label: "RECORRIDO", value: formatKm(stats.distanceKm) },
         ]}
       />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={employeePalette.accent}
+          />
+        }
+      >
         <Text style={commonStyles.sectionLabel}>MI ENTREGA ACTIVA</Text>
-        {activeDelivery ? (
+        {loading && !activeDelivery ? (
+          <View style={[commonStyles.emptyBox, { paddingVertical: 20 }]}>
+            <ActivityIndicator size="small" color={employeePalette.accent} />
+          </View>
+        ) : activeDelivery ? (
           <ActiveDeliveryCard
             delivery={activeDelivery}
             onContinue={() => navigation.navigate("DeliveryRoute", { deliveryId: activeDelivery.id })}
@@ -61,7 +81,11 @@ export default function DeliveriesScreen({ navigation }) {
         )}
 
         <Text style={[commonStyles.sectionLabel, { paddingTop: 2 }]}>DISPONIBLES CERCA</Text>
-        {available.length > 0 ? (
+        {loading && available.length === 0 ? (
+          <View style={[commonStyles.emptyBox, { paddingVertical: 20 }]}>
+            <ActivityIndicator size="small" color={employeePalette.accent} />
+          </View>
+        ) : available.length > 0 ? (
           available.map((delivery) => (
             <AvailableDeliveryRow
               key={delivery.id}

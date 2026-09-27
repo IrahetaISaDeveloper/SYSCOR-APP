@@ -2,6 +2,7 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import EmployeeTabBar from "../components/commons/EmployeeTabBar";
+import { DeliveryProvider } from "../hooks/useDelivery";
 
 import DeliveriesScreen from "../screens/delivery/DeliveriesScreen";
 import DeliveryDetailScreen from "../screens/delivery/DeliveryDetailScreen";
@@ -39,25 +40,27 @@ function DeliveriesStackNavigator() {
 
 export default function DeliveryNavigator() {
   return (
-    <Tab.Navigator
-      tabBar={(props) => <EmployeeTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
-    >
-      <Tab.Screen
-        name="Deliveries"
-        component={DeliveriesStackNavigator}
-        options={{ tabBarLabel: "Entregas", tabBarIcon: "two_wheeler" }}
-      />
-      <Tab.Screen
-        name="History"
-        component={DeliveryHistoryScreen}
-        options={{ tabBarLabel: "Historial", tabBarIcon: "history" }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={DeliveryProfileScreen}
-        options={{ tabBarLabel: "Perfil", tabBarIcon: "person" }}
-      />
-    </Tab.Navigator>
+    <DeliveryProvider>
+      <Tab.Navigator
+        tabBar={(props) => <EmployeeTabBar {...props} />}
+        screenOptions={{ headerShown: false }}
+      >
+        <Tab.Screen
+          name="Deliveries"
+          component={DeliveriesStackNavigator}
+          options={{ tabBarLabel: "Entregas", tabBarIcon: "two_wheeler" }}
+        />
+        <Tab.Screen
+          name="History"
+          component={DeliveryHistoryScreen}
+          options={{ tabBarLabel: "Historial", tabBarIcon: "history" }}
+        />
+        <Tab.Screen
+          name="Profile"
+          component={DeliveryProfileScreen}
+          options={{ tabBarLabel: "Perfil", tabBarIcon: "person" }}
+        />
+      </Tab.Navigator>
+    </DeliveryProvider>
   );
 }
