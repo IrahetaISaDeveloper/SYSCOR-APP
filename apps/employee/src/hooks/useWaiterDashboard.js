@@ -1,13 +1,15 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Alert } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   fetchWaiterDashboard,
-  fetchMenu,
   updateTableStatus,
-  createOrder,
+  checkoutTable,
 } from "../services/waiterDashboardApi";
 
 const POLL_INTERVAL_MS = 15000;
+
+const errorMessage = (err, fallback) => err?.response?.data?.message || fallback;
 
 export default function useWaiterDashboard() {
   const [tables, setTables] = useState([]);
@@ -15,15 +17,11 @@ export default function useWaiterDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  const [menu, setMenu] = useState({ combos: [], drinks: [], extras: [] });
-  const [menuLoading, setMenuLoading] = useState(false);
+  const [selectedTableId, setSelectedTableId] = useState(null);
+  const [activeSheet, setActiveSheet] = useState(null);
+  const [busy, setBusy] = useState(false);
 
-  const [selectedTable, setSelectedTable] = useState(null);
-  const [isActionsModalVisible, setActionsModalVisible] = useState(false);
-  const [isAssignModalVisible, setAssignModalVisible] = useState(false);
-  const [isOrderModalVisible, setOrderModalVisible] = useState(false);
-
-  const pollRef = useRef(null);
+  const firstLoadRef = useRef(true);
 
   const loadDashboard = useCallback(async ({ silent = false } = {}) => {
     try {
@@ -39,117 +37,137 @@ export default function useWaiterDashboard() {
     }
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      loadDashboard({ silent: !firstLoadRef.current });
+      firstLoadRef.current = false;
+      const interval = setInterval(() => loadDashboard({ silent: true }), POLL_INTERVAL_MS);
+      return () => clearInterval(interval);
+    }, [loadDashboard])
+  );
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadDashboard({ silent: true });
     setRefreshing(false);
   }, [loadDashboard]);
 
-  useEffect(() => {
-    loadDashboard();
-    pollRef.current = setInterval(() => loadDashboard({ silent: true }), POLL_INTERVAL_MS);
-    return () => clearInterval(pollRef.current);
-  }, [loadDashboard]);
+  const selectedTable = useMemo(
+    () => tables.find((t) => t._id === selectedTableId) || null,
+    [tables, selectedTableId]
+  );
 
-  // ---- Selección de mesa / navegación entre modales ----
+  useEffect(() => {
+    if (activeSheet && selectedTableId && !selectedTable && !loading) setActiveSheet(null);
+  }, [activeSheet, selectedTableId, selectedTable, loading]);
 
   const openTable = useCallback((table) => {
-  console.log('🪑 Mesa seleccionada:', table.number, '| status:', JSON.stringify(table.status));
-  setSelectedTable(table);
-  if (table.status === "libre" || table.status === "reservada") {
-    setAssignModalVisible(true);
-  } else {
-    setActionsModalVisible(true);
-  }
-}, []);
-
-  const closeAllModals = useCallback(() => {
-    setActionsModalVisible(false);
-    setAssignModalVisible(false);
-    setOrderModalVisible(false);
+    setSelectedTableId(table._id);
+    setActiveSheet(table.status === "libre" || table.status === "reservada" ? "assign" : "actions");
   }, []);
 
-  const openOrderModal = useCallback(async () => {
-    setActionsModalVisible(false);
-    if (menu.combos.length === 0 && menu.drinks.length === 0 && menu.extras.length === 0) {
+  const closeSheet = useCallback(() => setActiveSheet(null), []);
+  const openCharge = useCallback(() => setActiveSheet("charge"), []);
+  const backToActions = useCallback(() => setActiveSheet("actions"), []);
+
+  const occupyTable = useCallback(
+    async ({ customerName, peopleCount }) => {
+      if (!selectedTable) return null;
+      setBusy(true);
       try {
-        setMenuLoading(true);
-        const data = await fetchMenu();
-        setMenu(data);
-      } catch (err) {
-        console.error("useWaiterDashboard.openOrderModal:", err);
-        Alert.alert("Error", "No se pudo cargar el menú");
-      } finally {
-        setMenuLoading(false);
-      }
-    }
-    setOrderModalVisible(true);
-  }, []);
-
-  // ---- Acciones sobre mesas ----
-
-  const assignCustomer = useCallback(
-  async ({ customerName, peopleCount, items }) => {
-    if (!selectedTable) return;
-    try {
-      await updateTableStatus(selectedTable._id, "ocupada");
-      await createOrder({
-        table: selectedTable._id,
-        items,
-        customerName,
-        peopleCount,
-      });
-      setAssignModalVisible(false);
-      await loadDashboard({ silent: true });
-    } catch (err) {
-      console.log('🔴 assignCustomer falló en:', err.config?.method?.toUpperCase(), err.config?.url);
-      console.log('🔴 status:', err.response?.status, 'data:', JSON.stringify(err.response?.data));
-      Alert.alert("Error", "No se pudo asignar la mesa. Intenta de nuevo.");
-    }
-  },
-  [selectedTable, loadDashboard]
-);
-
-  const addItemsToOrder = useCallback(
-    async (items) => {
-      if (!selectedTable) return;
-      try {
-        await createOrder({ table: selectedTable._id, items });
+        await updateTableStatus(selectedTable._id, "ocupada", {
+          customerName: customerName || "",
+          peopleCount,
+        });
+        setActiveSheet(null);
         await loadDashboard({ silent: true });
+        return {
+          _id: selectedTable._id,
+          number: selectedTable.number,
+          customerName: customerName || null,
+          peopleCount,
+        };
       } catch (err) {
-        console.error("useWaiterDashboard.addItemsToOrder:", err);
-        Alert.alert("Error", "No se pudo agregar la comanda. Intenta de nuevo.");
+        console.error("useWaiterDashboard.occupyTable:", err);
+        Alert.alert("Error", errorMessage(err, "No se pudo ocupar la mesa. Intenta de nuevo."));
+        return null;
+      } finally {
+        setBusy(false);
       }
     },
     [selectedTable, loadDashboard]
   );
 
-  const sendTableToCleaning = useCallback(async () => {
-    if (!selectedTable) return;
-    try {
-      await updateTableStatus(selectedTable._id, "limpieza");
-      setActionsModalVisible(false);
-      await loadDashboard({ silent: true });
-    } catch (err) {
-      console.error("useWaiterDashboard.sendTableToCleaning:", err);
-      Alert.alert("Error", "No se pudo liberar la mesa. Intenta de nuevo.");
-    }
-  }, [selectedTable, loadDashboard]);
-
-  const freeTable = useCallback(
-    async (table) => {
-      const target = table || selectedTable;
-      if (!target) return;
+  const changeTableStatus = useCallback(
+    async (status, fallbackMessage) => {
+      if (!selectedTable) return;
+      setBusy(true);
       try {
-        await updateTableStatus(target._id, "libre");
-        setActionsModalVisible(false);
+        await updateTableStatus(selectedTable._id, status);
+        setActiveSheet(null);
         await loadDashboard({ silent: true });
       } catch (err) {
-        console.error("useWaiterDashboard.freeTable:", err);
-        Alert.alert("Error", "No se pudo marcar la mesa como libre.");
+        console.error("useWaiterDashboard.changeTableStatus:", err);
+        Alert.alert("Error", errorMessage(err, fallbackMessage));
+      } finally {
+        setBusy(false);
       }
     },
     [selectedTable, loadDashboard]
+  );
+
+  const sendTableToCleaning = useCallback(() => {
+    if (!selectedTable) return;
+    const pendingInKitchen = (selectedTable.activeOrders || []).some((o) => o.status !== "delivered");
+    const message = pendingInKitchen
+      ? `La Mesa ${selectedTable.number} tiene comandas sin cobrar. Si pasa a limpieza se cancelarán las que sigan en cocina.`
+      : `La Mesa ${selectedTable.number} pasará a limpieza.`;
+
+    Alert.alert("Cliente se retiró", message, [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Pasar a limpieza",
+        style: "destructive",
+        onPress: () => changeTableStatus("limpieza", "No se pudo pasar la mesa a limpieza."),
+      },
+    ]);
+  }, [selectedTable, changeTableStatus]);
+
+  const freeTable = useCallback(
+    () => changeTableStatus("libre", "No se pudo marcar la mesa como libre."),
+    [changeTableStatus]
+  );
+
+  const chargeTable = useCallback(
+    async (paymentMethod) => {
+      if (!selectedTable) return;
+      setBusy(true);
+      try {
+        const response = await checkoutTable(selectedTable._id, paymentMethod);
+        const total = Number(response?.data?.total || 0);
+        const tableNumber = selectedTable.number;
+        setActiveSheet("actions");
+        await loadDashboard({ silent: true });
+
+        Alert.alert(
+          "Cuenta cobrada",
+          `Mesa ${tableNumber} · $${total.toFixed(2)} ${paymentMethod === "card" ? "con tarjeta" : "en efectivo"}.`,
+          [
+            { text: "Mantener ocupada", style: "cancel" },
+            {
+              text: "Pasar a limpieza",
+              onPress: () => changeTableStatus("limpieza", "No se pudo pasar la mesa a limpieza."),
+            },
+          ]
+        );
+      } catch (err) {
+        console.error("useWaiterDashboard.chargeTable:", err);
+        Alert.alert("Error", errorMessage(err, "No se pudo cobrar la cuenta. Intenta de nuevo."));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [selectedTable, loadDashboard, changeTableStatus]
   );
 
   return {
@@ -159,24 +177,18 @@ export default function useWaiterDashboard() {
     error,
     onRefresh,
 
-    menu,
-    menuLoading,
-
     selectedTable,
-    isActionsModalVisible,
-    isAssignModalVisible,
-    isOrderModalVisible,
+    activeSheet,
+    busy,
 
     openTable,
-    closeAllModals,
-    openOrderModal,
-    setActionsModalVisible,
-    setAssignModalVisible,
-    setOrderModalVisible,
+    closeSheet,
+    openCharge,
+    backToActions,
 
-    assignCustomer,
-    addItemsToOrder,
+    occupyTable,
     sendTableToCleaning,
     freeTable,
+    chargeTable,
   };
 }
