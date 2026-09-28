@@ -20,6 +20,11 @@ const call = async (fn) => {
       error: error.response?.data?.message || 'No se pudo conectar. Inténtalo de nuevo.',
       // Montos que el servidor calculó, cuando el saldo no alcanzó.
       chargeAmount: error.response?.data?.chargeAmount,
+      // Se acabó el tiempo para agregar productos a un pedido.
+      addWindowClosed: !!error.response?.data?.addWindowClosed,
+      // Sin respuesta del servidor (se acabó la espera o no hay red): el
+      // cobro pudo haberse creado, así que se reintenta con el mismo requestId.
+      noResponse: !error.response,
     };
   }
 };
@@ -45,16 +50,31 @@ const toCheckoutItem = (item) => ({
   })),
 });
 
-export const createCheckout = ({ items, isDelivery, deliveryAddress, card, saveCard, useCredit }) =>
+// `fulfillment`: 'delivery' (a domicilio), 'pickup' (pasar a traer) o
+// 'dine_in' (comer en el local; `dineIn` trae hora, personas y alias).
+// `addToOrder`: id del pedido al que se suman estos productos ("Agregar más
+// productos"); entonces la forma de entrega es la del pedido original.
+// `paymentMethod`: 'online' (tarjeta ahora), 'cash' o 'card_on_delivery' (al recibir).
+// `requestId`: identificador del intento de pago. Si la respuesta no llega y
+// se reintenta con el mismo, el servidor devuelve ese cobro en vez de crear
+// otro (así un reintento nunca cobra ni crea el pedido dos veces).
+export const createCheckout = ({ items, fulfillment, deliveryAddress, dineIn, addToOrder, paymentMethod, card, saveCard, useCredit, requestId }) =>
   call(() =>
     apiClient.post('/payments/checkout', {
       items: items.map(toCheckoutItem),
-      isDelivery,
+      fulfillment,
+      isDelivery: fulfillment === 'delivery',
       deliveryAddress,
+      dineIn,
+      addToOrder,
+      paymentMethod,
       card,
       saveCard,
       useCredit,
-    }),
+      requestId,
+    // El cobro puede tardar (servidor despertando + Wompi): más que los 15 s
+    // del resto de la app.
+    }, { timeout: 60000 }),
   );
 
 export const getCheckout = (id) => call(() => apiClient.get(`/payments/checkout/${id}`));

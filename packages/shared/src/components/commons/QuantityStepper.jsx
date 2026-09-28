@@ -17,7 +17,7 @@ const QuantityStepper = ({ value = 1, onIncrement, onDecrement }) => {
       <Text style={[styles.value, isDark && darkStyles.text]}>{value}</Text>
 
       <TouchableOpacity
-        style={[styles.button, styles.incrementButton]}
+        style={[styles.button, styles.incrementButton, isDark && darkStyles.incrementButton]}
         onPress={onIncrement}
         activeOpacity={0.7}
       >
@@ -72,6 +72,7 @@ const styles = StyleSheet.create({
 const darkStyles = StyleSheet.create({
   container: { backgroundColor: d.surfaceMuted },
   decrementButton: { backgroundColor: d.borderStrong },
+  incrementButton: { backgroundColor: d.primary },
   text: { color: d.textDark },
 });
 

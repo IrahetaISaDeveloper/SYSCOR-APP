@@ -1,20 +1,22 @@
 // Colores oscuros para los componentes comunes.
 //
 // Son los mismos del modo oscuro de la app de clientes (ver darkColors en
-// apps/customer/src/styles/CustomerMenu.js); viven aquí porque `shared` no
-// puede importar de `apps/`. Los componentes los aplican como una capa
-// encima de sus estilos claros, así que en claro no cambia nada.
+// apps/customer/src/styles/CustomerMenu.js), que a su vez copia la paleta
+// oscura del sistema web: azul noche con el morado del sistema de acento.
+// Viven aquí porque `shared` no puede importar de `apps/`. Los componentes los
+// aplican como una capa encima de sus estilos claros, así que en claro no
+// cambia nada.
 export const darkPalette = {
-  background: '#0A0A0A',
-  surface: '#161617',
-  surfaceMuted: '#1E1E20',
-  border: '#232325',
-  borderStrong: '#2E2E31',
-  textDark: '#FFFFFF',
-  textGray: '#9A9AA0',
-  textLight: '#6E6E75',
-  primary: '#E23D28',
-  primaryTint: 'rgba(226,61,40,0.14)',
+  background: '#161826',
+  surface: '#232532',
+  surfaceMuted: '#292B31',
+  border: '#3F424D',
+  borderStrong: '#595D6C',
+  textDark: '#E9E9ED',
+  textGray: '#9397AB',
+  textLight: '#75798C',
+  primary: '#9184D9',
+  primaryTint: 'rgba(145,132,217,0.13)',
 };
 
 export default darkPalette;

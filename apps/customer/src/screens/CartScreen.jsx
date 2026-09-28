@@ -57,6 +57,8 @@ const pickUpsell = (dishes, cartItems) => {
 
 const buildDescription = (item) => {
   const parts = [];
+  // Promoción: se dice qué incluye ("4 Taco al pastor · 1 Burrito").
+  if (item.promoSummary) parts.push(`Promo: ${item.promoSummary}`);
   const removals = describeRemovals(item.removedIngredients);
   if (removals) parts.push(removals);
   if (item.selectedDrinkName) {

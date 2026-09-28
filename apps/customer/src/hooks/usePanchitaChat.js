@@ -25,13 +25,17 @@ export default function usePanchitaChat({ onActionDone } = {}) {
     });
   }, []);
 
+  // `context`: { orderId, orderCode } del pedido elegido arriba del chat.
   const send = useCallback(
-    async (text) => {
+    async (text, context = null) => {
       const message = String(text || '').trim();
       if (!message || sending) return;
-      setMessages((list) => [...list, { id: makeId(), role: 'user', text: message, cards: [] }]);
+      setMessages((list) => [
+        ...list,
+        { id: makeId(), role: 'user', text: message, cards: [], orderCode: context?.orderCode || null },
+      ]);
       setSending(true);
-      const res = await sendMessage(message);
+      const res = await sendMessage(message, context?.orderId);
       setSending(false);
       const reply = res.success
         ? { role: 'model', text: res.data.reply, cards: res.data.cards || [] }

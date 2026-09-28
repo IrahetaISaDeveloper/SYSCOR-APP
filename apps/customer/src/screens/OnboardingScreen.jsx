@@ -20,7 +20,7 @@ import { getMenuColors } from '../styles/CustomerMenu';
 const SLIDES = [
   {
     key: 'menu',
-    image: require('../../assets/promo-tacos-pastor.png'),
+    image: require('../../assets/promo-tacos-pastor.jpg'),
     icon: 'restaurant-outline',
     kicker: 'EL MENÚ',
     title: 'Todo El Corral,\nen tu mano',
@@ -36,7 +36,7 @@ const SLIDES = [
   },
   {
     key: 'pay',
-    image: require('../../assets/promo-burrito.png'),
+    image: require('../../assets/promo-burrito.jpg'),
     icon: 'card-outline',
     kicker: 'SIN FILAS',
     title: 'Paga en segundos\ny síguelo en vivo',
@@ -110,7 +110,7 @@ export default function OnboardingScreen({ onFinish }) {
                 <View
                   style={[
                     styles.iconBadge,
-                    { width: ms(34), height: ms(34), borderRadius: ms(10), backgroundColor: 'rgba(226,61,40,0.12)' },
+                    { width: ms(34), height: ms(34), borderRadius: ms(10), backgroundColor: c.primaryTint },
                   ]}
                 >
                   <Icon name={slide.icon} size={ms(17)} color={c.primary} />

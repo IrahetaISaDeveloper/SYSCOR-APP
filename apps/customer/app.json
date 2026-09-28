@@ -17,7 +17,7 @@
           "backgroundColor": "#F7F5F1",
           "dark": {
             "image": "./assets/logo-horizontal-blanco.png",
-            "backgroundColor": "#0E0E0E"
+            "backgroundColor": "#161826"
           }
         }
       ],
@@ -33,6 +33,20 @@
           "photosPermission": "El Corral usa tus fotos para que elijas tu foto de perfil.",
           "cameraPermission": "El Corral usa la cámara para que te tomes tu foto de perfil."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#A33527",
+          "icon": "./assets/notification-icon.png"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "El Corral usa la cámara para escanear el código QR de tu mesa y para tu foto de perfil.",
+          "recordAudioAndroid": false
+        }
       ]
     ],
     "ios": {
@@ -40,16 +54,29 @@
       "bundleIdentifier": "com.syscor.clientes"
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#F7F5F1"
       },
       "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "resize",
-      "package": "com.syscor.clientes"
+      "package": "com.syscor.clientes",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "edbe0044-39bf-4431-ab24-dbbf81eff699"
+      }
+    },
+    "owner": "syscors-team"
   }
 }

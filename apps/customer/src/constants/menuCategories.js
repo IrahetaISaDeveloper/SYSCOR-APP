@@ -14,27 +14,27 @@ export const MENU_CATEGORIES = [
   {
     id: 'Combos',
     label: 'Combos',
-    image: require('../../assets/promo-tacos-pastor.png'),
+    image: require('../../assets/promo-tacos-pastor.jpg'),
   },
   {
     id: 'Tacos',
     label: 'Tacos',
-    image: require('../../assets/taco-pastor-single.png'),
+    image: require('../../assets/taco-pastor-single.jpg'),
   },
   {
     id: 'Burritos',
     label: 'Burritos',
-    image: require('../../assets/promo-burrito.png'),
+    image: require('../../assets/promo-burrito.jpg'),
   },
   {
     id: 'Tortas',
     label: 'Tortas',
-    image: require('../../assets/torta-milanesa.png'),
+    image: require('../../assets/torta-milanesa.jpg'),
   },
   {
     id: 'Quesadillas',
     label: 'Quesadillas',
-    image: require('../../assets/quesadilla-birria.png'),
+    image: require('../../assets/quesadilla-birria.jpg'),
   },
   {
     id: 'Antojitos',
@@ -75,7 +75,7 @@ export const MENU_CATEGORIES = [
   {
     id: 'Bebidas',
     label: 'Bebidas',
-    image: require('../../assets/agua-jamaica.png'),
+    image: require('../../assets/agua-jamaica.jpg'),
   },
 ];
 

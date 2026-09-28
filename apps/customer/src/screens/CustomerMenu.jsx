@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Modal,
   BackHandler,
+  RefreshControl,
   useColorScheme,
   useWindowDimensions,
 } from 'react-native';
@@ -20,39 +21,24 @@ import menuStyles, { getMenuColors } from '../styles/CustomerMenu';
 import { textStyles } from '@syscor/shared/src/styles/typography';
 import { useAuthMetrics } from '@syscor/shared/src/styles/authTheme';
 import useMenu from '../hooks/useMenu';
+import usePromotions from '../hooks/usePromotions';
+import PromotionSheet from '../components/PromotionSheet';
 import { MENU_CATEGORIES } from '../constants/menuCategories';
 import CartContext from '../context/CartContext';
 import { useTabBarVisibility } from '../context/TabBarVisibilityContext';
 import { useFavorites } from '../context/FavoritesContext';
 
-// Promociones del carrusel. Son fijas: el backend todavía no expone
-// promociones, así que viven aquí hasta que exista ese endpoint.
-const PROMOS = [
-  {
-    id: 'pastor',
-    badge: 'Martes de pastor',
-    title: 'Orden de 5 + agua fresca',
-    price: '$7.50',
-    oldPrice: '$9.75',
-    image: require('../../assets/promo-tacos-pastor.png'),
-  },
-  {
-    id: 'burrito',
-    badge: 'Nuevo',
-    title: 'Burrito de la casa',
-    price: '$6.25',
-    oldPrice: '$7.80',
-    image: require('../../assets/promo-burrito.png'),
-  },
-  {
-    id: 'quesabirria',
-    badge: 'Recomendado',
-    title: 'Quesabirria + consomé',
-    price: '$8.00',
-    oldPrice: '$9.50',
-    image: require('../../assets/quesadilla-birria.png'),
-  },
-];
+// Cuánto le queda a una promoción: horas si es cuestión de horas, días si
+// falta más. Las promos duran como máximo 3 días.
+const formatTimeLeft = (endsAt) => {
+  if (!endsAt) return null;
+  const remainingMs = endsAt.getTime() - Date.now();
+  if (Number.isNaN(remainingMs) || remainingMs <= 0) return null;
+  const hours = Math.ceil(remainingMs / (60 * 60 * 1000));
+  if (hours < 24) return `Quedan ${hours} h`;
+  const days = Math.ceil(hours / 24);
+  return `Quedan ${days} ${days === 1 ? 'día' : 'días'}`;
+};
 
 // Formas de ordenar la lista. El botón de la derecha del buscador abre este
 // panel; antes era un icono decorativo que no hacía nada.
@@ -78,13 +64,28 @@ const CustomerMenu = ({ navigation }) => {
   const [openCategory, setOpenCategory] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [promoIndex, setPromoIndex] = useState(0);
+  // Promoción abierta en la hoja de detalle (null = cerrada).
+  const [openPromo, setOpenPromo] = useState(null);
   const [sortBy, setSortBy] = useState('recommended');
   // Proteína elegida dentro de la categoría abierta. 'all' = todas.
   const [subFilter, setSubFilter] = useState('all');
   const scrollRef = useRef(null);
   const [sortOpen, setSortOpen] = useState(false);
 
-  const { dishes, isLoading, error, needsAuth, refetch } = useMenu();
+  const { dishes, isLoading, error, needsAuth, refetch: refetchMenu } = useMenu();
+  const { promotions, refetch: refetchPromotions } = usePromotions();
+  const refetch = useCallback(() => {
+    refetchMenu();
+    refetchPromotions();
+  }, [refetchMenu, refetchPromotions]);
+
+  // Jalar la pantalla hacia abajo recarga el menú y las promociones.
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const onPullRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await Promise.all([refetchMenu({ silent: true }), refetchPromotions()]);
+    setIsRefreshing(false);
+  }, [refetchMenu, refetchPromotions]);
   // Avisa a la barra inferior para que se esconda al bajar.
   const { handleScroll, reset: resetTabBar } = useTabBarVisibility();
 
@@ -253,6 +254,14 @@ const CustomerMenu = ({ navigation }) => {
         keyboardShouldPersistTaps="handled"
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onPullRefresh}
+            tintColor={c.primary}
+            colors={[c.primary]}
+          />
+        }
       >
         {/* ── BUSCADOR ── */}
         <View
@@ -309,8 +318,9 @@ const CustomerMenu = ({ navigation }) => {
           )}
         </View>
 
-        {/* ── DE LA PLANCHA HOY ── (solo en la portada del menú) */}
-        {!searching && !openCategory ? (
+        {/* ── PROMOCIONES DE HOY ── (solo en la portada del menú y si hay
+            alguna vigente) */}
+        {!searching && !openCategory && promotions.length > 0 ? (
           <>
             <View
               style={[
@@ -324,7 +334,7 @@ const CustomerMenu = ({ navigation }) => {
               ]}
             >
               <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(19) }]}>
-                De la plancha hoy
+                Promociones de hoy
               </Text>
               <View
                 style={[
@@ -339,7 +349,7 @@ const CustomerMenu = ({ navigation }) => {
                 ]}
               >
                 <Text style={[textStyles.kicker, { color: c.textGray, fontSize: ms(9.5) }]}>
-                  2×1 HASTA LAS 6
+                  {promotions.length} {promotions.length === 1 ? 'VIGENTE' : 'VIGENTES'}
                 </Text>
               </View>
             </View>
@@ -353,8 +363,10 @@ const CustomerMenu = ({ navigation }) => {
               scrollEventThrottle={16}
               contentContainerStyle={{ paddingHorizontal: m.gutter, gap: promoGap }}
             >
-              {PROMOS.map((promo) => (
-                <View
+              {promotions.map((promo) => {
+                const timeLeft = formatTimeLeft(promo.endsAt);
+                return (
+                <TouchableOpacity
                   key={promo.id}
                   style={[
                     menuStyles.promoCard,
@@ -365,13 +377,33 @@ const CustomerMenu = ({ navigation }) => {
                       borderRadius: ms(18),
                     },
                   ]}
+                  activeOpacity={0.9}
+                  onPress={() => setOpenPromo(promo)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Ver promoción ${promo.name}, ${promo.priceLabel}`}
                 >
                   <View>
-                    <Image
-                      source={promo.image}
-                      style={[menuStyles.promoImage, { height: ms(168) }]}
-                      resizeMode="cover"
-                    />
+                    {promo.imageUrl ? (
+                      <Image
+                        source={{ uri: promo.imageUrl }}
+                        style={[menuStyles.promoImage, { height: ms(168) }]}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View
+                        style={[
+                          menuStyles.promoImage,
+                          {
+                            height: ms(168),
+                            backgroundColor: c.imagePlaceholder,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          },
+                        ]}
+                      >
+                        <Icon name="pricetag-outline" size={ms(34)} color={c.textLight} />
+                      </View>
+                    )}
                     <View
                       style={[
                         menuStyles.promoBadge,
@@ -386,7 +418,7 @@ const CustomerMenu = ({ navigation }) => {
                       ]}
                     >
                       <Text style={[textStyles.link, { color: c.white, fontSize: ms(12.5) }]}>
-                        {promo.badge}
+                        {promo.discountPercent > 0 ? `-${promo.discountPercent}%` : 'Promo'}
                       </Text>
                     </View>
                   </View>
@@ -401,33 +433,54 @@ const CustomerMenu = ({ navigation }) => {
                       style={[textStyles.title, { color: c.textDark, fontSize: ms(15.5) }]}
                       numberOfLines={1}
                     >
-                      {promo.title}
+                      {promo.name}
                     </Text>
+                    {promo.summary ? (
+                      <Text
+                        style={[textStyles.body, { color: c.textGray, fontSize: ms(12) }]}
+                        numberOfLines={1}
+                      >
+                        {promo.summary}
+                      </Text>
+                    ) : null}
                     <View style={[menuStyles.promoPriceRow, { gap: ms(9) }]}>
                       <Text style={[textStyles.num, { color: c.primary, fontSize: ms(19) }]}>
-                        {promo.price}
+                        {promo.priceLabel}
                       </Text>
-                      <Text
-                        style={[
-                          textStyles.num,
-                          {
-                            color: c.textLight,
-                            fontSize: ms(13),
-                            textDecorationLine: 'line-through',
-                          },
-                        ]}
-                      >
-                        {promo.oldPrice}
-                      </Text>
+                      {promo.originalPriceLabel ? (
+                        <Text
+                          style={[
+                            textStyles.num,
+                            {
+                              color: c.textLight,
+                              fontSize: ms(13),
+                              textDecorationLine: 'line-through',
+                            },
+                          ]}
+                        >
+                          {promo.originalPriceLabel}
+                        </Text>
+                      ) : null}
+                      {timeLeft ? (
+                        <Text
+                          style={[
+                            textStyles.body,
+                            { marginLeft: 'auto', color: c.textGray, fontSize: ms(11.5) },
+                          ]}
+                        >
+                          {timeLeft}
+                        </Text>
+                      ) : null}
                     </View>
                   </View>
-                </View>
-              ))}
+                </TouchableOpacity>
+                );
+              })}
             </ScrollView>
 
             {/* Puntos del carrusel */}
             <View style={[menuStyles.dotsRow, { gap: ms(4), marginTop: ms(14) }]}>
-              {PROMOS.map((promo, index) => (
+              {promotions.map((promo, index) => (
                 <View
                   key={promo.id}
                   style={[
@@ -481,16 +534,6 @@ const CustomerMenu = ({ navigation }) => {
                 </Text>
               ) : null}
             </View>
-            {!isLoading ? (
-              <TouchableOpacity
-                onPress={refetch}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityRole="button"
-                accessibilityLabel="Recargar"
-              >
-                <Icon name="refresh-outline" size={ms(18)} color={c.textLight} />
-              </TouchableOpacity>
-            ) : null}
           </View>
         ) : (
           <View
@@ -502,16 +545,6 @@ const CustomerMenu = ({ navigation }) => {
             <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(19) }]}>
               {searching ? 'Resultados' : 'Menú'}
             </Text>
-            {!isLoading ? (
-              <TouchableOpacity
-                onPress={refetch}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityRole="button"
-                accessibilityLabel="Recargar"
-              >
-                <Icon name="refresh-outline" size={ms(18)} color={c.textLight} />
-              </TouchableOpacity>
-            ) : null}
           </View>
         )}
 
@@ -704,6 +737,16 @@ const CustomerMenu = ({ navigation }) => {
         bottomInset={insets.bottom}
       />
 
+      {/* ── DETALLE DE PROMOCIÓN ── */}
+      <PromotionSheet
+        promotion={openPromo}
+        timeLeft={openPromo ? formatTimeLeft(openPromo.endsAt) : null}
+        onClose={() => setOpenPromo(null)}
+        colors={c}
+        ms={ms}
+        bottomInset={insets.bottom}
+      />
+
       {/* ── PÍLDORA "VER MI BOLSA" ── */}
       <BagPill
         colors={c}
@@ -827,14 +870,6 @@ const DishCard = ({ dish, colors: c, ms, cardWidth, onPress }) => {
           <Text style={[textStyles.num, { color: c.primary, fontSize: ms(16) }]}>
             {dish.priceLabel}
           </Text>
-          <View
-            style={[
-              menuStyles.dishAddButton,
-              { backgroundColor: c.primary, width: ms(30), height: ms(30), borderRadius: ms(15) },
-            ]}
-          >
-            <Icon name="add" size={ms(18)} color="#FFFFFF" />
-          </View>
         </View>
       </View>
     </TouchableOpacity>

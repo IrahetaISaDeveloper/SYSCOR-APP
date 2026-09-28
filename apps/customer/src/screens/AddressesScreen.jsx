@@ -450,7 +450,7 @@ const AddressRow = ({ address, colors: c, bandColor, ms, onOptions }) => (
       style={[
         ordersStyles.pastIcon,
         {
-          backgroundColor: address.isDefault ? 'rgba(226,61,40,0.14)' : bandColor,
+          backgroundColor: address.isDefault ? c.primaryTint : bandColor,
           width: ms(40),
           height: ms(40),
           borderRadius: ms(10),
@@ -466,7 +466,7 @@ const AddressRow = ({ address, colors: c, bandColor, ms, onOptions }) => (
         {address.isDefault ? (
           <View
             style={{
-              backgroundColor: 'rgba(226,61,40,0.14)',
+              backgroundColor: c.primaryTint,
               borderRadius: ms(6),
               paddingHorizontal: ms(7),
               paddingVertical: ms(2),

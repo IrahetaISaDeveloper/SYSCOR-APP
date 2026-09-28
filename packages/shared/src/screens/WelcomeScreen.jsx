@@ -142,12 +142,12 @@ const lightTokens = {
 };
 
 const darkTokens = {
-  background: '#0B0B0B',
-  surface: '#1C1C1E',
-  border: '#2E2E32',
-  textPrimary: '#FFFFFF',
-  textSecondary: '#A8AEB8',
-  accent: '#C62828',
+  background: '#161826',
+  surface: '#232532',
+  border: '#3F424D',
+  textPrimary: '#E9E9ED',
+  textSecondary: '#CFD3E5',
+  accent: '#9184D9',
 };
 
 const styles = StyleSheet.create({

@@ -19,6 +19,30 @@ import { getMenuColors } from '../styles/CustomerMenu';
 import SavedCardTile from '../components/SavedCardTile';
 import PaymentVerificationModal from '../components/PaymentVerificationModal';
 import { cvvLengthOf } from '../services/cardsApi';
+import DineInForm from '../components/DineInForm';
+import CardScanner from '../components/CardScanner';
+import { cardNumberInputLength } from '../utils/cardUtils';
+
+// Las tres formas de recibir el pedido.
+const FULFILLMENT_OPTIONS = [
+  { key: 'dine_in', label: 'Comer en el local', icon: 'restaurant-outline' },
+  { key: 'delivery', label: 'A domicilio', icon: 'home-outline' },
+  { key: 'pickup', label: 'Pasar a traer', icon: 'bag-handle-outline' },
+];
+
+// Formas de pago. "Al recibir" se paga a quien entrega: repartidor, caja o mesero.
+const PAY_METHOD_OPTIONS = [
+  { key: 'online', label: 'Tarjeta ahora', icon: 'card-outline' },
+  { key: 'cash', label: 'Efectivo al recibir', icon: 'cash-outline' },
+  { key: 'card_on_delivery', label: 'Tarjeta al recibir', icon: 'wallet-outline' },
+];
+
+// A quién se le paga al recibir, según cómo llega el pedido.
+const PAY_ON_DELIVERY_WHO = {
+  delivery: 'al repartidor cuando llegue',
+  pickup: 'en caja cuando pases por él',
+  dine_in: 'en tu mesa',
+};
 
 // Métricas fijas para las tarjetas guardadas (esta pantalla no escala).
 const ms = (size) => size;
@@ -28,7 +52,7 @@ export const PaymentScreen = (props) => {
   const styles = getPaymentStyles(isDark);
   const colors = getMenuColors(isDark);
   const insets = useSafeAreaInsets();
-  const { cartItems = [], onBack } = props;
+  const { cartItems = [], onBack, addMode = null } = props;
   const {
     safeSubtotal,
     safeTotal,
@@ -51,8 +75,21 @@ export const PaymentScreen = (props) => {
     creditToApply,
     amountToCharge,
     coveredByCredit,
+    payMethod,
+    setPayMethod,
+    payOnDelivery,
     deliveryMode,
     setDeliveryMode,
+    reservationDays,
+    dineDayKey,
+    setDineDayKey,
+    dineSlot,
+    setDineSlot,
+    partySize,
+    setPartySize,
+    tableAlias,
+    setTableAlias,
+    availability,
     addresses,
     selectedAddressIndex,
     setSelectedAddressIndex,
@@ -68,10 +105,12 @@ export const PaymentScreen = (props) => {
     handleCardNumberChange,
     handleExpiryChange,
     handleCvvChange,
+    applyCardScan,
     handlePay,
     closeSuccessModal,
     handleGoHomePress,
   } = usePayment(props);
+  const [scannerOpen, setScannerOpen] = React.useState(false);
 
   return (
     // El SafeAreaView de react-native no hace nada en Android: el encabezado
@@ -90,7 +129,7 @@ export const PaymentScreen = (props) => {
         <TouchableOpacity onPress={onBack} activeOpacity={0.7}>
           <Icon name="arrow-back" size={20} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Pago</Text>
+        <Text style={styles.headerTitle}>{addMode ? `Agregar a ${addMode.code}` : 'Pago'}</Text>
         <View style={{ width: 20 }} />
       </View>
 
@@ -110,16 +149,21 @@ export const PaymentScreen = (props) => {
           </View>
         </View>
 
-        {/* Entrega */}
+        {addMode ? (
+          <Text style={{ fontSize: 13, color: colors.textGray, marginBottom: 20 }}>
+            Estos productos se suman a tu pedido {addMode.code}, con la misma forma de entrega. Solo pagas lo que agregaste.
+          </Text>
+        ) : null}
+
+        {/* Entrega (no aplica al agregar productos: es la del pedido original) */}
+        {!addMode ? (
+        <>
         <View style={styles.methodTitleSection}>
           <Icon name="bicycle-outline" size={18} color={colors.textDark} />
           <Text style={styles.methodTitle}>¿Cómo lo recibes?</Text>
         </View>
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
-          {[
-            { key: 'delivery', label: 'A domicilio', icon: 'home-outline' },
-            { key: 'pickup', label: 'Recoger en el local', icon: 'storefront-outline' },
-          ].map((option) => {
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+          {FULFILLMENT_OPTIONS.map((option) => {
             const selected = deliveryMode === option.key;
             return (
               <TouchableOpacity
@@ -128,21 +172,24 @@ export const PaymentScreen = (props) => {
                 activeOpacity={0.8}
                 style={{
                   flex: 1,
-                  flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 6,
                   paddingVertical: 12,
+                  paddingHorizontal: 4,
                   borderRadius: 12,
                   borderWidth: 1,
                   borderColor: selected ? colors.primary : colors.border,
-                  backgroundColor: selected ? 'rgba(226,61,40,0.10)' : 'transparent',
+                  backgroundColor: selected ? colors.primaryTint : 'transparent',
                 }}
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
               >
-                <Icon name={option.icon} size={16} color={selected ? colors.primary : colors.textGray} />
-                <Text style={{ fontSize: 13, fontWeight: '600', color: selected ? colors.primary : colors.textGray }}>
+                <Icon name={option.icon} size={18} color={selected ? colors.primary : colors.textGray} />
+                <Text
+                  style={{ fontSize: 12, fontWeight: '600', textAlign: 'center', color: selected ? colors.primary : colors.textGray }}
+                  numberOfLines={2}
+                >
                   {option.label}
                 </Text>
               </TouchableOpacity>
@@ -189,12 +236,29 @@ export const PaymentScreen = (props) => {
             </View>
           ) : (
             <Text style={{ fontSize: 13, color: colors.textGray, marginBottom: 20 }}>
-              Aún no tienes direcciones. Agrega una en la pestaña "Dirección" o elige recoger en el local.
+              Aún no tienes direcciones. Agrega una en la pestaña "Dirección" o elige pasar a traer.
             </Text>
           )
+        ) : deliveryMode === 'dine_in' ? (
+          <DineInForm
+            colors={colors}
+            isDark={isDark}
+            days={reservationDays}
+            dayKey={dineDayKey}
+            onDayChange={setDineDayKey}
+            slot={dineSlot}
+            onSlotChange={setDineSlot}
+            partySize={partySize}
+            onPartySizeChange={setPartySize}
+            alias={tableAlias}
+            onAliasChange={setTableAlias}
+            availability={availability}
+          />
         ) : (
           <View style={{ marginBottom: 12 }} />
         )}
+        </>
+        ) : null}
 
         {/* Saldo a favor (de reclamos resueltos por Panchita) */}
         {walletBalance > 0 ? (
@@ -224,14 +288,77 @@ export const PaymentScreen = (props) => {
                 {useCredit
                   ? coveredByCredit
                     ? 'Tu saldo cubre todo el pedido.'
-                    : `Se descuentan $${creditToApply.toFixed(2)}; pagas $${amountToCharge.toFixed(2)} con tarjeta.`
+                    : `Se descuentan $${creditToApply.toFixed(2)}; pagas $${amountToCharge.toFixed(2)} ${payOnDelivery ? 'al recibir' : 'con tarjeta'}.`
                   : 'Guárdalo para otra ocasión.'}
               </Text>
             </View>
           </TouchableOpacity>
         ) : null}
 
-        {!coveredByCredit ? (
+        {/* Forma de pago (lo agregado a un pedido siempre se paga en línea) */}
+        {!addMode && !coveredByCredit ? (
+          <>
+            <View style={styles.methodTitleSection}>
+              <Icon name="wallet-outline" size={18} color={colors.textDark} />
+              <Text style={styles.methodTitle}>¿Cómo pagas?</Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: payOnDelivery ? 10 : 20 }}>
+              {PAY_METHOD_OPTIONS.map((option) => {
+                const selected = payMethod === option.key;
+                return (
+                  <TouchableOpacity
+                    key={option.key}
+                    onPress={() => setPayMethod(option.key)}
+                    activeOpacity={0.8}
+                    style={{
+                      flex: 1,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      paddingVertical: 12,
+                      paddingHorizontal: 4,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: selected ? colors.primary : colors.border,
+                      backgroundColor: selected ? colors.primaryTint : 'transparent',
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                  >
+                    <Icon name={option.icon} size={18} color={selected ? colors.primary : colors.textGray} />
+                    <Text
+                      style={{ fontSize: 12, fontWeight: '600', textAlign: 'center', color: selected ? colors.primary : colors.textGray }}
+                      numberOfLines={2}
+                    >
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            {payOnDelivery ? (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  gap: 10,
+                  padding: 14,
+                  borderRadius: 14,
+                  backgroundColor: colors.primaryTint,
+                  marginBottom: 20,
+                }}
+              >
+                <Icon name="information-circle-outline" size={18} color={colors.primary} />
+                <Text style={{ flex: 1, fontSize: 13, color: colors.textDark, lineHeight: 18 }}>
+                  Pagas ${amountToCharge.toFixed(2)} {payMethod === 'cash' ? 'en efectivo' : 'con tarjeta'}{' '}
+                  {PAY_ON_DELIVERY_WHO[deliveryMode] || 'al recibir'}.
+                  {payMethod === 'cash' ? ' Si puedes, lleva el monto exacto.' : ''}
+                </Text>
+              </View>
+            ) : null}
+          </>
+        ) : null}
+
+        {!coveredByCredit && !payOnDelivery ? (
         <>
         {/* Método de Pago */}
         <View style={styles.methodTitleSection}>
@@ -300,6 +427,26 @@ export const PaymentScreen = (props) => {
         {/* Formulario Wompi (tarjeta nueva) */}
         {!selectedCard ? (
           <>
+          <TouchableOpacity
+            onPress={() => setScannerOpen(true)}
+            activeOpacity={0.85}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              height: 44,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: colors.primary,
+              backgroundColor: colors.primaryTint,
+              marginBottom: 14,
+            }}
+            accessibilityRole="button"
+          >
+            <Icon name="scan-outline" size={18} color={colors.primary} />
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>Escanear tarjeta</Text>
+          </TouchableOpacity>
           <InputText
               dark={isDark}
             label="Nombre en la tarjeta"
@@ -313,8 +460,8 @@ export const PaymentScreen = (props) => {
               dark={isDark}
             label="Número de tarjeta"
             placeholder="0000 0000 0000 0000"
-            keyboardType="numeric"
-            maxLength={23}
+            keyboardType="number-pad"
+            maxLength={cardNumberInputLength(cardNumber)}
             value={cardNumber}
             onChangeText={handleCardNumberChange}
             error={fieldError === 'cardNumber'}
@@ -336,7 +483,7 @@ export const PaymentScreen = (props) => {
             <InputText
               dark={isDark}
               label="Vencimiento"
-              placeholder="MM/YY"
+              placeholder="MM/AA"
               maxLength={5}
               value={expiry}
               onChangeText={handleExpiryChange}
@@ -376,9 +523,11 @@ export const PaymentScreen = (props) => {
         ) : null}
 
         {/* Badge Wompi */}
-        <View style={styles.wompiBadgeContainer}>
-          <Text style={styles.wompiText}>Procesado de forma segura por <Text style={{ fontWeight: '800', color: colors.textDark }}>Wompi</Text></Text>
-        </View>
+        {!payOnDelivery ? (
+          <View style={styles.wompiBadgeContainer}>
+            <Text style={styles.wompiText}>Procesado de forma segura por <Text style={{ fontWeight: '800', color: colors.textDark }}>Wompi</Text></Text>
+          </View>
+        ) : null}
 
         {/* Badges Seguridad */}
         <View style={styles.badgesContainer}>
@@ -405,14 +554,21 @@ export const PaymentScreen = (props) => {
             <ActivityIndicator color={colors.white} />
           ) : (
             <>
-              <Icon name="lock-closed" size={16} color={colors.white} />
+              <Icon name={payOnDelivery ? 'checkmark-circle' : 'lock-closed'} size={16} color={colors.white} />
               <Text style={styles.payButtonText}>
-                {coveredByCredit ? 'Pagar con mi saldo' : `Pagar $${amountToCharge.toFixed(2)}`}
+                {coveredByCredit
+                  ? 'Pagar con mi saldo'
+                  : payOnDelivery
+                    ? `Hacer pedido · $${amountToCharge.toFixed(2)} al recibir`
+                    : `Pagar $${amountToCharge.toFixed(2)}`}
               </Text>
             </>
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Escanear el frente de la tarjeta (se lee en el teléfono) */}
+      <CardScanner visible={scannerOpen} onClose={() => setScannerOpen(false)} onResult={applyCardScan} colors={colors} />
 
       {/* Verificación 3D Secure del banco */}
       <PaymentVerificationModal

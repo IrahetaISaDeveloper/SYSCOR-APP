@@ -4,10 +4,11 @@ import { StyleSheet } from 'react-native';
 //
 // Los valores salen del diseño: fondo hueso muy claro, tarjetas blancas de
 // borde suave y el rojo de la marca como único acento. En oscuro el fondo es
-// negro plano y las tarjetas gris muy oscuro, tal como en la maqueta.
+// azul noche y el acento morado, igual que el modo oscuro del sistema web.
 export const lightColors = {
   primary: '#E23D28',
   primaryDark: '#C62828',
+  primaryTint: 'rgba(226,61,40,0.12)',
   background: '#FAF7F2',
   surface: '#FFFFFF',
   surfaceMuted: '#F2EEE7',
@@ -26,21 +27,25 @@ export const lightColors = {
 };
 
 export const darkColors = {
-  primary: '#E23D28',
-  primaryDark: '#C62828',
-  background: '#0A0A0A',
-  surface: '#161617',
-  surfaceMuted: '#1E1E20',
-  border: '#232325',
-  borderStrong: '#2E2E31',
-  textDark: '#FFFFFF',
-  textGray: '#9A9AA0',
-  textLight: '#6E6E75',
+  // Misma paleta que el modo oscuro del sistema web (tokens de
+  // html[data-theme="dark"] en FrontEndWebTaqueria/src/index.css): azul
+  // noche en fondos y el morado del sistema como acento.
+  primary: '#9184D9',
+  primaryDark: '#7A6CC8',
+  primaryTint: 'rgba(145,132,217,0.13)',
+  background: '#161826',
+  surface: '#232532',
+  surfaceMuted: '#292B31',
+  border: '#3F424D',
+  borderStrong: '#595D6C',
+  textDark: '#E9E9ED',
+  textGray: '#9397AB',
+  textLight: '#75798C',
   white: '#FFFFFF',
-  imagePlaceholder: '#1E1E20',
-  pill: '#1C1C1E',
-  navBackground: '#0F0F10',
-  navBorder: '#1E1E20',
+  imagePlaceholder: '#292B31',
+  pill: '#292B31',
+  navBackground: '#101220',
+  navBorder: '#232532',
   error: '#EF5350',
 };
 
@@ -180,10 +185,6 @@ const menuStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  dishAddButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 
   // ── AGRUPACIÓN POR PROTEÍNA ─────────────────────────

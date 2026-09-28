@@ -14,7 +14,7 @@ const SelectableRow = ({ label, selected, onPress, isLast }) => {
       activeOpacity={0.7}
     >
       <Text style={[styles.label, isDark && darkStyles.text]}>{label}</Text>
-      <View style={[styles.button, isDark && darkStyles.button, selected && styles.buttonSelected]}>
+      <View style={[styles.button, isDark && darkStyles.button, selected && styles.buttonSelected, selected && isDark && darkStyles.buttonSelected]}>
         <Icon name={selected ? 'checkmark' : 'add'} size={15} color={selected || isDark ? '#FFFFFF' : '#3F3F46'} />
       </View>
     </TouchableOpacity>
@@ -65,6 +65,7 @@ const styles = StyleSheet.create({
 const darkStyles = StyleSheet.create({
   rowDivider: { borderBottomColor: d.border },
   button: { borderColor: d.borderStrong },
+  buttonSelected: { backgroundColor: d.primary, borderColor: d.primary },
   text: { color: d.textDark },
 });
 

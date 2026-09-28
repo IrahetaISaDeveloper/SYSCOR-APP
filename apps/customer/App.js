@@ -26,6 +26,8 @@ import { PreferencesProvider } from './src/context/PreferencesContext';
 import { PanchitaProvider } from './src/context/PanchitaContext';
 import PanchitaAlertBanner from './src/components/PanchitaAlertBanner';
 import CartAddedToast from './src/components/CartAddedToast';
+import AddToOrderBanner from './src/components/AddToOrderBanner';
+import PushNotificationsManager from './src/components/PushNotificationsManager';
 import { navigationRef } from './src/navigation/navigationRef';
 
 // Auth (solo cliente)
@@ -53,6 +55,8 @@ import AddressesScreen from './src/screens/AddressesScreen';
 import ProductDetailsScreen from './src/screens/ProductDetailsScreen';
 import PaymentScreenWrapper from './src/screens/PaymentScreenWrapper';
 import GuestProductDetailsScreen from './src/screens/GuestProductDetailsScreen';
+import TableReservationScreen from './src/screens/TableReservationScreen';
+import TableCheckInScreen from './src/screens/TableCheckInScreen';
 
 const AuthStack = createNativeStackNavigator();
 const CustomerStack = createNativeStackNavigator();
@@ -132,11 +136,17 @@ function CustomerRootNavigator() {
           <CustomerStack.Screen name="Wallet" component={WalletScreen} />
           <CustomerStack.Screen name="Panchita" component={PanchitaScreen} />
           <CustomerStack.Screen name="PaymentVerification" component={PaymentScreenWrapper} />
+          <CustomerStack.Screen name="TableReservation" component={TableReservationScreen} />
+          <CustomerStack.Screen name="TableCheckIn" component={TableCheckInScreen} />
         </CustomerStack.Navigator>
         {/* Avisos de Panchita encima de cualquier pantalla */}
         <PanchitaAlertBanner />
         {/* "Se agregó a tu bolsa", también encima de todo */}
         <CartAddedToast />
+        {/* "Agregar más productos": pedido, tiempo restante y pagar */}
+        <AddToOrderBanner />
+        {/* Registra el teléfono para los avisos push de los pedidos */}
+        <PushNotificationsManager />
         </PanchitaProvider>
       </FavoritesProvider>
     </CartProvider>

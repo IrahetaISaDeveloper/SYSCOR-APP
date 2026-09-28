@@ -10,7 +10,7 @@ export const orderStatusColors = {
 };
 
 // Franja de "tiempo" dentro de la tarjeta del pedido en curso.
-export const getOrderBandColor = (isDark) => (isDark ? '#1E1C1A' : '#F3EEDF');
+export const getOrderBandColor = (isDark) => (isDark ? '#292B31' : '#F3EEDF');
 
 // Solo lo que no depende del tema. El color se aplica en la pantalla.
 const ordersStyles = StyleSheet.create({
@@ -63,21 +63,18 @@ const ordersStyles = StyleSheet.create({
     alignItems: 'flex-end',
   },
 
-  // Progreso: tres puntos unidos por una línea.
+  // Progreso: cuatro pasos unidos por una línea, con su hora debajo.
   progressTrack: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  progressStep: {
+    flex: 1,
+    alignItems: 'stretch',
+  },
   progressDot: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  progressLine: {
-    flex: 1,
-  },
-  progressLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
   },
 
   band: {

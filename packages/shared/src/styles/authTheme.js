@@ -19,19 +19,20 @@ export const lightTokens = {
   success: '#1E8E4E',
 };
 
+// Misma paleta que el modo oscuro del sistema web (azul noche y morado).
 export const darkTokens = {
-  background: '#0B0B0B',
-  surface: '#1C1C1E',
-  surfaceMuted: '#161618',
-  border: '#2E2E32',
-  borderStrong: '#3A3A3F',
-  textPrimary: '#FFFFFF',
-  textSecondary: '#A8AEB8',
-  textMuted: '#7C828C',
-  accent: '#C62828',
-  accentSoft: '#2A1616',
+  background: '#161826',
+  surface: '#232532',
+  surfaceMuted: '#292B31',
+  border: '#3F424D',
+  borderStrong: '#595D6C',
+  textPrimary: '#E9E9ED',
+  textSecondary: '#CFD3E5',
+  textMuted: '#9397AB',
+  accent: '#9184D9',
+  accentSoft: 'rgba(145,132,217,0.13)',
   danger: '#E05B4B',
-  success: '#3DBE74',
+  success: '#7FB695',
 };
 
 export const getAuthTokens = (isDark) => (isDark ? darkTokens : lightTokens);

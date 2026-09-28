@@ -311,24 +311,14 @@ const FavoriteRow = ({ fav, colors: c, ms, onOpen, onToggle }) => (
       </Text>
     </View>
 
-    <View style={{ alignItems: 'center', justifyContent: 'space-between', alignSelf: 'stretch' }}>
-      <TouchableOpacity
-        onPress={onToggle}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        accessibilityRole="button"
-        accessibilityLabel={`Quitar ${fav.name} de favoritos`}
-      >
-        <Icon name="heart" size={ms(21)} color={c.primary} />
-      </TouchableOpacity>
-      <View
-        style={[
-          ordersStyles.pastIcon,
-          { backgroundColor: c.primary, width: ms(30), height: ms(30), borderRadius: ms(15) },
-        ]}
-      >
-        <Icon name="add" size={ms(18)} color="#FFFFFF" />
-      </View>
-    </View>
+    <TouchableOpacity
+      onPress={onToggle}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      accessibilityRole="button"
+      accessibilityLabel={`Quitar ${fav.name} de favoritos`}
+    >
+      <Icon name="heart" size={ms(21)} color={c.primary} />
+    </TouchableOpacity>
   </TouchableOpacity>
 );
 

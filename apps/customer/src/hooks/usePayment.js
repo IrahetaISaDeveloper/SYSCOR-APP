@@ -4,12 +4,16 @@ import { getCards, cvvLengthOf, BRAND_LABELS } from '../services/cardsApi';
 import { getAddresses } from '../services/addressesApi';
 import { createCheckout, cancelCheckout, waitForCheckout } from '../services/checkoutApi';
 import { usePanchita } from '../context/PanchitaContext';
+import { getAvailability } from '../services/reservationsApi';
+import { getReservationDays, slotDate } from '../utils/reservationSlots';
 import {
   detectCardBrand,
-  isValidLuhn,
   sanitizeDigits,
   formatCardNumber,
   formatExpiry,
+  cardNumberProblem,
+  expiryProblem,
+  sanitizeCardHolder,
 } from '../utils/cardUtils';
 
 // Toda la lógica de la pantalla de Pago: entrega o recogida, tarjetas
@@ -18,7 +22,8 @@ import {
 //
 // `rawItems` son los productos tal como están en el carrito (con extras,
 // salsas, etc.); `cartItems` es la versión resumida que se muestra.
-export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total = 0, onPaid, onGoHome } = {}) => {
+// `addMode`: { orderId, code } cuando se pagan productos agregados a un pedido.
+export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total = 0, onPaid, onDineInPaid, onAddPaid, onAddWindowClosed, onPayingAdd, addMode = null, onGoHome } = {}) => {
   const { user } = useAuth();
   const customerId = user?.id || user?._id;
 
@@ -41,6 +46,12 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
   const amountToCharge = useCredit && serverCharge > 0 ? serverCharge : localCharge;
   const coveredByCredit = amountToCharge <= 0;
 
+  // Cómo paga: 'online' (tarjeta ahora, con Wompi), 'cash' (efectivo al
+  // recibir) o 'card_on_delivery' (tarjeta al recibir, en el POS). Lo que se
+  // agrega a un pedido ya hecho siempre se paga en línea.
+  const [payMethod, setPayMethod] = useState('online');
+  const payOnDelivery = !addMode && payMethod !== 'online';
+
   // Estado local para los campos de Wompi
   const [cardName, setCardName] = useState('');
   const [cardNumber, setCardNumber] = useState('');
@@ -56,10 +67,58 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
   const [savedCvv, setSavedCvv] = useState('');
   const [paying, setPaying] = useState(false);
 
-  // Entrega: a domicilio (a una dirección de su libreta) o recoger en el local.
+  // Cómo lo recibe: 'dine_in' (comer en el local), 'delivery' (a domicilio,
+  // a una dirección de su libreta) o 'pickup' (pasar a traer).
   const [deliveryMode, setDeliveryMode] = useState('delivery');
+
+  // Comer en el local: día, hora, personas y un nombre para la mesa.
+  const reservationDays = useMemo(() => getReservationDays(), []);
+  const [dineDayKey, setDineDayKey] = useState(reservationDays[0]?.key || null);
+  const [dineSlot, setDineSlot] = useState(null);
+  const [partySize, setPartySize] = useState(2);
+  const [tableAlias, setTableAlias] = useState('');
+  // { loading, available, message, maxCapacity } de la hora elegida.
+  const [availability, setAvailability] = useState(null);
+  const dineDay = reservationDays.find((d) => d.key === dineDayKey) || null;
+  const reservedFor = dineDay && dineSlot !== null ? slotDate(dineDay.start, dineSlot).toISOString() : null;
+
+  // Al cambiar de día, la hora elegida puede no existir en el nuevo.
+  useEffect(() => {
+    if (dineDay && dineSlot !== null && !dineDay.slots.includes(dineSlot)) setDineSlot(null);
+  }, [dineDay, dineSlot]);
+
+  // Se revisa si hay mesa cada vez que cambia la hora o las personas.
+  useEffect(() => {
+    if (deliveryMode !== 'dine_in' || !reservedFor) {
+      setAvailability(null);
+      return;
+    }
+    let active = true;
+    setAvailability((prev) => ({ ...prev, loading: true }));
+    const timer = setTimeout(() => {
+      getAvailability({ reservedFor, partySize }).then((res) => {
+        if (!active) return;
+        setAvailability(
+          res.success
+            ? { loading: false, ...res.data }
+            : { loading: false, available: false, message: res.error },
+        );
+      });
+    }, 250);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [deliveryMode, reservedFor, partySize]);
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressIndex, setSelectedAddressIndex] = useState(null);
+
+  // Identificador del intento de pago (ver checkoutApi.createCheckout). Se
+  // conserva si la respuesta no llegó, para que el reintento no cree otro
+  // cobro; se renueva cuando el servidor contesta un error o el pago termina.
+  const requestIdRef = useRef(null);
+  const newRequestId = () =>
+    `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
 
   // Verificación 3DS en curso: { id, paymentUrl, returnUrlPrefix }.
   const [verification, setVerification] = useState(null);
@@ -128,11 +187,20 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
 
   // Handlers ya conectados a su campo, listos para pasarle al onChangeText
   // del input (el componente no necesita conocer los setters internos).
-  const handleCardNameChange = onChangeField('cardName', setCardName);
+  const handleCardNameChange = onChangeField('cardName', setCardName, sanitizeCardHolder);
   const handleCardNumberChange = onChangeField('cardNumber', setCardNumber, formatCardNumber);
   const handleExpiryChange = onChangeField('expiry', setExpiry, formatExpiry);
   const handleCvvChange = onChangeField('cvv', setCvv, sanitizeDigits);
   const handleSavedCvvChange = onChangeField('savedCvv', setSavedCvv, sanitizeDigits);
+
+  // Datos leídos por el escáner de tarjetas: llenan el formulario de tarjeta
+  // nueva (el CVV siempre se escribe a mano).
+  const applyCardScan = (data) => {
+    setFieldError(null);
+    if (data.cardNumber) setCardNumber(formatCardNumber(data.cardNumber));
+    if (data.expiry) setExpiry(data.expiry);
+    if (data.cardHolder) setCardName(sanitizeCardHolder(data.cardHolder));
+  };
 
   // Con una tarjeta guardada solo falta el CVV (no se guarda nunca).
   const validateSavedCard = () => {
@@ -154,7 +222,6 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
   const validatePaymentForm = () => {
     const trimmedName = cardName.trim();
     const digitsOnly = cardNumber.replace(/\s/g, '');
-    const [expiryMonth, expiryYear] = expiry.split('/');
 
     if (cartItems.length === 0) {
       return { field: null, message: 'Tu carrito está vacío. Agrega productos antes de pagar.' };
@@ -162,29 +229,10 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
     if (trimmedName.length < 3) {
       return { field: 'cardName', message: 'Ingresa el nombre completo tal como aparece en la tarjeta.' };
     }
-    if (digitsOnly.length < 15 || digitsOnly.length > 19 || !/^\d+$/.test(digitsOnly)) {
-      return { field: 'cardNumber', message: 'El número de tarjeta no es válido.' };
-    }
-    if (!cardBrand.brand) {
-      return { field: 'cardNumber', message: 'No reconocemos esa tarjeta. Revisa el número ingresado.' };
-    }
-    if (!isValidLuhn(digitsOnly)) {
-      return { field: 'cardNumber', message: 'El número de tarjeta parece incorrecto. Revísalo.' };
-    }
-    if (!/^\d{2}$/.test(expiryMonth || '') || !/^\d{2}$/.test(expiryYear || '')) {
-      return { field: 'expiry', message: 'La fecha de vencimiento debe tener el formato MM/YY.' };
-    }
-    const month = Number(expiryMonth);
-    if (month < 1 || month > 12) {
-      return { field: 'expiry', message: 'El mes de vencimiento no es válido.' };
-    }
-    const now = new Date();
-    const currentYear = now.getFullYear() % 100;
-    const currentMonth = now.getMonth() + 1;
-    const year = Number(expiryYear);
-    if (year < currentYear || (year === currentYear && month < currentMonth)) {
-      return { field: 'expiry', message: 'La tarjeta está vencida.' };
-    }
+    const numberError = cardNumberProblem(digitsOnly);
+    if (numberError) return { field: 'cardNumber', message: numberError };
+    const expiryError = expiryProblem(expiry);
+    if (expiryError) return { field: 'expiry', message: expiryError };
     if (!new RegExp(`^\\d{${cardBrand.cvvLength}}$`).test(cvv)) {
       return { field: 'cvv', message: `El CVV de ${cardBrand.brand} debe tener ${cardBrand.cvvLength} dígitos.` };
     }
@@ -198,18 +246,42 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
 
   const handlePay = async () => {
     if (paying) return;
-    if (deliveryMode === 'delivery' && !selectedAddress) {
-      showError('Elige a dónde llevamos tu pedido, o cámbialo a "Recoger en el local".');
+    if (!addMode && deliveryMode === 'delivery' && !selectedAddress) {
+      showError('Elige a dónde llevamos tu pedido, o cámbialo a "Pasar a traer".');
       return;
     }
-    // Si el saldo cubre todo, no hace falta tarjeta.
-    const validation = coveredByCredit ? null : selectedCard ? validateSavedCard() : validatePaymentForm();
+    if (!addMode && deliveryMode === 'dine_in') {
+      if (!reservedFor) {
+        showError('Elige el día y la hora en que vienes a comer.');
+        return;
+      }
+      if (!availability || availability.loading) {
+        showError('Estamos revisando las mesas. Un momento.');
+        return;
+      }
+      if (!availability.available) {
+        showError(availability.message || 'No quedan mesas para esa hora. Prueba con otra.');
+        return;
+      }
+    }
+    // Si el saldo cubre todo o se paga al recibir, no hace falta tarjeta.
+    const needsCard = !coveredByCredit && !payOnDelivery;
+    const validation = !needsCard
+      ? cartItems.length === 0
+        ? { field: null, message: 'Tu carrito está vacío. Agrega productos antes de pagar.' }
+        : null
+      : selectedCard
+        ? validateSavedCard()
+        : validatePaymentForm();
     if (validation) {
       showError(validation.message, validation.field);
       return;
     }
 
     setPaying(true);
+    onPayingAdd?.(true);
+    if (!requestIdRef.current) requestIdRef.current = newRequestId();
+    const requestId = requestIdRef.current;
     // Con tarjeta guardada se manda cuál es y el CVV; el número lo tiene el
     // backend. Una tarjeta nueva se guarda (sin CVV) solo si el pago se aprueba.
     const card = selectedCard
@@ -222,17 +294,41 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
           cvv,
         };
 
-    const res = await createCheckout({
+    const res = await createCheckout(addMode ? {
       items: rawItems,
-      isDelivery: deliveryMode === 'delivery',
-      deliveryAddress: deliveryMode === 'delivery' ? selectedAddress.details : undefined,
+      addToOrder: addMode.orderId,
+      requestId,
       card: coveredByCredit ? undefined : card,
       saveCard: !coveredByCredit && !selectedCard && saveCard,
+      useCredit: useCredit && walletBalance > 0,
+    } : {
+      items: rawItems,
+      requestId,
+      fulfillment: deliveryMode,
+      deliveryAddress: deliveryMode === 'delivery' ? selectedAddress.details : undefined,
+      dineIn:
+        deliveryMode === 'dine_in'
+          ? { reservedFor, partySize, alias: tableAlias.trim() || undefined }
+          : undefined,
+      paymentMethod: payOnDelivery ? payMethod : 'online',
+      card: needsCard ? card : undefined,
+      saveCard: needsCard && !selectedCard && saveCard,
       useCredit: useCredit && walletBalance > 0,
     });
 
     if (!res.success) {
       setPaying(false);
+      onPayingAdd?.(false);
+      if (res.noResponse) {
+        showError('No pudimos confirmar tu pago. Vuelve a tocar "Pagar": no se te cobrará dos veces.');
+        return;
+      }
+      // El servidor contestó: el próximo intento es uno nuevo.
+      requestIdRef.current = null;
+      if (res.addWindowClosed) {
+        onAddWindowClosed?.(res.error);
+        return;
+      }
       if (coveredByCredit && res.chargeAmount > 0) {
         setServerCharge(res.chargeAmount);
         refreshPanchita();
@@ -241,15 +337,26 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
       return;
     }
 
-    // Pagado todo con saldo: no hay verificación del banco.
+    // Pagado todo con saldo (o un reintento de un pago que ya terminó): no
+    // hay verificación del banco.
     if (!res.checkout.paymentUrl) {
+      // Un reintento puede encontrar el primer cobro todavía en proceso: se
+      // espera a que termine en vez de dar error.
+      let checkout = res.checkout;
+      if (['pending', 'processing'].includes(checkout.status)) {
+        const settled = await waitForCheckout(checkout.id);
+        if (settled?.success) checkout = settled.checkout;
+      }
+      if (checkout.status !== 'pending' && checkout.status !== 'processing') requestIdRef.current = null;
       setPaying(false);
+      onPayingAdd?.(false);
       refreshPanchita();
-      if (res.checkout.status === 'approved') {
-        setShowSuccessModal(true);
-        onPaid?.(res.checkout.orderId);
+      if (checkout.status === 'approved') {
+        finishPaid(checkout);
+      } else if (['pending', 'processing'].includes(checkout.status)) {
+        showError('Tu pago sigue en proceso. Revisa "Pedidos" en un momento antes de volver a pagar.');
       } else {
-        showError(res.checkout.message || 'No se pudo registrar tu pedido.');
+        showError(checkout.message || 'No se pudo registrar tu pedido.');
       }
       return;
     }
@@ -262,6 +369,22 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
     });
   };
 
+  // Pago aprobado. Si viene a comer al local, Panchita le busca mesa en un
+  // chat; si no, el modal de éxito de siempre.
+  const finishPaid = (checkout) => {
+    onPaid?.(checkout.orderId);
+    // Productos agregados a un pedido: ya se sumaron al mismo pedido.
+    if (checkout.addToOrder && onAddPaid) {
+      onAddPaid(checkout.orderId);
+      return;
+    }
+    if (checkout.fulfillment === 'dine_in' && onDineInPaid) {
+      onDineInPaid(checkout.orderId);
+      return;
+    }
+    setShowSuccessModal(true);
+  };
+
   // Termina el pago después del 3DS (o cuando el cliente lo cierra): consulta
   // el resultado real al backend. Se protege para no correr dos veces.
   const settleVerification = async (cancelled) => {
@@ -272,13 +395,15 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
 
     const res = cancelled ? await cancelCheckout(id) : await waitForCheckout(id);
     setPaying(false);
+    // La verificación terminó: el próximo pago es un intento nuevo.
+    requestIdRef.current = null;
+    onPayingAdd?.(false);
 
     const status = res?.success ? res.checkout.status : null;
     // El saldo apartado vuelve si no se pagó: se actualiza lo que se muestra.
     refreshPanchita();
     if (status === 'approved') {
-      setShowSuccessModal(true);
-      onPaid?.(res.checkout.orderId);
+      finishPaid(res.checkout);
       return;
     }
     if (status === 'pending') {
@@ -327,11 +452,24 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
     walletBalance,
     useCredit,
     setUseCredit,
+    payMethod,
+    setPayMethod,
+    payOnDelivery,
     creditToApply,
     amountToCharge,
     coveredByCredit,
     deliveryMode,
     setDeliveryMode,
+    reservationDays,
+    dineDayKey,
+    setDineDayKey,
+    dineSlot,
+    setDineSlot,
+    partySize,
+    setPartySize,
+    tableAlias,
+    setTableAlias,
+    availability,
     addresses,
     selectedAddressIndex,
     setSelectedAddressIndex,
@@ -347,6 +485,7 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
     handleCardNumberChange,
     handleExpiryChange,
     handleCvvChange,
+    applyCardScan,
     handlePay,
     closeSuccessModal,
     handleGoHomePress,

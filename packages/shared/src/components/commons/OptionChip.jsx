@@ -28,11 +28,11 @@ const OptionChip = ({ label, selected, onPress, dotColor, style, image, price })
         <View style={cardStyles.info}>
           <Text style={[cardStyles.label, isDark && darkStyles.text]} numberOfLines={1}>{label}</Text>
           {price ? (
-            <Text style={cardStyles.price}>+${Number(price).toFixed(2)}</Text>
+            <Text style={[cardStyles.price, isDark && darkStyles.accentText]}>+${Number(price).toFixed(2)}</Text>
           ) : null}
         </View>
-        <View style={[cardStyles.radio, isDark && darkStyles.radio, selected && cardStyles.radioSelected]}>
-          {selected ? <View style={cardStyles.radioDot} /> : null}
+        <View style={[cardStyles.radio, isDark && darkStyles.radio, selected && cardStyles.radioSelected, selected && isDark && darkStyles.radioSelected]}>
+          {selected ? <View style={[cardStyles.radioDot, isDark && darkStyles.radioDot]} /> : null}
         </View>
       </TouchableOpacity>
     );
@@ -146,9 +146,12 @@ const cardStyles = StyleSheet.create({
 // Capa para modo oscuro: solo cambia colores.
 const darkStyles = StyleSheet.create({
   card: { backgroundColor: d.surface, borderColor: d.border },
-  cardSelected: { backgroundColor: d.primaryTint },
+  cardSelected: { backgroundColor: d.primaryTint, borderColor: d.primary },
   chip: { backgroundColor: d.surface, borderColor: d.border },
   radio: { borderColor: d.borderStrong },
+  radioSelected: { borderColor: d.primary },
+  radioDot: { backgroundColor: d.primary },
+  accentText: { color: d.primary },
   text: { color: d.textDark },
 });
 

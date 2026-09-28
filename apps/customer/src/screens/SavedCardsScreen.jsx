@@ -30,7 +30,16 @@ import {
   BRAND_LABELS,
   formatCardExpiry,
 } from '../services/cardsApi';
-import { detectCardBrand, isValidLuhn, formatCardNumber, formatExpiry } from '../utils/cardUtils';
+import {
+  detectCardBrand,
+  formatCardNumber,
+  formatExpiry,
+  cardNumberProblem,
+  expiryProblem,
+  cardNumberInputLength,
+  sanitizeCardHolder,
+} from '../utils/cardUtils';
+import CardScanner from '../components/CardScanner';
 
 // Otras formas de pago que acepta el restaurante (informativas).
 const OTHER_METHODS = [
@@ -43,19 +52,12 @@ const EMPTY_FORM = { cardHolder: '', cardNumber: '', expiry: '', isDefault: fals
 // Valida el formulario de tarjeta. No hay CVV: se pide en cada compra. Al
 // editar (`editing`) el número no se toca, así que no se valida.
 const validateCardForm = ({ cardHolder, cardNumber, expiry }, editing = false) => {
-  const digits = cardNumber.replace(/\s/g, '');
-  const [mm, yy] = expiry.split('/');
   if (cardHolder.trim().length < 3) return 'Escribe el nombre tal como aparece en la tarjeta.';
-  if (!editing && (digits.length < 15 || digits.length > 19 || !isValidLuhn(digits))) return 'El número de tarjeta no es válido.';
-  if (!editing && !detectCardBrand(digits).brand) return 'No reconocemos esa tarjeta. Revisa el número.';
-  if (!/^\d{2}$/.test(mm || '') || !/^\d{2}$/.test(yy || '')) return 'El vencimiento debe tener el formato MM/AA.';
-  const month = Number(mm);
-  const year = Number(yy);
-  if (month < 1 || month > 12) return 'El mes de vencimiento no es válido.';
-  const now = new Date();
-  const currentYear = now.getFullYear() % 100;
-  if (year < currentYear || (year === currentYear && month < now.getMonth() + 1)) return 'La tarjeta está vencida.';
-  return null;
+  if (!editing) {
+    const numberError = cardNumberProblem(cardNumber);
+    if (numberError) return numberError;
+  }
+  return expiryProblem(expiry);
 };
 
 // "Métodos de pago" en Más: las tarjetas que el cliente guarda para sus
@@ -103,6 +105,18 @@ const SavedCardsScreen = ({ navigation }) => {
   );
 
   const brand = detectCardBrand(form.cardNumber);
+  const [scannerOpen, setScannerOpen] = useState(false);
+
+  // Lo que leyó el escáner llena el formulario; el cliente revisa.
+  const applyScan = (data) => {
+    setForm((f) => ({
+      ...f,
+      ...(data.cardNumber ? { cardNumber: formatCardNumber(data.cardNumber) } : {}),
+      ...(data.expiry ? { expiry: data.expiry } : {}),
+      ...(data.cardHolder ? { cardHolder: sanitizeCardHolder(data.cardHolder) } : {}),
+    }));
+    setFormError(null);
+  };
 
   const openForm = () => {
     setEditingCard(null);
@@ -365,6 +379,8 @@ const SavedCardsScreen = ({ navigation }) => {
         ))}
       </ScrollView>
 
+      <CardScanner visible={scannerOpen} onClose={() => setScannerOpen(false)} onResult={applyScan} colors={c} />
+
       {/* ── NUEVA TARJETA / EDITAR ── */}
       <Sheet visible={formOpen} onClose={() => !saving && setFormOpen(false)} colors={c} ms={ms} bottomInset={insets.bottom}>
         <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(18) }]}>
@@ -376,10 +392,34 @@ const SavedCardsScreen = ({ navigation }) => {
             : 'Débito o crédito. No te pedimos el CVV para guardarla.'}
         </Text>
 
+        {!editingCard ? (
+          <TouchableOpacity
+            onPress={() => setScannerOpen(true)}
+            activeOpacity={0.85}
+            style={[
+              ordersStyles.row,
+              {
+                gap: ms(8),
+                justifyContent: 'center',
+                marginTop: ms(14),
+                height: ms(44),
+                borderRadius: ms(12),
+                borderWidth: 1,
+                borderColor: c.primary,
+                backgroundColor: c.primaryTint,
+              },
+            ]}
+            accessibilityRole="button"
+          >
+            <Icon name="scan-outline" size={ms(18)} color={c.primary} />
+            <Text style={[textStyles.bodyMedium, { color: c.primary, fontSize: ms(14) }]}>Escanear tarjeta</Text>
+          </TouchableOpacity>
+        ) : null}
+
         {fieldLabel('NOMBRE EN LA TARJETA')}
         <TextInput
           value={form.cardHolder}
-          onChangeText={setField('cardHolder')}
+          onChangeText={setField('cardHolder', sanitizeCardHolder)}
           placeholder="Juan Pérez"
           placeholderTextColor={c.textLight}
           autoCapitalize="characters"
@@ -403,7 +443,7 @@ const SavedCardsScreen = ({ navigation }) => {
             placeholder="0000 0000 0000 0000"
             placeholderTextColor={c.textLight}
             keyboardType="number-pad"
-            maxLength={23}
+            maxLength={cardNumberInputLength(form.cardNumber)}
             style={[textStyles.num, { flex: 1, fontSize: ms(15), color: c.textDark, paddingVertical: ms(12) }]}
           />
           <Text style={[textStyles.kicker, { color: brand.brand ? c.textDark : c.textLight, fontSize: ms(10) }]}>

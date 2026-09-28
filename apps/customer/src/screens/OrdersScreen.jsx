@@ -22,7 +22,9 @@ import useMyOrders from '../hooks/useMyOrders';
 import { useCart } from '../context/CartContext';
 import { useTabBarVisibility } from '../context/TabBarVisibilityContext';
 import { usePanchita } from '../context/PanchitaContext';
-import { cancelMyOrder } from '../services/api';
+import { cancelMyOrder, holdMyOrder } from '../services/api';
+import { formatReservation, formatClock } from '../utils/reservationSlots';
+import RateOrderSheet from '../components/RateOrderSheet';
 
 // Etiqueta y color de la insignia de cada estado del backend.
 const STATUS_BADGES = {
@@ -37,18 +39,17 @@ const STATUS_BADGES = {
 // Paso actual de la barra de progreso según el estado.
 const STEP_BY_STATUS = { pending: 0, preparing: 1, atrasado: 1, ready: 2, delivered: 3 };
 
-// El último paso cambia según cómo llega el pedido al cliente.
+// Pasos del pedido, cada uno con el estado del backend del que sale su hora.
+// El de "salió de cocina" cambia según cómo llega el pedido al cliente.
 const getSteps = (order) => {
-  const last =
-    order.orderType === 'local'
-      ? { label: 'En mesa', icon: 'restaurant-outline' }
-      : order.isDelivery
-        ? { label: 'En camino', icon: 'bicycle-outline' }
-        : { label: 'Para recoger', icon: 'bag-handle-outline' };
+  const ready = order.isDelivery && order.orderType !== 'local' && order.fulfillment !== 'dine_in'
+    ? { label: 'En camino', icon: 'bicycle-outline' }
+    : { label: 'Lista', icon: 'bag-check-outline' };
   return [
-    { label: 'Recibida', icon: 'receipt-outline' },
-    { label: 'En cocina', icon: 'flame-outline' },
-    last,
+    { status: 'pending', label: 'Recibida', icon: 'receipt-outline' },
+    { status: 'preparing', label: 'En cocina', icon: 'flame-outline' },
+    { status: 'ready', ...ready },
+    { status: 'delivered', label: 'Entregada', icon: 'checkmark-done-outline' },
   ];
 };
 
@@ -64,7 +65,7 @@ const TYPE_FILTERS = [
 const RECENT_PAST_LIMIT = 3;
 
 // ── PANTALLA ────────────────────────────────────────────────────────────
-const OrdersScreen = ({ navigation }) => {
+const OrdersScreen = ({ navigation, route }) => {
   const isDark = useColorScheme() === 'dark';
   const c = getMenuColors(isDark);
   const bandColor = getOrderBandColor(isDark);
@@ -76,12 +77,24 @@ const OrdersScreen = ({ navigation }) => {
   const [typeFilter, setTypeFilter] = useState('all');
 
   const { orders, isLoading, isRefreshing, error, refetch } = useMyOrders();
-  const { addItem } = useCart();
+  const { addItem, startAddMode } = useCart();
   const { handleScroll, reset: resetTabBar } = useTabBarVisibility();
   const panchita = usePanchita();
   const [cancellingId, setCancellingId] = useState(null);
+  // Pedido que se está calificando (null = hoja cerrada).
+  const [ratingOrder, setRatingOrder] = useState(null);
 
-  // Cancelar un pedido en línea (hasta 15 min). Qué pasa con el dinero lo
+  // Al tocar el aviso de "Pedido entregado" se llega aquí con el pedido a
+  // calificar: se abre la hoja en cuanto carguen los pedidos.
+  const rateOrderId = route?.params?.rateOrderId;
+  useEffect(() => {
+    if (!rateOrderId || isLoading) return;
+    const target = orders.find((o) => o.id === rateOrderId);
+    if (target && target.status === 'delivered' && !target.rating) setRatingOrder(target);
+    navigation.setParams({ rateOrderId: undefined });
+  }, [rateOrderId, isLoading, orders, navigation]);
+
+  // Cancelar un pedido en línea (antes de que entre a cocina). Qué pasa con el dinero lo
   // decide y lo explica el backend.
   const confirmCancel = (order) =>
     Alert.alert(
@@ -99,6 +112,37 @@ const OrdersScreen = ({ navigation }) => {
             refetch();
             panchita.refresh();
             Alert.alert(res.title || (res.success ? 'Pedido cancelado' : 'No se pudo cancelar'), res.success ? res.message : res.error);
+          },
+        },
+      ],
+    );
+
+  // "Agregar más productos": el pedido se pausa 10 minutos (cocina no lo
+  // empieza) y la app pasa al modo de agregar: el carrito queda solo para lo
+  // nuevo hasta que se pague. Una sola vez por pedido.
+  const [holdingId, setHoldingId] = useState(null);
+  const enterAddMode = (order, until) => {
+    startAddMode({ orderId: order.id, code: order.code, until });
+    navigation.navigate('Menu');
+  };
+  const confirmAddMore = (order) =>
+    Alert.alert(
+      `¿Agregar productos a ${order.code}?`,
+      'Tienes 10 minutos para elegir y pagar lo que quieras sumar. Mientras, cocina espera tu pedido. Si no pagas a tiempo, se quita lo agregado y tu pedido sigue como estaba. Solo se puede una vez por pedido.',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Agregar productos',
+          onPress: async () => {
+            setHoldingId(order.id);
+            const res = await holdMyOrder(order.id);
+            setHoldingId(null);
+            refetch();
+            if (!res.success) {
+              Alert.alert(res.title, res.error);
+              return;
+            }
+            enterAddMode(order, res.hold?.until);
           },
         },
       ],
@@ -308,19 +352,37 @@ const OrdersScreen = ({ navigation }) => {
                 {active.map((order) => (
                   <View key={order.id} style={{ gap: ms(8) }}>
                     <ActiveOrderCard order={order} colors={c} bandColor={bandColor} ms={ms} />
-                    {order.cancelDeadline ? (
+                    {order.reservation ? (
+                      <ReservationCard
+                        reservation={order.reservation}
+                        onChooseTable={() => navigation.navigate('TableReservation', { orderId: order.id })}
+                        onCheckIn={() => navigation.navigate('TableCheckIn')}
+                        colors={c}
+                        ms={ms}
+                      />
+                    ) : null}
+                    {order.hold.active || order.canHold ? (
+                      <HoldButton
+                        hold={order.hold}
+                        busy={holdingId === order.id}
+                        onHold={() => confirmAddMore(order)}
+                        onResume={() => enterAddMode(order, order.hold.until)}
+                        onExpire={refetch}
+                        colors={c}
+                        ms={ms}
+                      />
+                    ) : null}
+                    {order.canCancel ? (
                       <CancelOrderButton
-                        deadline={order.cancelDeadline}
                         busy={cancellingId === order.id}
                         onPress={() => confirmCancel(order)}
-                        onExpire={refetch}
                         colors={c}
                         ms={ms}
                       />
                     ) : null}
                     {/* Estimación con tráfico y clima, mensajes al repartidor y ayuda */}
                     <TouchableOpacity
-                      onPress={() => navigation.navigate('Panchita')}
+                      onPress={() => navigation.navigate('Panchita', { orderId: order.id })}
                       activeOpacity={0.85}
                       style={[
                         ordersStyles.outlineButton,
@@ -350,6 +412,7 @@ const OrdersScreen = ({ navigation }) => {
                       bandColor={bandColor}
                       ms={ms}
                       onRepeat={() => repeatOrder(order)}
+                      onRate={() => setRatingOrder(order)}
                     />
                   ))}
                 </View>
@@ -388,6 +451,7 @@ const OrdersScreen = ({ navigation }) => {
                     bandColor={bandColor}
                     ms={ms}
                     onRepeat={() => repeatOrder(order)}
+                    onRate={() => setRatingOrder(order)}
                   />
                 ))}
               </View>
@@ -395,6 +459,15 @@ const OrdersScreen = ({ navigation }) => {
           ))
         )}
       </ScrollView>
+      <RateOrderSheet
+        order={ratingOrder}
+        onClose={() => setRatingOrder(null)}
+        onRated={refetch}
+        colors={c}
+        ms={ms}
+        bottomInset={insets.bottom}
+      />
+
       {/* Chef Panchita, siempre a mano en Pedidos */}
       <PanchitaBubble tokens={getAuthTokens(isDark)} isDark={isDark} onPress={() => navigation.navigate('Panchita')} />
     </View>
@@ -424,6 +497,66 @@ const StatusBadge = ({ status, ms }) => {
   );
 };
 
+// Mesa reservada de un pedido para comer en el local: a qué hora, qué mesa,
+// y los botones para elegirla (si falta) o marcar la llegada con el QR.
+const RESERVATION_TEXT = {
+  pending_table: 'Aún no eliges tu mesa.',
+  checked_in: 'Ya estás en tu mesa. ¡Buen provecho!',
+  expired: 'La reserva venció: pasaron 30 minutos de la hora. Si ya estás aquí, avísale a un mesero.',
+  cancelled: 'La reserva se canceló.',
+};
+
+const ReservationCard = ({ reservation: r, onChooseTable, onCheckIn, colors: c, ms }) => {
+  const text =
+    RESERVATION_TEXT[r.status] ??
+    `Te guardamos la mesa hasta las ${r.expiresAt ? formatClock(r.expiresAt) : ''}. Al llegar, escanea el QR de la mesa.`;
+  const actionButton = (label, icon, onPress, primary) => (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      style={{
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: ms(6),
+        height: ms(40),
+        borderRadius: ms(12),
+        borderWidth: 1,
+        borderColor: c.primary,
+        backgroundColor: primary ? c.primary : 'transparent',
+      }}
+      accessibilityRole="button"
+    >
+      <Icon name={icon} size={ms(15)} color={primary ? '#FFFFFF' : c.primary} />
+      <Text style={[textStyles.bodyMedium, { fontSize: ms(13), color: primary ? '#FFFFFF' : c.primary }]}>{label}</Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={{ padding: ms(14), gap: ms(10), borderRadius: ms(16), borderWidth: 1, borderColor: c.border, backgroundColor: c.surface }}>
+      <View style={[ordersStyles.row, { gap: ms(10) }]}>
+        <Icon name="restaurant-outline" size={ms(18)} color={c.primary} />
+        <View style={{ flex: 1 }}>
+          <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(14.5) }]}>
+            {r.table ? `Mesa ${r.table.number} · ${r.table.zoneLabel}` : 'Mesa por elegir'}
+          </Text>
+          <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(12.5) }]}>
+            {r.reservedFor ? formatReservation(r.reservedFor) : ''} · {r.partySize} {r.partySize === 1 ? 'persona' : 'personas'}
+          </Text>
+        </View>
+      </View>
+      <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(12.5) }]}>{text}</Text>
+      {r.status === 'pending_table' || r.status === 'reserved' ? (
+        <View style={[ordersStyles.row, { gap: ms(8) }]}>
+          {r.status === 'reserved' ? actionButton('Llegué: escanear QR', 'qr-code-outline', onCheckIn, true) : null}
+          {actionButton(r.status === 'reserved' ? 'Ver mesa' : 'Elegir mi mesa', 'grid-outline', onChooseTable, r.status === 'pending_table')}
+        </View>
+      ) : null}
+    </View>
+  );
+};
+
 const SectionLabel = ({ label, colors: c, ms }) => (
   <Text
     style={[
@@ -435,59 +568,161 @@ const SectionLabel = ({ label, colors: c, ms }) => (
   </Text>
 );
 
-// "Cancelar pedido" con los minutos que quedan para hacerlo. Al acabarse el
-// plazo se esconde solo (y se vuelve a consultar la lista).
-const CancelOrderButton = ({ deadline, busy, onPress, onExpire, colors: c, ms }) => {
+// "Agregar más productos" o, si ya está agregando, el tiempo que queda y
+// "Continuar" (vuelve al menú en el modo de agregar).
+const HoldButton = ({ hold, busy, onHold, onResume, onExpire, colors: c, ms }) => {
   const [now, setNow] = useState(Date.now());
-  const remaining = Math.max(0, deadline.getTime() - now);
+  const remaining = hold.active && hold.until ? Math.max(0, hold.until.getTime() - now) : 0;
+  const onHoldNow = remaining > 0;
 
   useEffect(() => {
-    if (remaining <= 0) return undefined;
+    if (!onHoldNow) return undefined;
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, [remaining <= 0]);
+  }, [onHoldNow]);
 
+  // Se acabó el tiempo: el backend lo regresó a la cola.
   useEffect(() => {
-    if (remaining <= 0) onExpire?.();
+    if (hold.active && !onHoldNow) onExpire?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [remaining <= 0]);
+  }, [onHoldNow]);
 
-  if (remaining <= 0) return null;
-
-  const minutes = Math.floor(remaining / 60000);
-  const seconds = Math.floor((remaining % 60000) / 1000);
-  const left = `${minutes}:${String(seconds).padStart(2, '0')}`;
+  const left = `${Math.floor(remaining / 60000)}:${String(Math.floor((remaining % 60000) / 1000)).padStart(2, '0')}`;
+  const color = onHoldNow ? sc.warning : c.textDark;
 
   return (
     <TouchableOpacity
-      onPress={onPress}
-      disabled={busy}
+      onPress={onHoldNow ? onResume : onHold}
+      disabled={busy || (hold.active && !onHoldNow)}
       activeOpacity={0.85}
       style={[
         ordersStyles.outlineButton,
-        { borderColor: c.error, borderRadius: ms(14), height: ms(44), gap: ms(8), opacity: busy ? 0.6 : 1 },
+        {
+          borderColor: onHoldNow ? sc.warning : c.border,
+          backgroundColor: c.surface,
+          borderRadius: ms(14),
+          height: ms(44),
+          gap: ms(8),
+          opacity: busy ? 0.6 : 1,
+        },
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`Cancelar pedido. Quedan ${minutes} minutos para hacerlo.`}
+      accessibilityLabel={onHoldNow ? `Agregando productos, quedan ${left}. Continuar` : 'Agregar más productos a este pedido'}
     >
       {busy ? (
-        <ActivityIndicator size="small" color={c.error} />
+        <ActivityIndicator size="small" color={color} />
+      ) : onHoldNow ? (
+        <>
+          <Icon name="add-circle" size={ms(16)} color={sc.warning} />
+          <Text style={[textStyles.link, { color: sc.warning, fontSize: ms(13.5) }]}>Agregando productos</Text>
+          <Text style={[textStyles.num, { color: c.textGray, fontSize: ms(12.5) }]}>· {left}</Text>
+          <Text style={[textStyles.link, { color: c.primary, fontSize: ms(13.5) }]}>· Continuar</Text>
+        </>
       ) : (
         <>
-          <Icon name="close-circle-outline" size={ms(16)} color={c.error} />
-          <Text style={[textStyles.link, { color: c.error, fontSize: ms(13.5) }]}>Cancelar pedido</Text>
-          <Text style={[textStyles.num, { color: c.textGray, fontSize: ms(12.5) }]}>· quedan {left}</Text>
+          <Icon name="add-circle-outline" size={ms(16)} color={c.textDark} />
+          <Text style={[textStyles.link, { color: c.textDark, fontSize: ms(13.5) }]}>Agregar más productos</Text>
+          <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(12) }]}>· 10 min</Text>
         </>
       )}
     </TouchableOpacity>
   );
 };
 
+// Cancelar solo se puede mientras el pedido siga "Recibido". Cuando cocina
+// lo empieza, el backend deja de mandar canCancel y el botón desaparece.
+const CancelOrderButton = ({ busy, onPress, colors: c, ms }) => (
+  <TouchableOpacity
+    onPress={onPress}
+    disabled={busy}
+    activeOpacity={0.85}
+    style={[
+      ordersStyles.outlineButton,
+      { borderColor: c.error, borderRadius: ms(14), height: ms(44), gap: ms(8), opacity: busy ? 0.6 : 1 },
+    ]}
+    accessibilityRole="button"
+    accessibilityLabel="Cancelar pedido. Solo se puede antes de que entre a cocina."
+  >
+    {busy ? (
+      <ActivityIndicator size="small" color={c.error} />
+    ) : (
+      <>
+        <Icon name="close-circle-outline" size={ms(16)} color={c.error} />
+        <Text style={[textStyles.link, { color: c.error, fontSize: ms(13.5) }]}>Cancelar pedido</Text>
+        <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(12) }]}>· antes de que entre a cocina</Text>
+      </>
+    )}
+  </TouchableOpacity>
+);
+
+// Progreso del pedido: cuatro pasos unidos por una línea, cada uno con la
+// hora a la que el pedido llegó a ese estado. Cada paso es una columna del
+// mismo ancho, así la etiqueta y la hora quedan centradas bajo su punto.
+const OrderProgress = ({ order, colors: c, ms }) => {
+  const steps = getSteps(order);
+  const finished = order.status === 'delivered';
+  const current = STEP_BY_STATUS[order.status] ?? 0;
+  const reached = (index) => finished || index <= current;
+  const halfLine = (color) => ({ flex: 1, height: ms(3), backgroundColor: color });
+
+  return (
+    <View style={ordersStyles.progressTrack}>
+      {steps.map((step, index) => {
+        const done = finished || index < current;
+        const isCurrent = !finished && index === current;
+        const dotColor = done ? sc.success : isCurrent ? sc.warning : c.surfaceMuted;
+        const time = reached(index) ? order.statusTimes?.[step.status] : null;
+        return (
+          <View key={step.status} style={[ordersStyles.progressStep, { gap: ms(6) }]}>
+            <View style={ordersStyles.progressTrack}>
+              <View
+                style={halfLine(index === 0 ? 'transparent' : reached(index) ? sc.success : c.border)}
+              />
+              <View
+                style={[
+                  ordersStyles.progressDot,
+                  { backgroundColor: dotColor, width: ms(24), height: ms(24), borderRadius: ms(12) },
+                ]}
+              >
+                <Icon
+                  name={done ? 'checkmark' : step.icon}
+                  size={ms(13)}
+                  color={done || isCurrent ? '#FFFFFF' : c.textGray}
+                />
+              </View>
+              <View
+                style={halfLine(
+                  index === steps.length - 1 ? 'transparent' : reached(index + 1) ? sc.success : c.border,
+                )}
+              />
+            </View>
+            <Text
+              style={[
+                textStyles.kicker,
+                { color: isCurrent ? sc.warning : c.textGray, fontSize: ms(9.5), textAlign: 'center' },
+              ]}
+              numberOfLines={1}
+            >
+              {step.label.toUpperCase()}
+            </Text>
+            <Text
+              style={[
+                textStyles.num,
+                { color: time ? c.textDark : c.textLight, fontSize: ms(11.5), textAlign: 'center' },
+              ]}
+            >
+              {time ? timeOf(time) : '--:--'}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+};
+
 // Tarjeta grande del pedido en curso: estado, progreso, tiempo y detalle.
 const ActiveOrderCard = ({ order, colors: c, bandColor, ms }) => {
   const [open, setOpen] = useState(false);
-  const steps = getSteps(order);
-  const current = STEP_BY_STATUS[order.status] ?? 0;
 
   return (
     <View
@@ -509,6 +744,14 @@ const ActiveOrderCard = ({ order, colors: c, bandColor, ms }) => {
             <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(12.5) }]}>
               {getOrderPlace(order)} · {countLabel(order.itemCount)}
             </Text>
+            {order.payOnDelivery ? (
+              <View style={[ordersStyles.row, { gap: ms(5) }]}>
+                <Icon name={order.paymentMethod === 'cash' ? 'cash-outline' : 'card-outline'} size={ms(13)} color={sc.warning} />
+                <Text style={[textStyles.bodyMedium, { color: c.textDark, fontSize: ms(12) }]}>
+                  Pagas ${order.amountDue.toFixed(2)} {order.paymentMethod === 'cash' ? 'en efectivo' : 'con tarjeta'} al recibir
+                </Text>
+              </View>
+            ) : null}
           </View>
           <View style={[ordersStyles.alignEnd, { gap: ms(3) }]}>
             <Text style={[textStyles.num, { color: c.primary, fontSize: ms(17) }]}>
@@ -520,65 +763,7 @@ const ActiveOrderCard = ({ order, colors: c, bandColor, ms }) => {
           </View>
         </View>
 
-        {/* Progreso */}
-        <View style={{ gap: ms(8) }}>
-          <View style={ordersStyles.progressTrack}>
-            {steps.map((step, index) => {
-              const done = index < current;
-              const isCurrent = index === current;
-              const dotColor = done ? sc.success : isCurrent ? sc.warning : c.surfaceMuted;
-              return (
-                <React.Fragment key={step.label}>
-                  <View
-                    style={[
-                      ordersStyles.progressDot,
-                      {
-                        backgroundColor: dotColor,
-                        width: ms(24),
-                        height: ms(24),
-                        borderRadius: ms(12),
-                      },
-                    ]}
-                  >
-                    <Icon
-                      name={done ? 'checkmark' : step.icon}
-                      size={ms(13)}
-                      color={done || isCurrent ? '#FFFFFF' : c.textGray}
-                    />
-                  </View>
-                  {index < steps.length - 1 ? (
-                    <View
-                      style={[
-                        ordersStyles.progressLine,
-                        {
-                          height: ms(3),
-                          backgroundColor: index < current ? sc.success : c.border,
-                        },
-                      ]}
-                    />
-                  ) : null}
-                </React.Fragment>
-              );
-            })}
-          </View>
-          <View style={ordersStyles.progressLabels}>
-            {steps.map((step, index) => (
-              <Text
-                key={step.label}
-                style={[
-                  textStyles.kicker,
-                  {
-                    color: index === current ? sc.warning : c.textGray,
-                    fontSize: ms(9.5),
-                    textAlign: index === 0 ? 'left' : index === steps.length - 1 ? 'right' : 'center',
-                  },
-                ]}
-              >
-                {step.label.toUpperCase()}
-              </Text>
-            ))}
-          </View>
-        </View>
+        <OrderProgress order={order} colors={c} ms={ms} />
       </View>
 
       {/* Franja de tiempo. No hay estimado de entrega en el backend, así que
@@ -645,69 +830,100 @@ const ActiveOrderCard = ({ order, colors: c, bandColor, ms }) => {
 };
 
 // Fila de un pedido terminado (entregado o cancelado).
-const PastOrderRow = ({ order, colors: c, bandColor, ms, onRepeat }) => {
+// Los entregados se abren al tocarlos para ver a qué hora pasó cada paso.
+const PastOrderRow = ({ order, colors: c, bandColor, ms, onRepeat, onRate }) => {
+  const [open, setOpen] = useState(false);
   const cancelled = order.status === 'cancelled';
+  const delivered = order.status === 'delivered';
   const canRepeat = order.items.some((item) => item.itemId);
 
   return (
-    <View
-      style={[
-        ordersStyles.pastCard,
-        {
-          backgroundColor: c.surface,
-          borderColor: c.border,
-          borderRadius: ms(16),
-          padding: ms(13),
-          gap: ms(12),
-        },
-      ]}
+    <TouchableOpacity
+      onPress={() => setOpen((v) => !v)}
+      disabled={!delivered}
+      activeOpacity={0.85}
+      style={{
+        backgroundColor: c.surface,
+        borderColor: c.border,
+        borderWidth: 1,
+        borderRadius: ms(16),
+        padding: ms(13),
+        gap: ms(14),
+      }}
+      accessibilityRole={delivered ? 'button' : undefined}
+      accessibilityState={delivered ? { expanded: open } : undefined}
+      accessibilityHint={delivered ? 'Muestra la hora de cada paso del pedido' : undefined}
     >
-      <View
-        style={[
-          ordersStyles.pastIcon,
-          { backgroundColor: bandColor, width: ms(40), height: ms(40), borderRadius: ms(10) },
-        ]}
-      >
-        <Icon
-          name={order.orderType === 'local' ? 'storefront-outline' : 'receipt-outline'}
-          size={ms(18)}
-          color={c.textGray}
-        />
-      </View>
-
-      <View style={{ flex: 1, gap: ms(4) }}>
-        <View style={[ordersStyles.row, { gap: ms(8), flexWrap: 'wrap' }]}>
-          <Text style={[textStyles.num, { color: c.textDark, fontSize: ms(14.5) }]}>
-            {order.code}
-          </Text>
-          <StatusBadge status={order.status} ms={ms} />
-        </View>
-        <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(12) }]} numberOfLines={1}>
-          {formatDay(order.createdAt)} · {getOrderPlace(order)} · {countLabel(order.itemCount)}
-        </Text>
-      </View>
-
-      <View style={[ordersStyles.alignEnd, { gap: ms(4) }]}>
-        <Text
+      <View style={[ordersStyles.pastCard, { borderWidth: 0, gap: ms(12) }]}>
+        <View
           style={[
-            textStyles.num,
-            { color: cancelled ? c.textLight : c.textDark, fontSize: ms(14.5) },
+            ordersStyles.pastIcon,
+            { backgroundColor: bandColor, width: ms(40), height: ms(40), borderRadius: ms(10) },
           ]}
         >
-          ${order.total.toFixed(2)}
-        </Text>
-        {canRepeat ? (
-          <TouchableOpacity
-            onPress={onRepeat}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessibilityRole="button"
-            accessibilityLabel={`Repetir pedido ${order.code}`}
+          <Icon
+            name={order.orderType === 'local' ? 'storefront-outline' : 'receipt-outline'}
+            size={ms(18)}
+            color={c.textGray}
+          />
+        </View>
+
+        <View style={{ flex: 1, gap: ms(4) }}>
+          <View style={[ordersStyles.row, { gap: ms(8), flexWrap: 'wrap' }]}>
+            <Text style={[textStyles.num, { color: c.textDark, fontSize: ms(14.5) }]}>
+              {order.code}
+            </Text>
+            <StatusBadge status={order.status} ms={ms} />
+          </View>
+          <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(12) }]} numberOfLines={1}>
+            {formatDay(order.createdAt)} · {getOrderPlace(order)} · {countLabel(order.itemCount)}
+          </Text>
+        </View>
+
+        <View style={[ordersStyles.alignEnd, { gap: ms(4) }]}>
+          <Text
+            style={[
+              textStyles.num,
+              { color: cancelled ? c.textLight : c.textDark, fontSize: ms(14.5) },
+            ]}
           >
-            <Text style={[textStyles.link, { color: c.primary, fontSize: ms(12.5) }]}>Repetir</Text>
-          </TouchableOpacity>
-        ) : null}
+            ${order.total.toFixed(2)}
+          </Text>
+          {canRepeat ? (
+            <TouchableOpacity
+              onPress={onRepeat}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Repetir pedido ${order.code}`}
+            >
+              <Text style={[textStyles.link, { color: c.primary, fontSize: ms(12.5) }]}>Repetir</Text>
+            </TouchableOpacity>
+          ) : null}
+          {/* Entregado: calificarlo, o las estrellas que ya se le dieron */}
+          {delivered && order.rating ? (
+            <View style={[ordersStyles.row, { gap: ms(2) }]} accessibilityLabel={`Calificado con ${order.rating.stars} estrellas`}>
+              {[1, 2, 3, 4, 5].map((v) => (
+                <Icon key={v} name={v <= order.rating.stars ? 'star' : 'star-outline'} size={ms(11)} color="#F2A33A" />
+              ))}
+            </View>
+          ) : delivered && onRate ? (
+            <TouchableOpacity
+              onPress={onRate}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Calificar pedido ${order.code}`}
+            >
+              <View style={[ordersStyles.row, { gap: ms(3) }]}>
+                <Icon name="star-outline" size={ms(12.5)} color={c.primary} />
+                <Text style={[textStyles.link, { color: c.primary, fontSize: ms(12.5) }]}>Calificar</Text>
+              </View>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
-    </View>
+
+      {delivered && open ? <OrderProgress order={order} colors={c} ms={ms} /> : null}
+    </TouchableOpacity>
   );
 };
 
@@ -796,13 +1012,17 @@ const getOrderPlace = (order) => {
   if (order.orderType === 'local') {
     return order.tableNumber != null ? `Mesa ${order.tableNumber}` : 'En el local';
   }
+  if (order.fulfillment === 'dine_in') {
+    const table = order.tableNumber ?? order.reservation?.table?.number;
+    return table != null ? `Comer en el local · Mesa ${table}` : 'Comer en el local';
+  }
   return order.isDelivery ? 'A domicilio' : 'Para recoger';
 };
 
 const getBandText = (order) => {
   if (order.status === 'atrasado') return 'Está tardando un poco más. Lleva';
   if (order.status === 'ready') {
-    if (order.orderType === 'local') return 'Listo, va en camino a tu mesa. Lleva';
+    if (order.orderType === 'local' || order.fulfillment === 'dine_in') return 'Listo, va en camino a tu mesa. Lleva';
     return order.isDelivery ? 'Listo, saliendo a tu domicilio. Lleva' : 'Listo para que pases por él. Lleva';
   }
   if (order.status === 'preparing') return 'En cocina. Tu pedido lleva';

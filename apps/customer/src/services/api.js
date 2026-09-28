@@ -76,6 +76,10 @@ export const getDrinksList = () => getActiveList(ACTIVE_PATHS.drinks);
 export const getSaucersList = () => getActiveList(ACTIVE_PATHS.saucers);
 export const getActiveExtras = () => getActiveList(ACTIVE_PATHS.extras);
 
+// Promociones vigentes en este momento (activas y dentro de su ventana), ya
+// ordenadas por la que termina primero. Pide sesión: sin ella responde 401.
+export const getTodayPromotions = () => request('/menu/promotions/today');
+
 // El backend no expone GET por ID para el cliente, así que se trae la lista
 // activa y se busca el producto dentro de ella.
 const getActiveById = async (path, id, notFound) => {
@@ -116,6 +120,46 @@ export const cancelMyOrder = async (orderId, reason = '') => {
         error.response?.status === 404 && !error.response?.data?.message
           ? 'El servidor todavía no tiene esta función.'
           : error.response?.data?.message || 'No se pudo conectar. Inténtalo de nuevo.',
+    };
+  }
+};
+
+// "Agregar más productos": pausa el pedido 10 minutos para sumarle productos
+// mientras no haya entrado a cocina (una vez por pedido). resumeMyOrder lo
+// devuelve antes a la cola si el cliente ya no quiere agregar nada.
+const holdCall = async (path, fallbackTitle) => {
+  try {
+    const { data } = await apiClient.post(path);
+    return { success: true, title: data?.title, message: data?.message, hold: data?.hold };
+  } catch (error) {
+    return {
+      success: false,
+      title: error.response?.data?.title || fallbackTitle,
+      error: error.response?.data?.message || 'No se pudo conectar. Inténtalo de nuevo.',
+    };
+  }
+};
+
+export const holdMyOrder = (orderId) => holdCall(`/orders/${orderId}/hold`, 'No se pueden agregar productos');
+
+export const resumeMyOrder = (orderId) => holdCall(`/orders/${orderId}/resume`, 'No se pudo reanudar');
+
+// Calificar un pedido entregado (una vez): estrellas 1-5, etiquetas de
+// RATING_TAGS y un comentario opcional.
+export const RATING_TAGS = {
+  good: ['Buen sabor', 'Llegó caliente', 'Buena porción', 'Rápido', 'Buen servicio'],
+  bad: ['Llegó frío', 'Tardó mucho', 'Faltó algo', 'Mal sabor', 'Porción pequeña'],
+};
+
+export const rateMyOrder = async (orderId, { stars, tags = [], comment = '' }) => {
+  try {
+    const { data } = await apiClient.post(`/orders/${orderId}/rating`, { stars, tags, comment });
+    return { success: true, title: data?.title, message: data?.message, rating: data?.rating };
+  } catch (error) {
+    return {
+      success: false,
+      title: error.response?.data?.title || 'No se pudo calificar',
+      error: error.response?.data?.message || 'No se pudo conectar. Inténtalo de nuevo.',
     };
   }
 };

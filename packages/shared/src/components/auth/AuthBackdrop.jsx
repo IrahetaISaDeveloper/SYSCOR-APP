@@ -11,8 +11,8 @@ import { View, StyleSheet } from 'react-native';
 // usa el rojo de la marca con poca opacidad, que sobre negro lee como un
 // resplandor.
 export default function AuthBackdrop({ isDark }) {
-  const left = isDark ? 'rgba(198, 40, 40, 0.16)' : 'rgba(255, 0, 0, 0.05)';
-  const right = isDark ? 'rgba(217, 131, 36, 0.10)' : 'rgba(0, 200, 0, 0.03)';
+  const left = isDark ? 'rgba(145, 132, 217, 0.18)' : 'rgba(255, 0, 0, 0.05)';
+  const right = isDark ? 'rgba(137, 166, 214, 0.10)' : 'rgba(0, 200, 0, 0.03)';
 
   return (
     <View style={styles.layer} pointerEvents="none">

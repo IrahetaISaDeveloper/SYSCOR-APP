@@ -32,7 +32,7 @@ export default function AnimatedSplashScreen({ onFinish }) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
 
-  const backgroundColor = isDark ? '#0E0E0E' : '#F7F5F1';
+  const backgroundColor = isDark ? '#161826' : '#F7F5F1';
 
   useEffect(() => {
     const animation = Animated.sequence([

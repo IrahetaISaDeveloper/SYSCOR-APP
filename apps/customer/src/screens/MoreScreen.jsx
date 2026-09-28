@@ -31,6 +31,7 @@ import { usePreferences } from '../context/PreferencesContext';
 import { useTabBarVisibility } from '../context/TabBarVisibilityContext';
 import Sheet from '../components/Sheet';
 import { usePanchita } from '../context/PanchitaContext';
+import { unregisterFromPush } from '../services/pushApi';
 
 const THEME_LABELS = { system: 'Sistema', light: 'Claro', dark: 'Oscuro' };
 const THEME_ICONS = { system: 'phone-portrait-outline', light: 'sunny-outline', dark: 'moon-outline' };
@@ -66,7 +67,16 @@ const MoreScreen = ({ navigation }) => {
   const confirmLogout = () =>
     Alert.alert('Cerrar sesión', '¿Seguro que quieres salir?', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Cerrar sesión', style: 'destructive', onPress: logout },
+      {
+        text: 'Cerrar sesión',
+        style: 'destructive',
+        // Primero se quita este teléfono de los avisos: después de salir ya
+        // no hay sesión para pedírselo al backend.
+        onPress: async () => {
+          await unregisterFromPush(user?.id || user?._id);
+          logout();
+        },
+      },
     ]);
 
   const open = (url) => {
@@ -342,7 +352,7 @@ const Row = ({ icon, label, onPress, right, tint, last, colors: c, bandColor, ms
             width: ms(36),
             height: ms(36),
             borderRadius: ms(10),
-            backgroundColor: tint ? 'rgba(226,61,40,0.12)' : bandColor,
+            backgroundColor: tint ? c.primaryTint : bandColor,
           },
         ]}
       >

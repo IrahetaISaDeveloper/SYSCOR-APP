@@ -27,8 +27,9 @@ const call = async (fn) => {
 export const getConversation = () => call(() => apiClient.get('/panchita/chat'));
 
 // Gemini puede tardar: se le da más margen que al resto de la API.
-export const sendMessage = (message) =>
-  call(() => apiClient.post('/panchita/chat', { message }, { timeout: 45000 }));
+// `orderId`: el pedido elegido arriba del chat como tema (opcional).
+export const sendMessage = (message, orderId) =>
+  call(() => apiClient.post('/panchita/chat', { message, orderId: orderId || undefined }, { timeout: 45000 }));
 
 export const resetConversation = () => call(() => apiClient.delete('/panchita/chat'));
 

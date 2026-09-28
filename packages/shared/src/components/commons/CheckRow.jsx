@@ -19,7 +19,7 @@ const CheckRow = ({ label, price, checked, onPress, image }) => {
           <Text style={[styles.price, isDark && darkStyles.muted]}>${Number(price).toFixed(2)}</Text>
         ) : null}
       </View>
-      <View style={[styles.addButton, isDark && darkStyles.addButton, checked && styles.addButtonChecked]}>
+      <View style={[styles.addButton, isDark && darkStyles.addButton, checked && styles.addButtonChecked, checked && isDark && darkStyles.addButtonChecked]}>
         <Icon name={checked ? 'checkmark' : 'add'} size={18} color={checked || isDark ? '#FFFFFF' : '#3F3F46'} />
       </View>
     </TouchableOpacity>
@@ -80,6 +80,7 @@ const styles = StyleSheet.create({
 const darkStyles = StyleSheet.create({
   avatar: { backgroundColor: d.surfaceMuted },
   addButton: { borderColor: d.borderStrong },
+  addButtonChecked: { backgroundColor: d.primary, borderColor: d.primary },
   text: { color: d.textDark },
   muted: { color: d.textGray },
 });

@@ -9,6 +9,7 @@ import {
   Alert,
   Keyboard,
   KeyboardAvoidingView,
+  Linking,
   useColorScheme,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -23,6 +24,15 @@ import { usePanchita } from '../context/PanchitaContext';
 import { useCart } from '../context/CartContext';
 import usePanchitaChat from '../hooks/usePanchitaChat';
 import OrderTrackingCard from '../components/OrderTrackingCard';
+import OrderContextPicker from '../components/OrderContextPicker';
+import useMyOrders from '../hooks/useMyOrders';
+import {
+  SUPPORT_PHONE,
+  SUPPORT_EMAIL,
+  SUPPORT_TEL_URL,
+  SUPPORT_WHATSAPP_URL,
+  SUPPORT_EMAIL_URL,
+} from '@syscor/shared/src/constants/support';
 
 // Atajos para empezar la conversación sin escribir.
 const QUICK_ACTIONS = [
@@ -56,6 +66,18 @@ const PanchitaScreen = ({ navigation, route }) => {
   const { addItem } = useCart();
   const chat = usePanchitaChat({ onActionDone: panchita.refresh });
 
+  // Pedido del que se está hablando ("Añadir contexto"). Si se llegó desde un
+  // pedido en "Pedidos", ya viene elegido.
+  const { orders: myOrders } = useMyOrders();
+  const [contextOrderId, setContextOrderId] = useState(route?.params?.orderId || null);
+  const routeOrderId = route?.params?.orderId;
+  useEffect(() => {
+    if (routeOrderId) setContextOrderId(routeOrderId);
+  }, [routeOrderId]);
+  const contextOrder = myOrders.find((o) => o.id === contextOrderId) || null;
+  const sendWithContext = (text) =>
+    chat.send(text, contextOrder ? { orderId: contextOrder.id, orderCode: contextOrder.code } : null);
+
   // Al abrir, datos frescos. Si llegó con una pregunta (ej. desde "Pedidos"), se envía.
   useEffect(() => {
     panchita.refresh();
@@ -66,7 +88,7 @@ const PanchitaScreen = ({ navigation, route }) => {
   useEffect(() => {
     if (initialPrompt && !chat.loading && !sentInitial.current) {
       sentInitial.current = true;
-      chat.send(initialPrompt);
+      sendWithContext(initialPrompt);
     }
   }, [initialPrompt, chat.loading, chat]);
 
@@ -90,7 +112,7 @@ const PanchitaScreen = ({ navigation, route }) => {
 
   const submit = () => {
     if (!draft.trim()) return;
-    chat.send(draft);
+    sendWithContext(draft);
     setDraft('');
   };
 
@@ -140,6 +162,18 @@ const PanchitaScreen = ({ navigation, route }) => {
         <TouchableOpacity onPress={confirmReset} hitSlop={10} accessibilityLabel="Nueva conversación">
           <Icon name="refresh" size={ms(20)} color={c.textGray} />
         </TouchableOpacity>
+      </View>
+
+      {/* ── CONTEXTO: de qué pedido hablamos ── */}
+      <View style={{ paddingHorizontal: m.gutter, paddingBottom: ms(10) }}>
+        <OrderContextPicker
+          orders={myOrders}
+          selectedId={contextOrderId}
+          onChange={setContextOrderId}
+          colors={c}
+          ms={ms}
+          bottomInset={insets.bottom}
+        />
       </View>
 
       <ScrollView
@@ -192,7 +226,7 @@ const PanchitaScreen = ({ navigation, route }) => {
             {QUICK_ACTIONS.map((action) => (
               <TouchableOpacity
                 key={action.label}
-                onPress={() => chat.send(action.message)}
+                onPress={() => sendWithContext(action.message)}
                 style={[
                   ordersStyles.row,
                   {
@@ -280,6 +314,12 @@ const PanchitaScreen = ({ navigation, route }) => {
 const Bubble = ({ message, colors: c, ms }) => {
   const mine = message.role === 'user';
   return (
+    <>
+    {mine && message.orderCode ? (
+      <Text style={[textStyles.kicker, { alignSelf: 'flex-end', color: c.textGray, fontSize: ms(9.5), marginBottom: -ms(4) }]}>
+        SOBRE {message.orderCode}
+      </Text>
+    ) : null}
     <View
       style={{
         alignSelf: mine ? 'flex-end' : 'flex-start',
@@ -298,6 +338,7 @@ const Bubble = ({ message, colors: c, ms }) => {
         {message.text}
       </Text>
     </View>
+    </>
   );
 };
 
@@ -322,7 +363,7 @@ const ChatCard = ({ card, colors: c, ms, onAddUsual }) => {
           <Text style={[textStyles.kicker, { color: status.color, fontSize: ms(9.5) }]}>{status.label}</Text>
         </View>
         <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(14.5) }]}>
-          {card.claim.typeLabel} · Pedido #{card.orderShortId}
+          {card.claim.typeLabel} · Pedido {card.orderShortId}
         </Text>
         {card.claim.amount > 0 ? (
           <Text style={[textStyles.num, { color: c.textDark, fontSize: ms(18) }]}>${Number(card.claim.amount).toFixed(2)}</Text>
@@ -373,7 +414,7 @@ const ChatCard = ({ card, colors: c, ms, onAddUsual }) => {
       <View style={[box, ordersStyles.row, { gap: ms(8) }]}>
         <Icon name="bicycle" size={ms(18)} color={c.primary} />
         <Text style={[textStyles.body, { flex: 1, color: c.textDark, fontSize: ms(13) }]}>
-          Enviado al repartidor (#{card.orderShortId}): “{card.text}”
+          Enviado al repartidor ({card.orderShortId}): “{card.text}”
         </Text>
       </View>
     );
@@ -384,8 +425,46 @@ const ChatCard = ({ card, colors: c, ms, onAddUsual }) => {
       <View style={[box, ordersStyles.row, { gap: ms(10) }]}>
         <Icon name="time" size={ms(20)} color={c.primary} />
         <Text style={[textStyles.bodyMedium, { flex: 1, color: c.textDark, fontSize: ms(13) }]}>
-          Pedido #{card.order.shortId}: unos {card.eta.minutes} min (entre {card.eta.window?.[0]} y {card.eta.window?.[1]}).
+          Pedido {card.order.code || card.order.shortId}: unos {card.eta.minutes} min (entre {card.eta.window?.[0]} y {card.eta.window?.[1]}).
         </Text>
+      </View>
+    );
+  }
+
+  // Contactos del equipo: botones para WhatsApp, llamada y correo. Los
+  // enlaces salen de las constantes de la app, no del chat.
+  if (card.type === 'contact') {
+    const options = [
+      { icon: 'logo-whatsapp', label: 'WhatsApp', detail: SUPPORT_PHONE, url: SUPPORT_WHATSAPP_URL, color: '#25D366' },
+      { icon: 'call-outline', label: 'Llamar', detail: SUPPORT_PHONE, url: SUPPORT_TEL_URL, color: c.primary },
+      { icon: 'mail-outline', label: 'Correo', detail: SUPPORT_EMAIL, url: SUPPORT_EMAIL_URL, color: c.primary },
+    ];
+    return (
+      <View style={box}>
+        <Text style={[textStyles.kicker, { color: c.textGray, fontSize: ms(9.5) }]}>HABLAR CON EL EQUIPO</Text>
+        {options.map((option) => (
+          <TouchableOpacity
+            key={option.label}
+            onPress={() => Linking.openURL(option.url).catch(() => Alert.alert(option.label, option.detail))}
+            activeOpacity={0.85}
+            style={[
+              ordersStyles.row,
+              { gap: ms(10), padding: ms(10), borderRadius: ms(12), borderWidth: 1, borderColor: c.border, backgroundColor: c.background },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={`${option.label}: ${option.detail}`}
+          >
+            <Icon name={option.icon} size={ms(20)} color={option.color} />
+            <View style={{ flex: 1 }}>
+              <Text style={[textStyles.bodyMedium, { color: c.textDark, fontSize: ms(13.5) }]}>{option.label}</Text>
+              <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(12) }]}>{option.detail}</Text>
+            </View>
+            <Icon name="open-outline" size={ms(16)} color={c.textGray} />
+          </TouchableOpacity>
+        ))}
+        {card.hours ? (
+          <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(11.5) }]}>Atendemos {card.hours}.</Text>
+        ) : null}
       </View>
     );
   }

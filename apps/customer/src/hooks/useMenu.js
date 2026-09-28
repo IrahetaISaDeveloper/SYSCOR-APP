@@ -14,8 +14,10 @@ const useMenu = () => {
   // El backend respondió 401/403: el menú pide sesión.
   const [needsAuth, setNeedsAuth] = useState(false);
 
-  const fetchDishes = useCallback(async () => {
-    setIsLoading(true);
+  // `silent`: al jalar para refrescar no se tapa el menú con el cargando; la
+  // pantalla ya muestra el indicador del gesto.
+  const fetchDishes = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setIsLoading(true);
     setError(null);
     setNeedsAuth(false);
 

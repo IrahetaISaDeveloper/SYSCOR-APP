@@ -579,7 +579,7 @@ const PhoneCard = ({ phone, onChangeNumber, onChangeType, onMakeDefault, onRemov
                   borderRadius: ms(15),
                   borderWidth: 1,
                   borderColor: selected ? c.primary : c.border,
-                  backgroundColor: selected ? 'rgba(226,61,40,0.12)' : 'transparent',
+                  backgroundColor: selected ? c.primaryTint : 'transparent',
                 },
               ]}
               accessibilityRole="radio"

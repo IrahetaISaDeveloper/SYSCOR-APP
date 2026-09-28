@@ -39,7 +39,6 @@ const sauceDot = (name) => SAUCE_DOTS.find((s) => s.match.test(name))?.color;
 
 const money = (n) => `$${(Number(n) || 0).toFixed(2)}`;
 const idOf = (item, fallback) => item?._id?.$oid || item?._id || fallback;
-const PRIMARY_TINT = 'rgba(226,61,40,0.10)';
 
 const TYPE_LABELS = { saucer: 'PLATILLO', combo: 'COMBO', drink: 'BEBIDA' };
 
@@ -208,7 +207,7 @@ export const ProductDetails = ({ route, navigation, onAddToCart, onGoToCart, onB
     borderRadius: ms(21),
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: isDark ? 'rgba(20,20,20,0.72)' : '#FFFFFF',
+    backgroundColor: isDark ? 'rgba(22,24,38,0.72)' : '#FFFFFF',
     borderWidth: 1,
     borderColor: isDark ? 'rgba(255,255,255,0.12)' : c.border,
   };
@@ -610,7 +609,7 @@ const Block = ({ title, subtitle, badge, open = true, onToggle, colors: c, ms, c
             {title}
           </Text>
           {badge ? (
-            <View style={{ paddingHorizontal: ms(7), paddingVertical: ms(2), borderRadius: ms(7), backgroundColor: PRIMARY_TINT }}>
+            <View style={{ paddingHorizontal: ms(7), paddingVertical: ms(2), borderRadius: ms(7), backgroundColor: c.primaryTint }}>
               <Text style={[textStyles.kicker, { color: c.primary, fontSize: ms(9.5) }]}>{badge}</Text>
             </View>
           ) : null}
@@ -743,7 +742,7 @@ const DishTab = ({ dish, active, changes, onPress, colors: c, ms }) => (
       borderRadius: ms(22),
       borderWidth: 1,
       borderColor: active ? c.primary : c.border,
-      backgroundColor: active ? PRIMARY_TINT : c.surface,
+      backgroundColor: active ? c.primaryTint : c.surface,
     }}
     accessibilityRole="tab"
     accessibilityState={{ selected: active }}
@@ -831,7 +830,7 @@ const Chip = ({ label, active, solid, strike, leading, onPress, accessibilityLab
         borderRadius: ms(19),
         borderWidth: 1,
         borderColor: active ? c.primary : c.border,
-        backgroundColor: filled ? c.primary : active ? PRIMARY_TINT : c.surfaceMuted,
+        backgroundColor: filled ? c.primary : active ? c.primaryTint : c.surfaceMuted,
       }}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: active }}

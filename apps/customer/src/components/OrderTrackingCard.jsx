@@ -67,7 +67,7 @@ const OrderTrackingCard = ({ order, colors: c, ms, onSent }) => {
       {/* Encabezado */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Text style={[textStyles.kicker, { color: c.textGray, fontSize: ms(10.5) }]}>
-          PEDIDO #{order.shortId} · {String(order.statusLabel || '').toUpperCase()}
+          PEDIDO {order.code || order.shortId} · {String(order.statusLabel || '').toUpperCase()}
         </Text>
         <View style={{ paddingHorizontal: ms(8), paddingVertical: ms(3), borderRadius: ms(8), backgroundColor: risk.color }}>
           <Text style={[textStyles.kicker, { color: '#FFFFFF', fontSize: ms(9) }]}>{risk.label}</Text>
@@ -160,7 +160,7 @@ const OrderTrackingCard = ({ order, colors: c, ms, onSent }) => {
                 paddingHorizontal: ms(12),
                 height: ms(34),
                 borderRadius: ms(17),
-                backgroundColor: 'rgba(226,61,40,0.12)',
+                backgroundColor: c.primaryTint,
               }}
               accessibilityRole="button"
             >

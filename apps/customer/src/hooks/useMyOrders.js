@@ -58,6 +58,20 @@ const useMyOrders = () => {
 
 // ── Helpers ───────────────────────────────────────────────────────
 
+// A qué hora entró el pedido a cada estado, sacado de `statusHistory`. Se
+// toma la primera vez que pasó por cada uno. "Recibido" cae en createdAt si
+// el historial no lo trae (pedidos viejos).
+const getStatusTimes = (raw) => {
+  const times = { pending: null, preparing: null, ready: null, delivered: null };
+  for (const entry of raw.statusHistory || []) {
+    if (!(entry?.status in times) || times[entry.status] || !entry.changedAt) continue;
+    const date = new Date(entry.changedAt);
+    if (!Number.isNaN(date.getTime())) times[entry.status] = date;
+  }
+  if (!times.pending && raw.createdAt) times.pending = new Date(raw.createdAt);
+  return times;
+};
+
 const normalizeOrder = (raw) => {
   const id = String(raw._id?.$oid || raw._id || raw.id || '');
   const items = (raw.items || []).map((item) => ({
@@ -71,21 +85,51 @@ const normalizeOrder = (raw) => {
 
   return {
     id,
-    // El backend no tiene número de pedido; los últimos caracteres del ID
-    // bastan para que cliente y mesero hablen del mismo pedido.
-    code: `#${id.slice(-5).toUpperCase()}`,
+    // Código de orden del backend ("AD27-01"): el mismo que ven el panel y
+    // Panchita. El recorte del id es solo por si el pedido aún no lo trae.
+    code: raw.code || id.slice(-6).toUpperCase(),
     orderType: raw.orderType === 'local' ? 'local' : 'online',
     tableNumber: raw.table?.number ?? null,
     isDelivery: !!raw.isDelivery,
+    // 'delivery', 'pickup' o 'dine_in' (los pedidos viejos no lo traen).
+    fulfillment: raw.fulfillment || (raw.isDelivery ? 'delivery' : 'pickup'),
+    // Mesa reservada de un pedido para comer en el local.
+    reservation: raw.reservation
+      ? {
+          id: String(raw.reservation.id || raw.reservation._id || ''),
+          status: raw.reservation.status,
+          reservedFor: raw.reservation.reservedFor ? new Date(raw.reservation.reservedFor) : null,
+          expiresAt: raw.reservation.expiresAt ? new Date(raw.reservation.expiresAt) : null,
+          partySize: raw.reservation.partySize,
+          table: raw.reservation.table || null,
+        }
+      : null,
     status: raw.status || 'pending',
     isActive: ACTIVE_STATUSES.includes(raw.status),
     total: Number(raw.total) || 0,
     items,
     itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
     createdAt: raw.createdAt ? new Date(raw.createdAt) : null,
+    statusTimes: getStatusTimes(raw),
     // Hasta cuándo se puede cancelar desde la app (null = ya no se puede).
-    cancelDeadline: raw.cancelDeadline ? new Date(raw.cancelDeadline) : null,
+    // Se puede cancelar mientras siga "Recibido": en cuanto pasa a cocina, ya no.
+    canCancel: !!raw.canCancel,
+    // "Agregar más productos": { active, until } y si todavía se puede.
+    hold: {
+      active: !!raw.hold?.active,
+      until: raw.hold?.until ? new Date(raw.hold.until) : null,
+    },
+    canHold: !!raw.canHold,
     cancelledByCustomer: raw.cancellation?.by === 'customer',
+    // Pago al recibir: 'cash' o 'card_on_delivery' con paymentStatus 'pending'.
+    paymentMethod: raw.paymentMethod || null,
+    payOnDelivery: ['cash', 'card_on_delivery'].includes(raw.paymentMethod) && raw.paymentStatus !== 'paid',
+    // Lo que falta pagar al recibir (el total menos lo cubierto con saldo).
+    amountDue: Math.max(0, (Number(raw.total) || 0) - (Number(raw.payment?.creditApplied) || 0)),
+    // Calificación del cliente (null = todavía no la deja).
+    rating: raw.rating?.stars
+      ? { stars: raw.rating.stars, tags: raw.rating.tags || [], comment: raw.rating.comment || '' }
+      : null,
   };
 };
 
