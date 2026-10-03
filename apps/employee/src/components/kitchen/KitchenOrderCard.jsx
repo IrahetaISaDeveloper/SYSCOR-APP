@@ -138,7 +138,20 @@ export default function KitchenOrderCard({ order, updating, onAdvance, onResume 
         {order.notes ? <NotesBox label="ESPECIFICACIONES DE LA COMANDA" text={order.notes} standalone /> : null}
       </View>
 
-      {isActive ? <View style={styles.actions}>{renderActions()}</View> : <View style={styles.bottomSpacer} />}
+      {order.status === "waiting" ? (
+        <View style={styles.actions}>
+          <View style={styles.waitingBox}>
+            <SymbolIcon name="schedule" size={16} color="#5B6B8C" />
+            <Text style={styles.waitingText}>
+              Segundo tiempo: espera a que el mesero lo marche. Aparecerá como pendiente.
+            </Text>
+          </View>
+        </View>
+      ) : isActive ? (
+        <View style={styles.actions}>{renderActions()}</View>
+      ) : (
+        <View style={styles.bottomSpacer} />
+      )}
     </View>
   );
 }

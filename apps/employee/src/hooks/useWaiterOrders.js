@@ -1,24 +1,36 @@
 import { useState, useCallback, useMemo, useRef } from "react";
-import { Alert } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { fetchWaiterDashboard, updateOrderStatus } from "../services/waiterDashboardApi";
+import { useAuth } from "@syscor/shared/src/context/AuthContext";
+import { fetchWaiterDashboard } from "../services/waiterDashboardApi";
+import useOrderActions from "./useOrderActions";
 
 const POLL_INTERVAL_MS = 15000;
 
+// Cocina incluye los 2º tiempos en espera: siguen sin servirse.
 export const ORDER_FILTERS = [
-  { key: "all", label: "TODAS" },
-  { key: "kitchen", label: "EN COCINA", statuses: ["pending", "preparing", "atrasado"] },
-  { key: "ready", label: "LISTAS", statuses: ["ready"] },
-  { key: "delivered", label: "SERVIDAS", statuses: ["delivered"] },
+  { key: "all", label: "Todas" },
+  { key: "kitchen", label: "Cocina", statuses: ["pending", "preparing", "atrasado"] },
+  { key: "ready", label: "Listas", statuses: ["ready"] },
+  { key: "delivered", label: "Servidas", statuses: ["delivered"] },
+];
+
+// "Todas": las de cualquier mesero (cualquiera puede llevar una comanda
+// lista). "Mías": las que tomé o las que dije que llevo.
+export const ORDER_SCOPES = [
+  { key: "all", label: "Todas las comandas" },
+  { key: "mine", label: "Mías" },
 ];
 
 export default function useWaiterOrders() {
+  const { user } = useAuth();
+  const myId = user?.id || user?._id || null;
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
-  const [updatingId, setUpdatingId] = useState(null);
+  const [scope, setScope] = useState("all");
 
   const firstLoadRef = useRef(true);
 
@@ -32,10 +44,11 @@ export default function useWaiterOrders() {
             ...order,
             tableId: table._id,
             tableNumber: table.number,
+            tableFloor: table.floor || 1,
             customerName: order.customerName || table.customerName || null,
           }))
         )
-        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        .sort((a, b) => new Date(b.firedAt || b.createdAt) - new Date(a.firedAt || a.createdAt));
       setOrders(flattened);
       setError(null);
     } catch (err) {
@@ -61,39 +74,34 @@ export default function useWaiterOrders() {
     setRefreshing(false);
   }, [loadOrders]);
 
+  const reloadSilently = useCallback(() => loadOrders({ silent: true }), [loadOrders]);
+  const actions = useOrderActions(reloadSilently);
+
+  const inScope = useMemo(() => {
+    if (scope !== "mine" || !myId) return orders;
+    return orders.filter(
+      (o) => String(o.waiterId) === String(myId) || String(o.servingBy?.id) === String(myId)
+    );
+  }, [orders, scope, myId]);
+
   const counts = useMemo(() => {
     const result = {};
     for (const filter of ORDER_FILTERS) {
       result[filter.key] = filter.statuses
-        ? orders.filter((o) => filter.statuses.includes(o.status)).length
-        : orders.length;
+        ? inScope.filter((o) => filter.statuses.includes(o.status)).length
+        : inScope.length;
     }
     return result;
-  }, [orders]);
+  }, [inScope]);
 
   const filteredOrders = useMemo(() => {
     const filter = ORDER_FILTERS.find((f) => f.key === activeFilter);
-    if (!filter?.statuses) return orders;
-    return orders.filter((o) => filter.statuses.includes(o.status));
-  }, [orders, activeFilter]);
-
-  const markDelivered = useCallback(
-    async (orderId) => {
-      setUpdatingId(orderId);
-      try {
-        await updateOrderStatus(orderId, "delivered");
-        await loadOrders({ silent: true });
-      } catch (err) {
-        console.error("useWaiterOrders.markDelivered:", err);
-        Alert.alert("Error", err?.response?.data?.message || "No se pudo marcar la comanda como servida.");
-      } finally {
-        setUpdatingId(null);
-      }
-    },
-    [loadOrders]
-  );
+    if (!filter?.statuses) return inScope;
+    return inScope.filter((o) => filter.statuses.includes(o.status));
+  }, [inScope, activeFilter]);
 
   return {
+    myId,
     orders: filteredOrders,
     counts,
     loading,
@@ -102,7 +110,8 @@ export default function useWaiterOrders() {
     onRefresh,
     activeFilter,
     setActiveFilter,
-    updatingId,
-    markDelivered,
+    scope,
+    setScope,
+    actions,
   };
 }

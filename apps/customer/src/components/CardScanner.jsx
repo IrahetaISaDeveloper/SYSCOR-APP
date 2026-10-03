@@ -33,19 +33,29 @@ export default function CardScanner({ visible, onClose, onResult, colors: c }) {
     setHint(null);
     let uri = null;
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.9 });
       uri = photo?.uri;
-      const lines = uri ? await extractTextFromImage(uri) : [];
+      const lines = uri ? await readText(uri) : [];
       const data = parseCardText(lines);
       if (!data.cardNumber) {
-        setHint('No pude leer el número. Acerca la tarjeta al marco, con buena luz y sin reflejos, y vuelve a intentar.');
+        // Se leyó texto pero no un número válido, o no se leyó nada: son
+        // consejos distintos.
+        setHint(
+          lines.length === 0
+            ? 'No se ve texto en la foto. Acerca la tarjeta al marco, con buena luz, y vuelve a intentar.'
+            : 'No pude leer el número completo. Inclina un poco la tarjeta para que se marquen los números, sin reflejos, y vuelve a intentar.',
+        );
         return;
       }
       onResult(data);
       close();
     } catch (error) {
       console.warn('CardScanner:', error?.message);
-      setHint('No se pudo leer la tarjeta. Intenta de nuevo o escribe los datos a mano.');
+      setHint(
+        isModelDownloading(error)
+          ? 'Estamos preparando el lector de tarjetas en tu teléfono (necesita internet la primera vez). Intenta de nuevo en unos segundos.'
+          : 'No se pudo leer la tarjeta. Intenta de nuevo o escribe los datos a mano.',
+      );
     } finally {
       // La foto de la tarjeta no se queda en el teléfono.
       if (uri) {
@@ -145,6 +155,23 @@ export default function CardScanner({ visible, onClose, onResult, colors: c }) {
     </Modal>
   );
 }
+
+// En Android el modelo de ML Kit lo descarga Play Services; mientras baja,
+// la lectura falla con "Waiting for the text recognition model...".
+const isModelDownloading = (error) => /download|waiting for the/i.test(String(error?.message || ''));
+
+// Lee el texto de la foto. Si el modelo aún se está descargando, espera un
+// poco y reintenta un par de veces antes de rendirse.
+const readText = async (uri, attempts = 3) => {
+  for (let i = 1; ; i += 1) {
+    try {
+      return await extractTextFromImage(uri);
+    } catch (error) {
+      if (i >= attempts || !isModelDownloading(error)) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+    }
+  }
+};
 
 const Centered = ({ children }) => (
   <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 }}>{children}</View>

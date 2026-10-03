@@ -140,23 +140,61 @@ export const sanitizeCardHolder = (text) => (text || '').replace(/[^A-Za-zÁÉÍ
 // Palabras impresas en una tarjeta que no son el nombre del titular.
 const NOT_A_NAME = /\b(VISA|MASTER|MASTERCARD|DEBIT|DEBITO|DÉBITO|CREDIT|CREDITO|CRÉDITO|CLASSIC|GOLD|PLATINUM|SIGNATURE|INFINITE|BLACK|BUSINESS|BANCO|BANK|AGRICOLA|CUSCATLAN|DAVIVIENDA|PROMERICA|BAC|CREDOMATIC|HIPOTECARIO|INDUSTRIAL|AZUL|ATLANTIDA|VALID|THRU|VALIDA|HASTA|VENCE|EXPIRES|EXP|MONTH|YEAR|MES|AÑO|MEMBER|SINCE|ELECTRON|INTERNATIONAL|INTERNACIONAL|CONTACTLESS|AMERICAN|EXPRESS|DINERS|CLUB|DISCOVER|CARD|TARJETA)\b/;
 
+// Letras que el OCR confunde con dígitos en el relieve de la tarjeta.
+const OCR_DIGIT_FIXES = { O: '0', o: '0', Q: '0', D: '0', I: '1', l: '1', i: '1', '|': '1', S: '5', s: '5', B: '8', Z: '2', z: '2', G: '6', b: '6', g: '9' };
+
+// Corrige esas letras solo en "palabras" que son casi todo números (un
+// bloque "1lll" o "O8/29"), para no tocar el nombre ni el banco.
+const fixOcrDigits = (line) =>
+  line
+    .split(/(\s+)/)
+    .map((token) => {
+      // Solo si trae al menos un dígito y todo lo demás son letras
+      // confundibles o separadores de fecha.
+      const onlyDigitLike = [...token].every((ch) => /[\d/.-]/.test(ch) || OCR_DIGIT_FIXES[ch]);
+      if (!/\d/.test(token) || !onlyDigitLike) return token;
+      return [...token].map((ch) => OCR_DIGIT_FIXES[ch] || ch).join('');
+    })
+    .join('');
+
+// Un número que sirve: largo de su marca y pasa Luhn.
+const acceptCardNumber = (digits) => {
+  const spec = specOf(digits);
+  return spec.brand && spec.lengths.includes(digits.length) && isValidLuhn(digits);
+};
+
 // Saca número, vencimiento y nombre del texto que leyó el OCR en el frente
 // de la tarjeta. Devuelve solo lo que encontró con confianza.
 export const parseCardText = (lines, now = new Date()) => {
-  const text = (lines || []).join('\n');
+  const fixedLines = (lines || []).map((line) => fixOcrDigits(String(line || '')));
+  const text = fixedLines.join('\n');
   const result = {};
 
   // Número: una secuencia de 13 a 19 dígitos (con o sin espacios) que pase
   // Luhn y cuyo largo corresponda a su marca.
   const candidates = text.match(/(?:\d[ -]?){12,18}\d/g) || [];
-  for (const candidate of candidates) {
-    const digits = sanitizeDigits(candidate);
-    const spec = specOf(digits);
-    if (spec.brand && spec.lengths.includes(digits.length) && isValidLuhn(digits)) {
-      result.cardNumber = formatCardNumber(digits);
-      break;
+  const found = candidates.map(sanitizeDigits).find(acceptCardNumber);
+
+  // ML Kit suele devolver el número partido: cada bloque de 4 dígitos (o dos
+  // mitades) en su propia línea. Se juntan bloques seguidos hasta formar un
+  // número válido.
+  let joined = null;
+  if (!found) {
+    const groups = fixedLines
+      .flatMap((line) => line.split(/[\s-]+/))
+      .map((token) => (/^\d{2,8}$/.test(token) ? token : null));
+    for (let start = 0; start < groups.length && !joined; start += 1) {
+      let digits = '';
+      for (let end = start; end < groups.length && groups[end] && digits.length < 19; end += 1) {
+        digits += groups[end];
+        if (digits.length >= 13 && acceptCardNumber(digits)) {
+          joined = digits;
+          break;
+        }
+      }
     }
   }
+  if (found || joined) result.cardNumber = formatCardNumber(found || joined);
 
   // Vencimiento: la fecha MM/AA más lejana que no esté vencida (algunas
   // tarjetas imprimen también "miembro desde").

@@ -12,7 +12,20 @@ export const IN_KITCHEN_STATUSES = ["pending", "preparing", "atrasado"];
 
 export const getOrderStatusMeta = (status) => ORDER_STATUS[status] || ORDER_STATUS.pending;
 
-export const formatOrderId = (orderId) => `#${String(orderId || "").slice(-4).toUpperCase()}`;
+// Código de la comanda tal como lo genera el backend ("CL03-02": comer en el
+// local, día 03, comanda 2 del día). Todas las pantallas usan este mismo
+// valor. Nunca se inventa uno a partir del id: si el servidor no lo manda,
+// queda vacío y la pantalla solo dice "Comanda".
+export const orderCode = (order) => order?.code || "";
+
+// "Ronda 2 · 1er tiempo": de qué parte de la cuenta de la mesa es la comanda.
+export const orderStageLabel = (order) =>
+  [
+    order?.round > 1 ? `Ronda ${order.round}` : null,
+    order?.course === 1 ? "1er tiempo" : order?.course === 2 ? "2º tiempo" : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
 export const formatMoney = (amount) => `$${Number(amount || 0).toFixed(2)}`;
 

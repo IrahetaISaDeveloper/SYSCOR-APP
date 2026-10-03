@@ -2,6 +2,8 @@ export const LATE_THRESHOLD_MINUTES = 15;
 
 export const KITCHEN_STATUS = {
   pending: { label: "PENDIENTE", badge: "#3A3A3A" },
+  // 2º tiempo: el mesero lo marcha cuando la mesa termina el 1º.
+  waiting: { label: "EN ESPERA", badge: "#5B6B8C" },
   preparing: { label: "EN PREPARACIÓN", badge: "#E38B29" },
   late: { label: "RETRASADA", badge: "#C62828" },
   ready: { label: "LISTA", badge: "#2E8B57" },

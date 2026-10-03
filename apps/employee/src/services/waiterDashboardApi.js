@@ -39,14 +39,32 @@ export const updateTableStatus = async (tableId, status, occupation = {}) => {
 };
 
 // Crea una comanda para una mesa ocupada
-export const createOrder = async ({ table, items, customerName, notes }) => {
+//   course: 1 = sale primero, 2 = después (sin course = todo junto)
+//   waitForWaiter: el 2° tiempo espera a que el mesero lo marche
+//   roundOf: id de la comanda del 1° tiempo, para compartir la ronda
+export const createOrder = async ({ table, items, customerName, notes, course, waitForWaiter, roundOf }) => {
   const { data } = await apiClient.post("/orders", {
     orderType: "local",
     table,
     items,
     localCustomerName: customerName || undefined,
     notes: notes || undefined,
+    course: course || undefined,
+    waitForWaiter: waitForWaiter || undefined,
+    roundOf: roundOf || undefined,
   });
+  return data;
+};
+
+// "Marchar": cocina ya puede preparar un 2° tiempo que estaba en espera
+export const fireOrder = async (orderId) => {
+  const { data } = await apiClient.put(`/orders/${orderId}/fire`);
+  return data;
+};
+
+// "Yo la llevo" (claim: true) o soltarla (claim: false)
+export const claimOrder = async (orderId, claim = true) => {
+  const { data } = await apiClient.put(`/orders/${orderId}/claim`, { claim });
   return data;
 };
 

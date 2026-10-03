@@ -47,7 +47,8 @@
           "cameraPermission": "El Corral usa la cámara para escanear el código QR de tu mesa y para tu foto de perfil.",
           "recordAudioAndroid": false
         }
-      ]
+      ],
+      "./plugins/withMlKitOcr"
     ],
     "ios": {
       "supportsTablet": true,

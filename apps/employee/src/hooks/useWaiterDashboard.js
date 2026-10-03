@@ -46,6 +46,16 @@ export default function useWaiterDashboard() {
     }, [loadDashboard])
   );
 
+  // La comanda se mandó desde el menú y el servidor ya ocupó la mesa: se
+  // pinta ocupada al instante, sin esperar la recarga.
+  const markOccupied = useCallback(
+    (tableId) => {
+      setTables((prev) => prev.map((t) => (t._id === tableId ? { ...t, status: "ocupada" } : t)));
+      loadDashboard({ silent: true });
+    },
+    [loadDashboard]
+  );
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadDashboard({ silent: true });
@@ -142,7 +152,12 @@ export default function useWaiterDashboard() {
     [selectedTable, loadDashboard, changeTableStatus]
   );
 
+  // Recarga sin indicador (después de servir, marchar o "yo la llevo").
+  const reload = useCallback(() => loadDashboard({ silent: true }), [loadDashboard]);
+
   return {
+    reload,
+    markOccupied,
     tables,
     loading,
     refreshing,

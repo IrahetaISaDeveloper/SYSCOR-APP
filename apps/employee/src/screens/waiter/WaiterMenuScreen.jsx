@@ -23,6 +23,8 @@ import useWaiterMenu, { normalizeText } from '../../hooks/useWaiterMenu';
 import { MENU_CATEGORIES } from '../../constants/menuCategories';
 import { waiterColors as c, getTableState } from '../../styles/waiterTheme';
 import OrderReviewSheet from '../../components/waiter/OrderReviewSheet';
+import ProductCustomizeSheet from '../../components/waiter/ProductCustomizeSheet';
+import { formatMoney } from '../../utils/productOptions';
 
 const PILL = '#1C1C1E';
 
@@ -30,8 +32,11 @@ const PILL = '#1C1C1E';
 // cliente (buscador, tarjetas de categoría y rejilla de platillos), pero:
 //   - el buscador va fijo arriba: es lo más rápido para encontrar lo que pide
 //     la mesa;
-//   - tocar un platillo lo agrega a la orden (sin pantalla de detalle);
-//   - no se muestran precios.
+//   - un producto sin opciones se agrega con un toque; uno con opciones
+//     (combo armable, bebida, ingredientes, extras) abre su personalización;
+//   - el botón (i) de cada tarjeta abre el detalle con sus ingredientes, para
+//     leérselos al cliente;
+//   - el precio va junto al nombre, como en el menú del cliente.
 export default function WaiterMenuScreen({ navigation, route }) {
   const table = route.params?.table || {};
   const { ms, gutter } = useAuthMetrics();
@@ -44,6 +49,8 @@ export default function WaiterMenuScreen({ navigation, route }) {
   const [openCategory, setOpenCategory] = useState(null);
   const [subFilter, setSubFilter] = useState('all');
   const [reviewOpen, setReviewOpen] = useState(false);
+  // Producto que se está personalizando (null = hoja cerrada).
+  const [customizing, setCustomizing] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -110,12 +117,24 @@ export default function WaiterMenuScreen({ navigation, route }) {
   });
 
   const handleSend = async () => {
-    const ok = await menu.sendToKitchen();
-    if (!ok) return;
+    const result = await menu.sendToKitchen();
+    if (!result.ok) return;
     setSent(true);
     setReviewOpen(false);
-    Alert.alert('Comanda enviada', `La orden de la mesa ${table.number} ya está en cocina.`, [
-      { text: 'Listo', onPress: () => navigation.goBack() },
+    const message = result.waiting
+      ? `El 1er tiempo de la mesa ${table.number} ya está en cocina. El 2º queda en espera: márchalo desde la mesa o desde Comandas cuando terminen.`
+      : `La orden de la mesa ${table.number} ya está en cocina.`;
+    Alert.alert('Comanda enviada', message, [
+      {
+        text: 'Listo',
+        // Regresa a Mesas avisando qué mesa quedó ocupada (ver WaiterDashboardScreen).
+        onPress: () =>
+          navigation.navigate('WaiterTabs', {
+            screen: 'Dashboard',
+            params: { sentTableId: table._id, sentAt: Date.now() },
+            merge: true,
+          }),
+      },
     ]);
   };
 
@@ -289,6 +308,8 @@ export default function WaiterMenuScreen({ navigation, route }) {
                     product={product}
                     quantity={quantityOf(product.key)}
                     onChange={(delta) => changeQuantity(product, delta)}
+                    onCustomize={() => setCustomizing(product)}
+                    hasInfo={!!(product.raw?.recipe?.length || product.raw?.saucers?.length || product.raw?.selectiveOptions?.length)}
                     ms={ms}
                     cardWidth={cardWidth}
                   />
@@ -321,7 +342,7 @@ export default function WaiterMenuScreen({ navigation, route }) {
           <View style={{ gap: ms(2) }}>
             <Text style={[textStyles.title, { color: c.white, fontSize: ms(17) }]}>Ver orden</Text>
             <Text style={[textStyles.num, { color: 'rgba(255,255,255,0.7)', fontSize: ms(13) }]}>
-              {itemCount} {itemCount === 1 ? 'producto' : 'productos'}
+              {itemCount} {itemCount === 1 ? 'producto' : 'productos'} · {formatMoney(menu.total)}
             </Text>
           </View>
           <View style={[styles.pillIcon, { width: ms(50), height: ms(50), borderRadius: ms(25) }]}>
@@ -333,13 +354,34 @@ export default function WaiterMenuScreen({ navigation, route }) {
         </TouchableOpacity>
       ) : null}
 
+      <ProductCustomizeSheet
+        product={customizing}
+        extras={menu.extras}
+        houseDrinks={menu.houseDrinks}
+        onClose={() => setCustomizing(null)}
+        onAdd={(selection) => {
+          // Un producto sin opciones abierto solo para ver sus ingredientes se
+          // suma a su renglón, salvo que lleve comentario.
+          if (!customizing.customizable && !selection.notes) changeQuantity(customizing, selection.quantity);
+          else menu.addCustomized(customizing, selection);
+          setCustomizing(null);
+        }}
+      />
+
       <OrderReviewSheet
         visible={reviewOpen}
         onClose={() => setReviewOpen(false)}
         table={table}
         lines={menu.orderLines}
+        total={menu.total}
         onChangeQuantity={changeQuantity}
         onChangeLineNotes={menu.setLineNotes}
+        splitCourses={menu.splitCourses}
+        onChangeSplitCourses={menu.setSplitCourses}
+        coursesActive={menu.coursesActive}
+        onChangeLineCourse={menu.setLineCourse}
+        waitSecond={menu.waitSecond}
+        onChangeWaitSecond={menu.setWaitSecond}
         notes={menu.notes}
         onChangeNotes={menu.setNotes}
         submitting={menu.submitting}
@@ -385,9 +427,10 @@ function CategoryCard({ category, count, ms, cardWidth, onPress }) {
 
 // Tarjeta de producto: foto, nombre y descripción como en el menú del
 // cliente; abajo, en lugar del precio, el control para agregarlo a la orden.
-// Tocar la tarjeta también suma uno.
-function ProductCard({ product, quantity, onChange, ms, cardWidth }) {
+// Tocar la tarjeta suma uno, o abre la personalización si tiene opciones.
+function ProductCard({ product, quantity, onChange, onCustomize, hasInfo, ms, cardWidth }) {
   const selected = quantity > 0;
+  const custom = product.customizable;
   return (
     <TouchableOpacity
       style={[
@@ -395,9 +438,9 @@ function ProductCard({ product, quantity, onChange, ms, cardWidth }) {
         { width: cardWidth, borderRadius: ms(18), borderColor: selected ? c.primary : c.border, borderWidth: selected ? 1.5 : 1 },
       ]}
       activeOpacity={0.85}
-      onPress={() => onChange(1)}
+      onPress={() => (custom ? onCustomize() : onChange(1))}
       accessibilityRole="button"
-      accessibilityLabel={`Agregar ${product.name}${selected ? `, llevas ${quantity}` : ''}`}
+      accessibilityLabel={`${custom ? 'Personalizar' : 'Agregar'} ${product.name}${selected ? `, llevas ${quantity}` : ''}`}
     >
       <View style={[styles.productImageArea, { height: cardWidth * 0.72 }]}>
         {product.imageUrl ? (
@@ -409,6 +452,18 @@ function ProductCard({ product, quantity, onChange, ms, cardWidth }) {
           <View style={[styles.badge, { borderRadius: ms(8), paddingHorizontal: ms(8), paddingVertical: ms(4), top: ms(8), left: ms(8) }]}>
             <Text style={[textStyles.link, { color: c.white, fontSize: ms(10.5) }]}>Orden de {product.tacosPerOrder}</Text>
           </View>
+        ) : null}
+        {/* Ver ingredientes sin agregar nada */}
+        {hasInfo ? (
+          <TouchableOpacity
+            onPress={onCustomize}
+            hitSlop={8}
+            style={[styles.infoButton, { width: ms(30), height: ms(30), borderRadius: ms(15), bottom: ms(8), right: ms(8) }]}
+            accessibilityRole="button"
+            accessibilityLabel={`Ver ingredientes de ${product.name}`}
+          >
+            <Icon name="information" size={ms(18)} color={c.white} />
+          </TouchableOpacity>
         ) : null}
         {selected ? (
           <View style={[styles.qtyBadge, { minWidth: ms(26), height: ms(26), borderRadius: ms(13), top: ms(8), right: ms(8) }]}>
@@ -424,9 +479,19 @@ function ProductCard({ product, quantity, onChange, ms, cardWidth }) {
         <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(11.5), lineHeight: ms(15.5), height: ms(31) }]} numberOfLines={2}>
           {product.description || product.subcategory || product.category}
         </Text>
+        <Text style={[textStyles.num, { color: c.primary, fontSize: ms(15.5), marginTop: ms(2) }]}>
+          {formatMoney(product.price)}
+        </Text>
 
         <View style={{ marginTop: ms(6) }}>
-          {selected ? (
+          {custom ? (
+            <View style={[styles.row, selected ? styles.addButtonSolid : styles.addButton, { borderRadius: ms(12), height: ms(36), gap: ms(6) }]}>
+              <Icon name="options-outline" size={ms(16)} color={selected ? c.white : c.primary} />
+              <Text style={[textStyles.link, { color: selected ? c.white : c.primary, fontSize: ms(13) }]}>
+                {selected ? 'Agregar otro' : 'Personalizar'}
+              </Text>
+            </View>
+          ) : selected ? (
             <View style={[styles.row, styles.stepper, { borderRadius: ms(12), height: ms(36) }]}>
               <TouchableOpacity onPress={() => onChange(-1)} hitSlop={6} style={styles.stepperButton} accessibilityLabel={`Quitar un ${product.name}`}>
                 <Icon name={quantity === 1 ? 'trash-outline' : 'remove'} size={ms(17)} color={c.primary} />
@@ -533,6 +598,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
+  infoButton: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
   qtyBadge: {
     position: 'absolute',
     alignItems: 'center',
@@ -555,6 +626,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: c.primary,
+  },
+  addButtonSolid: {
+    justifyContent: 'center',
+    backgroundColor: c.primary,
   },
   pill: {
     position: 'absolute',

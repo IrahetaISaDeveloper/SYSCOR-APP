@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { useAuthMetrics } from "@syscor/shared/src/styles/authTheme";
 import { useAuth } from "@syscor/shared/src/context/AuthContext";
 import { getFirstName } from "@syscor/shared/src/utils/userDisplay";
 import useWaiterDashboard from "../../hooks/useWaiterDashboard";
+import useOrderActions from "../../hooks/useOrderActions";
 import WaiterSheet from "../../components/waiter/WaiterSheet";
 import WaiterFloorPlan from "../../components/waiterDashboard/WaiterFloorPlan";
 import TableListView from "../../components/waiterDashboard/TableListView";
@@ -38,7 +39,7 @@ const VIEW_MODES = [
   { id: "list", icon: "list-outline", label: "Lista" },
 ];
 
-export default function WaiterDashboardScreen({ navigation }) {
+export default function WaiterDashboardScreen({ navigation, route }) {
   const { ms, gutter } = useAuthMetrics();
   const { user } = useAuth();
   const firstName = getFirstName(user);
@@ -61,7 +62,18 @@ export default function WaiterDashboardScreen({ navigation }) {
     sendTableToCleaning,
     freeTable,
     chargeTable,
+    markOccupied,
+    reload,
   } = useWaiterDashboard();
+  const orderActions = useOrderActions(reload);
+  const myId = user?.id || user?._id || null;
+
+  // Al volver del menú con una comanda enviada, la mesa ya está ocupada.
+  const sentAt = route.params?.sentAt;
+  const sentTableId = route.params?.sentTableId;
+  useEffect(() => {
+    if (sentAt && sentTableId) markOccupied(sentTableId);
+  }, [sentAt, sentTableId, markOccupied]);
 
   const lastSheetRef = useRef(null);
 
@@ -122,7 +134,9 @@ export default function WaiterDashboardScreen({ navigation }) {
       <TableActionsSheet
         table={selectedTable}
         busy={busy}
-        onOpenOrder={handleOpenOrder}
+        myId={myId}
+        orderActions={orderActions}
+        onAddProducts={handleOpenOrder}
         onCharge={openCharge}
         onSendToCleaning={sendTableToCleaning}
         onFreeTable={freeTable}

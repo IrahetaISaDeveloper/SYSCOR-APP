@@ -2,6 +2,30 @@ import { useState } from 'react';
 import apiClient from '@syscor/shared/src/services/apiClient';
 import { firstPasswordProblem } from '@syscor/shared/src/utils/passwordRules';
 
+// Token del paso de verificación que devuelve el servidor. Viaja en el body
+// en vez de depender solo de la cookie: en Android podía quedar una cookie
+// vieja con el mismo nombre y el servidor la leía en lugar de la nueva
+// ("Ocurrió un problema interno al verificar el código"). Vive fuera del hook
+// porque la pantalla que envía el código y la que lo verifica son distintas.
+let verificationToken = null;
+
+// Nombre de la dirección según el tipo de lugar, con los mismos nombres que
+// usa "Mis direcciones" (Casa / Trabajo / Otro).
+const ADDRESS_TAGS = { residencia: 'Casa', oficina: 'Trabajo', otro: 'Otro' };
+
+// La pantalla de registro pide la dirección por partes; el backend guarda
+// { tag, details } como en "Mis direcciones". Sin esto la cuenta no se creaba
+// ("Path `details` is required").
+const toAddressPayload = (address) => {
+  if (address.tag && address.details) return address;
+  const street = [address.calle, address.numero ? `#${address.numero}` : null].filter(Boolean).join(' ');
+  return {
+    tag: address.alias || ADDRESS_TAGS[address.tipo] || 'Casa',
+    details: [street, address.colonia, address.municipio, address.departamento].filter(Boolean).join(', '),
+    isDefault: true,
+  };
+};
+
 // Solo letras (con acentos) y espacios, con la inicial de cada palabra en mayúscula.
 const formatPersonName = (text) =>
   text
@@ -70,7 +94,7 @@ export const useCustomerAuth = () => {
       image: null,
       birthdate: null,
       phones: phoneDigits(rawPhone) ? [phoneDigits(rawPhone)] : [],
-      addresses: address ? [address] : [],
+      addresses: address ? [toAddressPayload(address)] : [],
     };
   };
 
@@ -181,7 +205,8 @@ export const useCustomerAuth = () => {
     setError(null);
 
     try {
-      await apiClient.post('/auth/customers/register/send-code', { email: cleanEmail });
+      const { data } = await apiClient.post('/auth/customers/register/send-code', { email: cleanEmail });
+      verificationToken = data?.verificationToken || null;
       return true;
     } catch (err) {
       if (err.response) {
@@ -219,17 +244,24 @@ export const useCustomerAuth = () => {
     setError(null);
 
     try {
-      await apiClient.post('/auth/customers/register/verify-code', {
+      const verified = await apiClient.post('/auth/customers/register/verify-code', {
         code: activeCode,
         email: activeEmail,
+        verificationToken: verificationToken || undefined,
       });
 
+      // Cada paso devuelve el token para el siguiente.
       const personalInfo = buildPersonalInfoPayload(explicitData);
-      await apiClient.post('/auth/customers/register/personal-info', personalInfo);
+      const withInfo = await apiClient.post('/auth/customers/register/personal-info', {
+        ...personalInfo,
+        registrationToken: verified.data?.registrationToken || undefined,
+      });
 
       await apiClient.post('/auth/customers/register/set-password', {
         password: activePassword,
+        registrationToken: withInfo.data?.registrationToken || undefined,
       });
+      verificationToken = null;
 
       navigation.replace('VerifiedSuccess');
       return true;
@@ -257,7 +289,8 @@ export const useCustomerAuth = () => {
     setError(null);
 
     try {
-      await apiClient.post('/auth/customers/register/send-code', { email: targetEmail });
+      const { data } = await apiClient.post('/auth/customers/register/send-code', { email: targetEmail });
+      verificationToken = data?.verificationToken || null;
     } catch (err) {
       setError({
         title: 'Error al reenviar',

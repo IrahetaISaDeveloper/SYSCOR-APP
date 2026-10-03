@@ -16,6 +16,13 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "El Corral Staff usa tus fotos para que elijas tu foto de perfil.",
+          "cameraPermission": "El Corral Staff usa la cámara para que te tomes tu foto de perfil."
+        }
       ]
     ],
     "ios": {

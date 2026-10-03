@@ -98,11 +98,13 @@ const resolveTiming = (item, kitchenStatus, readyStatuses, prepStatuses) => {
 
 const pluralPeople = (count) => `${count} ${count === 1 ? "persona" : "personas"}`;
 
-const baseFields = (id, createdAt) => {
+// `code` es el código que genera el backend ("CL03-02"), el mismo que ven
+// meseros, panel y clientes. El recorte del id queda solo de respaldo.
+const baseFields = (id, createdAt, code) => {
   const minutesAgo = minutesBetween(createdAt) ?? 0;
   return {
     id: String(id),
-    displayId: `#${String(id).slice(-4).toUpperCase()}`,
+    displayId: code || String(id).slice(-6).toUpperCase(),
     createdAt,
     clock: formatClock(createdAt),
     minutesAgo,
@@ -113,7 +115,9 @@ const baseFields = (id, createdAt) => {
 export const mapApiOrder = (order) => {
   const mapped = ORDER_STATUS_MAP[order.status];
   if (!mapped) return null;
-  const status = resolveKitchenStatus(mapped, order);
+  // 2º tiempo que el mesero todavía no marcha: se ve, pero no se empieza.
+  const waiting = order.waiting && order.status === "pending";
+  const status = waiting ? "waiting" : resolveKitchenStatus(mapped, order);
   const isLocal = order.orderType !== "online";
 
   let context;
@@ -123,7 +127,13 @@ export const mapApiOrder = (order) => {
     const people = order.table?.peopleCount;
     context = {
       icon: "grid_view",
-      text: [number ? `Mesa ${number}` : "Mesa sin asignar", people ? pluralPeople(people) : null]
+      // Ronda 2 = lo que la mesa pidió después; tiempo = sale antes o después.
+      text: [
+        number ? `Mesa ${number}` : "Mesa sin asignar",
+        people ? pluralPeople(people) : null,
+        order.round > 1 ? `Ronda ${order.round}` : null,
+        order.course === 1 ? "1er tiempo" : order.course === 2 ? "2º tiempo" : null,
+      ]
         .filter(Boolean)
         .join(" · "),
     };
@@ -141,7 +151,8 @@ export const mapApiOrder = (order) => {
   }
 
   return {
-    ...baseFields(order._id, order.createdAt),
+    // Un 2º tiempo cuenta desde que se marchó, no desde que se tomó.
+    ...baseFields(order._id, order.firedAt || order.createdAt, order.code),
     source: "order",
     status,
     context,
