@@ -78,6 +78,15 @@
         "projectId": "edbe0044-39bf-4431-ab24-dbbf81eff699"
       }
     },
-    "owner": "syscors-team"
+    "owner": "syscors-team",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/edbe0044-39bf-4431-ab24-dbbf81eff699"
+    }
   }
 }
