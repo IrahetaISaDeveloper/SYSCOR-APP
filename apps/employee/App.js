@@ -9,11 +9,15 @@ import { useFonts } from 'expo-font';
 
 import { AuthProvider, useAuth } from '@syscor/shared/src/context/AuthContext';
 import { ROLES, EMPLOYEE_TYPES } from '@syscor/shared/src/constants/roles';
-import BootGate from '@syscor/shared/src/navigation/BootGate';
+import { fontAssets as authFontAssets } from '@syscor/shared/src/styles/typography';
+import EmployeeBootGate from './src/navigation/EmployeeBootGate';
 import UnsupportedRoleScreen from '@syscor/shared/src/screens/UnsupportedRoleScreen';
 
 // Auth (solo empleados)
 import LoginEmployeeScreen from './src/screens/auth/LoginEmployeeScreen';
+import RequestRecoveryCodeScreen from './src/screens/auth/RequestRecoveryCodeScreen';
+import VerifyRecoveryCodeScreen from './src/screens/auth/VerifyRecoveryCodeScreen';
+import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 
 // Mesero
 import WaiterDashboardScreen from './src/screens/waiter/WaiterDashboardScreen';
@@ -38,8 +42,11 @@ const KitchenTab = createBottomTabNavigator();
 
 function AuthNavigator() {
   return (
-    <AuthStack.Navigator screenOptions={{ headerShown: false }}>
-      <AuthStack.Screen name="EmployeeLogin" component={LoginEmployeeScreen} />
+    <AuthStack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+      <AuthStack.Screen name="Login" component={LoginEmployeeScreen} />
+      <AuthStack.Screen name="ForgotPassword" component={RequestRecoveryCodeScreen} />
+      <AuthStack.Screen name="VerifyRecoveryCode" component={VerifyRecoveryCodeScreen} />
+      <AuthStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
     </AuthStack.Navigator>
   );
 }
@@ -131,19 +138,21 @@ function RootNavigator() {
 }
 
 export default function App() {
-  const [fontsLoaded, fontError] = useFonts(fontAssets);
+  // DM Sans/Mono para las pantallas de trabajo y el juego compartido
+  // (Archivo, Inter, IBM Plex Mono) para la introducción y el login.
+  const [fontsLoaded, fontError] = useFonts({ ...fontAssets, ...authFontAssets });
 
   if (!fontsLoaded && !fontError) return null;
 
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <BootGate>
+        <EmployeeBootGate>
           <NavigationContainer>
             <StatusBar style="dark" />
             <RootNavigator />
           </NavigationContainer>
-        </BootGate>
+        </EmployeeBootGate>
       </AuthProvider>
     </SafeAreaProvider>
   );

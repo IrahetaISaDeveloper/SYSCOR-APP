@@ -2,25 +2,28 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import AnimatedSplashScreen from '../screens/AnimatedSplashScreen';
+import AnimatedSplashScreen from '@syscor/shared/src/screens/AnimatedSplashScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
-import WelcomeScreen from '../screens/WelcomeScreen';
 
+// Misma clave que el BootGate compartido: quien ya vio la introducción antes
+// de este cambio no la vuelve a ver.
 const ONBOARDING_SEEN_KEY = 'syscor.hasSeenOnboarding';
 
 // Mantiene visible el splash nativo hasta que nuestro splash animado en JS toma el control.
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-// Orquesta la secuencia de arranque:
-//   splash -> introducción (solo el primer arranque) -> bienvenida -> app.
+// Arranque de la app de empleados:
+//   splash -> introducción (solo el primer arranque) -> app.
+//
+// No hay pantalla de bienvenida con "Iniciar sesión / Crear cuenta": las
+// cuentas de empleado las crea administración, así que sin sesión la app abre
+// directo en el login.
 //
 // El splash se monta por encima de la pantalla que le sigue, de modo que al
 // deslizarse hacia arriba la deja descubierta sin parpadeos.
-export default function BootGate({ children }) {
+export default function EmployeeBootGate({ children }) {
   const [stage, setStage] = useState('splash');
   const [isFirstLaunch, setIsFirstLaunch] = useState(false);
-  // Ruta de auth elegida en la bienvenida ('Login' o 'RegisterCustomer').
-  const [entryRoute, setEntryRoute] = useState(null);
 
   useEffect(() => {
     AsyncStorage.getItem(ONBOARDING_SEEN_KEY).then((value) => {
@@ -34,41 +37,22 @@ export default function BootGate({ children }) {
     SplashScreen.hideAsync().catch(() => {});
   }, []);
 
-  const handleSplashFinish = () => setStage(isFirstLaunch ? 'onboarding' : 'welcome');
+  const handleSplashFinish = () => setStage(isFirstLaunch ? 'onboarding' : 'app');
 
   const handleOnboardingFinish = async () => {
     await AsyncStorage.setItem(ONBOARDING_SEEN_KEY, 'true');
-    setStage('welcome');
-  };
-
-  const handleWelcomeFinish = (route) => {
-    setEntryRoute(route);
     setStage('app');
   };
 
-  // `children` puede ser una función para recibir la ruta inicial elegida.
-  if (stage === 'app') {
-    return typeof children === 'function' ? children({ entryRoute }) : children;
-  }
+  // Durante el splash ya se monta debajo la pantalla que quedará al
+  // descubierto. El árbol es siempre el mismo para que la navegación no se
+  // vuelva a montar cuando el splash se retira.
+  const showOnboarding = isFirstLaunch && stage !== 'app';
 
-  if (stage === 'onboarding') {
-    return <OnboardingScreen onFinish={handleOnboardingFinish} />;
-  }
-
-  if (stage === 'welcome') {
-    return <WelcomeScreen onFinish={handleWelcomeFinish} />;
-  }
-
-  // Etapa de splash: debajo se monta ya la pantalla que quedará al descubierto
-  // cuando el splash se retire hacia arriba.
   return (
     <View style={styles.container}>
-      {isFirstLaunch ? (
-        <OnboardingScreen onFinish={handleOnboardingFinish} />
-      ) : (
-        <WelcomeScreen onFinish={handleWelcomeFinish} />
-      )}
-      <AnimatedSplashScreen onFinish={handleSplashFinish} />
+      {showOnboarding ? <OnboardingScreen onFinish={handleOnboardingFinish} /> : children}
+      {stage === 'splash' ? <AnimatedSplashScreen onFinish={handleSplashFinish} /> : null}
     </View>
   );
 }

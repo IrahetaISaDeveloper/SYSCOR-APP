@@ -59,9 +59,11 @@ const normalizeHistory = (history) =>
     })
     .filter(Boolean);
 
-export default function useLoginHelpChat() {
+// `presets` y `welcome` son opcionales: cada app puede traer sus propias
+// preguntas frecuentes y saludo (la de empleados no habla de crear cuenta).
+export default function useLoginHelpChat({ presets = LOGIN_FAQ, welcome = WELCOME } = {}) {
   const [messages, setMessages] = useState([
-    { id: makeId(), role: 'model', text: WELCOME },
+    { id: makeId(), role: 'model', text: welcome },
   ]);
   const [sending, setSending] = useState(false);
   // Tras responder, Panchita pregunta si sirvió: mientras esté en true la
@@ -196,12 +198,12 @@ export default function useLoginHelpChat() {
 
   const reset = useCallback(() => {
     historyRef.current = [];
-    setMessages([{ id: makeId(), role: 'model', text: WELCOME }]);
+    setMessages([{ id: makeId(), role: 'model', text: welcome }]);
     setSending(false);
     setAwaitingFeedback(false);
     setShowSupport(false);
     setOfferRecovery(false);
-  }, []);
+  }, [welcome]);
 
   return {
     messages,
@@ -211,7 +213,7 @@ export default function useLoginHelpChat() {
     offerRecovery,
     send,
     askPreset,
-    presets: LOGIN_FAQ,
+    presets,
     confirmSolved,
     requestSupport,
     reset,

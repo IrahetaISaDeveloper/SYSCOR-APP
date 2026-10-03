@@ -1,0 +1,226 @@
+import { useState, useEffect, useCallback } from "react";
+import {
+  requestRecoveryCode,
+  verifyRecoveryCode,
+  setNewPassword as setNewPasswordRequest,
+} from "../services/recoveryPasswordApi";
+import { firstPasswordProblem } from '@syscor/shared/src/utils/passwordRules';
+
+const RESEND_COOLDOWN_SECONDS = 120;
+
+export default function useRecoveryPassword() {
+  const [email, setEmail] = useState("");
+  const [digits, setDigits] = useState(["", "", "", "", "", ""]);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [inputError, setInputError] = useState("");
+  const [apiError, setApiError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingResend, setIsLoadingResend] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [timer, setTimer] = useState(0);
+
+  useEffect(() => {
+    if (timer <= 0) return undefined;
+    const interval = setInterval(() => {
+      setTimer((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timer]);
+
+  const clearMessages = useCallback(() => {
+    setApiError(null);
+    setInputError("");
+  }, []);
+
+  // Paso 1: solicitar código
+  const handleRequestCode = useCallback(
+    async (emailToUse) => {
+      clearMessages();
+      const trimmed = (emailToUse ?? email).trim();
+
+      if (!trimmed) {
+        setInputError("El correo es requerido");
+        return { ok: false };
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+        setInputError("Ingresa un correo válido");
+        return { ok: false };
+      }
+
+      setIsLoading(true);
+      try {
+        await requestRecoveryCode({ email: trimmed, userType: "employee" });
+        setEmail(trimmed);
+        setSuccess(true);
+        return { ok: true, email: trimmed };
+      } catch (err) {
+        setApiError({
+          title: err.response?.data?.title || "Correo no encontrado",
+          message: err.response?.data?.message || "Verifica e inténtalo de nuevo.",
+        });
+        return { ok: false };
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [email, clearMessages]
+  );
+
+  const handleResendCode = useCallback(async (explicitEmail) => {
+    const emailToUse = (explicitEmail ?? email).trim();
+    if (timer > 0 || isLoadingResend || !emailToUse) return;
+
+    setIsLoadingResend(true);
+    clearMessages();
+    setResendSuccess("");
+
+    try {
+      await requestRecoveryCode({ email: emailToUse, userType: "employee" });
+      setTimer(RESEND_COOLDOWN_SECONDS);
+      setResendSuccess("¡Código reenviado con éxito!");
+    } catch (err) {
+      setApiError({
+        title: err.response?.data?.title || "Error al reenviar",
+        message: err.response?.data?.message || "No se pudo reenviar el código.",
+      });
+    } finally {
+      setIsLoadingResend(false);
+    }
+  }, [email, timer, isLoadingResend, clearMessages]);
+
+  // Paso 2: verificar código
+  const handleDigitChange = useCallback((value, index, inputRefs) => {
+    const cleanValue = value.replace(/[^a-zA-Z0-9]/g, "").slice(-1).toUpperCase();
+    setDigits((prev) => {
+      const next = [...prev];
+      next[index] = cleanValue;
+      return next;
+    });
+    setApiError(null);
+    setInputError("");
+
+    if (cleanValue && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  }, []);
+
+  const handleDigitKeyPress = useCallback((e, index, inputRefs) => {
+    if (e.nativeEvent.key === "Backspace") {
+      setDigits((prev) => {
+        if (prev[index]) return prev; // deja que el onChangeText normal lo borre primero
+        if (index > 0) inputRefs.current[index - 1]?.focus();
+        return prev;
+      });
+    }
+  }, []);
+
+  // `explicitCode` y `explicitEmail` permiten al llamador pasar los valores
+  // directamente para evitar problemas de closure obsoleto (stale closure).
+  const handleVerifyCode = useCallback(async (explicitCode, explicitEmail) => {
+    clearMessages();
+    const rawCode = explicitCode ?? digits.join("");
+    const codeRequest = (rawCode || "").trim().toUpperCase();
+    const emailToUse = (explicitEmail ?? email).trim();
+
+    if (codeRequest.length < 6) {
+      setInputError("Ingresa el código completo de 6 dígitos");
+      return { ok: false };
+    }
+
+    setIsLoading(true);
+    try {
+      await verifyRecoveryCode({ code: codeRequest, codeRequest, email: emailToUse });
+      setSuccess(true);
+      return { ok: true };
+    } catch (err) {
+      setApiError({
+        title: err.response?.data?.title || "Código inválido",
+        message: err.response?.data?.message || "El código es incorrecto o ha expirado.",
+      });
+      return { ok: false };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [digits, email, clearMessages]);
+
+  // Paso 3: nueva contraseña
+  const handleResetPassword = useCallback(async (explicitEmail) => {
+    clearMessages();
+
+    if (!newPassword || !confirmPassword) {
+      setInputError("Por favor, ingresa y confirma la nueva contraseña");
+      return { ok: false };
+    }
+    if (newPassword !== confirmPassword) {
+      setInputError("Las contraseñas no coinciden");
+      return { ok: false };
+    }
+    // Mismas reglas que aplica el backend: avisarlas aquí evita que el
+    // servidor rechace el cambio después de haber pedido el código.
+    const problem = firstPasswordProblem(newPassword);
+    if (problem) {
+      setInputError(problem);
+      return { ok: false };
+    }
+
+    setIsLoading(true);
+    try {
+      const emailToUse = (explicitEmail ?? email).trim();
+      await setNewPasswordRequest({
+        // Sin `trim`: la contraseña se guarda tal cual se escribió, o el
+        // empleado no podría volver a entrar con lo que él tecleó.
+        newPassword,
+        confirmNewPassword: confirmPassword,
+        email: emailToUse,
+      });
+      setSuccess(true);
+      return { ok: true };
+    } catch (err) {
+      setApiError({
+        title: err.response?.data?.title || "Error de actualización",
+        message: err.response?.data?.message || "No se pudo actualizar la contraseña.",
+      });
+      return { ok: false };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [newPassword, confirmPassword, email, clearMessages]);
+
+  const resetFlowState = useCallback(() => {
+    setDigits(["", "", "", "", "", ""]);
+    setNewPassword("");
+    setConfirmPassword("");
+    setSuccess(false);
+    setApiError(null);
+    setInputError("");
+    setResendSuccess("");
+    setTimer(0);
+  }, []);
+
+  return {
+    email,
+    setEmail,
+    digits,
+    newPassword,
+    setNewPassword,
+    confirmPassword,
+    setConfirmPassword,
+    inputError,
+    apiError,
+    isLoading,
+    isLoadingResend,
+    resendSuccess,
+    timer,
+    success,
+    handleRequestCode,
+    handleResendCode,
+    handleDigitChange,
+    handleDigitKeyPress,
+    handleVerifyCode,
+    handleResetPassword,
+    resetFlowState,
+  };
+}

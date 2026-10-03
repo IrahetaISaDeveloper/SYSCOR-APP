@@ -35,6 +35,9 @@ export default function PanchitaChatSheet({
   metrics,
   isDark,
   onStartRecovery,
+  // Opcionales: preguntas frecuentes y saludo propios de cada app.
+  faq,
+  welcome,
 }) {
   const insets = useSafeAreaInsets();
   const keyboard = useKeyboardHeight();
@@ -52,7 +55,7 @@ export default function PanchitaChatSheet({
     presets,
     confirmSolved,
     requestSupport,
-  } = useLoginHelpChat();
+  } = useLoginHelpChat({ presets: faq, welcome });
 
   const [input, setInput] = useState('');
   // Las preguntas hechas ya no se vuelven a ofrecer.
