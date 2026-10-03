@@ -1,14 +1,5 @@
 import { employeePalette as palette } from "@syscor/shared/src/styles/employeePalette";
 
-export const TABLE_STATUS = {
-  libre: { label: "LIBRE", icon: "check", color: "#2ECC71", border: "#25A25A" },
-  ocupada: { label: "OCUPADA", icon: "restaurant", color: "#C62828", border: "#8E1C1C" },
-  limpieza: { label: "LIMPIEZA", icon: "cleaning_services", color: "#F39C12", border: "#B9740A" },
-  reservada: { label: "RESERVADA", icon: "bookmark", color: "#9B59B6", border: "#74408A" },
-};
-
-export const TABLE_STATUS_ORDER = ["libre", "ocupada", "limpieza", "reservada"];
-
 export const ORDER_STATUS = {
   pending: { label: "PENDIENTE", icon: "schedule", color: palette.muted },
   preparing: { label: "EN PREP.", icon: "local_fire_department", color: palette.warnInk },

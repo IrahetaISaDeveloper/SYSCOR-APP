@@ -22,9 +22,10 @@ import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 // Mesero
 import WaiterDashboardScreen from './src/screens/waiter/WaiterDashboardScreen';
 import WaiterOrdersScreen from './src/screens/waiter/WaiterOrdersScreen';
-import WaiterNewOrderScreen from './src/screens/waiter/WaiterNewOrderScreen';
+import WaiterMenuScreen from './src/screens/waiter/WaiterMenuScreen';
 import WaiterProfileScreen from './src/screens/waiter/WaiterProfileScreen';
 import EmployeeTabBar from './src/components/commons/EmployeeTabBar';
+import WaiterTabBar from './src/components/waiter/WaiterTabBar';
 import { fontAssets } from './src/styles/fonts';
 
 // Cocina
@@ -52,25 +53,27 @@ function AuthNavigator() {
 }
 
 function WaiterTabNavigator() {
+  // Mesas va al centro, en el botón elevado (ver WaiterTabBar).
   return (
     <WaiterTab.Navigator
-      tabBar={(props) => <EmployeeTabBar {...props} />}
+      initialRouteName="Dashboard"
+      tabBar={(props) => <WaiterTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
       <WaiterTab.Screen
-        name="Dashboard"
-        component={WaiterDashboardScreen}
-        options={{ tabBarLabel: 'Mesas', tabBarIcon: 'table_restaurant' }}
-      />
-      <WaiterTab.Screen
         name="Orders"
         component={WaiterOrdersScreen}
-        options={{ tabBarLabel: 'Comandas', tabBarIcon: 'receipt_long' }}
+        options={{ tabBarLabel: 'Comandas', tabBarIcon: 'receipt-outline' }}
+      />
+      <WaiterTab.Screen
+        name="Dashboard"
+        component={WaiterDashboardScreen}
+        options={{ tabBarLabel: 'Mesas', tabBarIcon: 'restaurant', tabBarCenter: true }}
       />
       <WaiterTab.Screen
         name="Profile"
         component={WaiterProfileScreen}
-        options={{ tabBarLabel: 'Perfil', tabBarIcon: 'person' }}
+        options={{ tabBarLabel: 'Perfil', tabBarIcon: 'person-outline' }}
       />
     </WaiterTab.Navigator>
   );
@@ -82,7 +85,7 @@ function WaiterNavigator() {
       <WaiterStack.Screen name="WaiterTabs" component={WaiterTabNavigator} />
       <WaiterStack.Screen
         name="NewOrder"
-        component={WaiterNewOrderScreen}
+        component={WaiterMenuScreen}
         options={{ animation: 'slide_from_bottom', gestureEnabled: false }}
       />
     </WaiterStack.Navigator>

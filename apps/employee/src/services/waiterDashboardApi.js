@@ -1,26 +1,35 @@
 import apiClient from '@syscor/shared/src/services/apiClient';
 
-// Mesas con los datos de su ocupación y el detalle de su cuenta abierta
+// Mesas con los datos de su ocupación y el detalle de su cuenta abierta.
+//
+// El tablero del mesero trae las comandas, pero no la planta, la zona, la
+// capacidad ni el lugar de la mesa en el croquis: eso viene de `/tables`, que
+// además sincroniza antes las reservas de la app (aparta o suelta mesas según
+// la hora). Por eso se pide primero `/tables` y luego el tablero, y se juntan.
 export const fetchWaiterDashboard = async () => {
+  const { data: tablesData } = await apiClient.get("/tables");
   const { data } = await apiClient.get("/orders/waiter/dashboard");
-  return Array.isArray(data) ? data : [];
-};
 
-// Menú activo (combos, bebidas, extras) para armar la comanda
-export const fetchMenu = async () => {
-  const [combos, drinks, extras] = await Promise.all([
-    apiClient.get("/menu/combos/active"),
-    apiClient.get("/menu/drinks/active"),
-    apiClient.get("/menu/extras/active"),
-  ]);
+  const layoutById = new Map(
+    (Array.isArray(tablesData) ? tablesData : []).map((t) => [String(t._id), t])
+  );
 
-  const asList = (payload) => (Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : []);
-
-  return {
-    combos: asList(combos.data),
-    drinks: asList(drinks.data),
-    extras: asList(extras.data),
-  };
+  return (Array.isArray(data) ? data : []).map((table) => {
+    const layout = layoutById.get(String(table._id)) || {};
+    const reserved = table.status === "reservada";
+    return {
+      ...table,
+      capacity: layout.capacity || null,
+      floor: layout.floor || 1,
+      zone: layout.zone || null,
+      position: layout.position && layout.position.w ? layout.position : null,
+      // El tablero solo manda nombre y personas de las mesas ocupadas; en las
+      // reservadas vienen de la reserva hecha desde la app.
+      customerName: reserved ? layout.customerName || null : table.customerName,
+      peopleCount: reserved ? layout.peopleCount || null : table.peopleCount,
+      fromAppReservation: reserved && !!layout.reservation,
+    };
+  });
 };
 
 // Cambia el estado de una mesa; al ocuparla se pueden mandar cliente y personas

@@ -63,40 +63,12 @@ export default function useWaiterDashboard() {
 
   const openTable = useCallback((table) => {
     setSelectedTableId(table._id);
-    setActiveSheet(table.status === "libre" || table.status === "reservada" ? "assign" : "actions");
+    setActiveSheet("actions");
   }, []);
 
   const closeSheet = useCallback(() => setActiveSheet(null), []);
   const openCharge = useCallback(() => setActiveSheet("charge"), []);
   const backToActions = useCallback(() => setActiveSheet("actions"), []);
-
-  const occupyTable = useCallback(
-    async ({ customerName, peopleCount }) => {
-      if (!selectedTable) return null;
-      setBusy(true);
-      try {
-        await updateTableStatus(selectedTable._id, "ocupada", {
-          customerName: customerName || "",
-          peopleCount,
-        });
-        setActiveSheet(null);
-        await loadDashboard({ silent: true });
-        return {
-          _id: selectedTable._id,
-          number: selectedTable.number,
-          customerName: customerName || null,
-          peopleCount,
-        };
-      } catch (err) {
-        console.error("useWaiterDashboard.occupyTable:", err);
-        Alert.alert("Error", errorMessage(err, "No se pudo ocupar la mesa. Intenta de nuevo."));
-        return null;
-      } finally {
-        setBusy(false);
-      }
-    },
-    [selectedTable, loadDashboard]
-  );
 
   const changeTableStatus = useCallback(
     async (status, fallbackMessage) => {
@@ -186,7 +158,6 @@ export default function useWaiterDashboard() {
     openCharge,
     backToActions,
 
-    occupyTable,
     sendTableToCleaning,
     freeTable,
     chargeTable,
