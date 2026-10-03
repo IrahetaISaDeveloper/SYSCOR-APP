@@ -3,7 +3,7 @@ import { Modal, View, Text, TouchableOpacity, Pressable } from "react-native";
 import { Ionicons as Icon } from "@expo/vector-icons";
 import bottomSheetModalStyles from "../../styles/bottomSheetModalStyles";
 
-export default function BottomSheetModal({ visible, onClose, title, children }) {
+export default function BottomSheetModal({ visible, onClose, title, hideHeader = false, children }) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={bottomSheetModalStyles.backdrop}>
@@ -12,12 +12,14 @@ export default function BottomSheetModal({ visible, onClose, title, children }) 
         <View style={bottomSheetModalStyles.sheet}>
           <View style={bottomSheetModalStyles.handle} />
 
-          <View style={bottomSheetModalStyles.header}>
-            <Text style={bottomSheetModalStyles.title}>{title}</Text>
-            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Icon name="close" size={22} color="#2C3E50" />
-            </TouchableOpacity>
-          </View>
+          {!hideHeader && (
+            <View style={bottomSheetModalStyles.header}>
+              <Text style={bottomSheetModalStyles.title}>{title}</Text>
+              <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Icon name="close" size={22} color="#1B1613" />
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Área de contenido con altura garantizada: los hijos (ScrollView + footer)
               pueden usar flex:1 con total seguridad, sin colapsar. */}
