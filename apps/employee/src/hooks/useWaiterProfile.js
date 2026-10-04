@@ -16,9 +16,6 @@ export const EMPLOYEE_TYPE_LABELS = {
   waiter: "Mesero",
   delivery: "Repartidor",
   cashier: "Cajero",
-  manager: "Gerente",
-  cleaner: "Personal de limpieza",
-  other: "Otro",
 };
 
 export const EMPLOYEE_STATUS_LABELS = {

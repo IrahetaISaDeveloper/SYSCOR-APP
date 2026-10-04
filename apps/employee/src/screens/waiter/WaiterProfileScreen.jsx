@@ -20,6 +20,7 @@ import { useAuthMetrics } from "@syscor/shared/src/styles/authTheme";
 import useWaiterProfile from "../../hooks/useWaiterProfile";
 import EditProfileSheet from "../../components/waiter/EditProfileSheet";
 import { waiterColors as c } from "../../styles/waiterTheme";
+import { getScheduleText, getShiftText } from "../../utils/workSchedule";
 
 const DARK = "#211C18";
 const RED = "#C9402F";
@@ -64,6 +65,7 @@ export default function WaiterProfileScreen({ navigation }) {
 
   const personalInfo = user?.personalInfo || {};
   const workInfo = user?.workInfo || {};
+  const scheduleText = getScheduleText(workInfo);
 
   const handleLogout = () => {
     Alert.alert("Cerrar sesión", "¿Seguro que quieres salir?", [
@@ -106,7 +108,7 @@ export default function WaiterProfileScreen({ navigation }) {
   const statTiles = [
     { value: stats.ordersToday, label: "Comandas hoy" },
     { value: stats.activeTables, label: "Mesas activas" },
-    { value: workInfo.shift || null, label: "Turno" },
+    { value: getShiftText(workInfo), label: "Turno" },
   ];
 
   const hasPermissions = permissions.screens.length + permissions.actions.length > 0;
@@ -206,8 +208,8 @@ export default function WaiterProfileScreen({ navigation }) {
           <View style={[styles.card, { borderRadius: ms(16) }]}>
             <InfoRow icon="briefcase-outline" label="Puesto" value={typeLabel} ms={ms} />
             <InfoRow icon="shield-checkmark-outline" label="Estado" value={statusLabel} ms={ms} />
-            <InfoRow icon="time-outline" label="Turno" value={workInfo.shift || "Sin asignar"} last={!workInfo.schedule} ms={ms} />
-            {workInfo.schedule ? <InfoRow icon="calendar-outline" label="Horario" value={workInfo.schedule} last ms={ms} /> : null}
+            <InfoRow icon="time-outline" label="Turno" value={getShiftText(workInfo) || "Sin asignar"} last={!scheduleText} ms={ms} />
+            {scheduleText ? <InfoRow icon="calendar-outline" label="Horario" value={scheduleText} last ms={ms} /> : null}
           </View>
 
           {/* ── PERMISOS ── */}
