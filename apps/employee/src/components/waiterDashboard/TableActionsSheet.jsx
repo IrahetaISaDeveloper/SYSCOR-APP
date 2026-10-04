@@ -12,8 +12,8 @@ import { waiterColors as c } from "../../styles/waiterTheme";
 //   - "Agregar productos" abre el menú (cada envío es una ronda nueva).
 //   - Sus comandas, por ronda, con lo que lleva cada una y sus acciones
 //     (marchar, yo la llevo, marcar servida).
-//   - Cobrar la cuenta y pasar a limpieza.
-// En limpieza solo ofrece marcarla libre.
+//   - Cobrar la cuenta y liberar la mesa cuando el cliente se retira
+//     (pasa directo a Disponible).
 export default function TableActionsSheet({
   table,
   busy,
@@ -21,8 +21,7 @@ export default function TableActionsSheet({
   orderActions,
   onAddProducts,
   onCharge,
-  onSendToCleaning,
-  onFreeTable,
+  onClientLeft,
 }) {
   const { ms } = useAuthMetrics();
   const orders = table.activeOrders || [];
@@ -39,15 +38,6 @@ export default function TableActionsSheet({
     });
     return [...groups.entries()].sort(([a], [b]) => a - b);
   }, [orders]);
-
-  if (table.status === "limpieza") {
-    return (
-      <View style={{ gap: ms(16) }}>
-        <Header table={table} info="En limpieza · aún no disponible" ms={ms} />
-        <BigButton icon="sparkles-outline" label="Mesa limpia · marcar como libre" color="#1E8E4E" onPress={onFreeTable} disabled={busy} ms={ms} />
-      </View>
-    );
-  }
 
   const elapsed = formatElapsed(minutesSince(table.occupiedAt || orders[0]?.createdAt));
   const info = [
@@ -106,13 +96,13 @@ export default function TableActionsSheet({
           ms={ms}
         />
         <TouchableOpacity
-          onPress={onSendToCleaning}
+          onPress={onClientLeft}
           disabled={busy}
           style={[styles.row, { justifyContent: "center", gap: ms(6), paddingVertical: ms(8) }]}
           accessibilityRole="button"
         >
           <Icon name="exit-outline" size={ms(16)} color="#C9402F" />
-          <Text style={[textStyles.link, { color: "#C9402F", fontSize: ms(13.5) }]}>Cliente se retiró · pasar a limpieza</Text>
+          <Text style={[textStyles.link, { color: "#C9402F", fontSize: ms(13.5) }]}>Cliente se retiró · liberar mesa</Text>
         </TouchableOpacity>
       </View>
     </View>

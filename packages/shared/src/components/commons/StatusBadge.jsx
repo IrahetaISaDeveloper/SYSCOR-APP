@@ -5,7 +5,6 @@ import statusBadgeStyles from "../../styles/statusBadgeStyles";
 export const TABLE_STATUS_META = {
   libre: { label: "Libre", color: "#2ECC71" },
   ocupada: { label: "Ocupada", color: "#C62828" },
-  limpieza: { label: "Limpieza", color: "#F39C12" },
   reservada: { label: "Reservada", color: "#9B59B6" },
 };
 

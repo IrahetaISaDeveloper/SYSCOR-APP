@@ -24,7 +24,7 @@ export const waiterColors = {
 
 // Estados reales de una mesa (tablesModel del backend), con los mismos
 // colores que el panel web: libre en verde, ocupada en rojo, reservada en
-// ámbar y limpieza en gris. `fill`, `border` y `ink` pintan la mesa en el
+// ámbar. `fill`, `border` y `ink` pintan la mesa en el
 // croquis; `short` es la etiqueta de las tarjetas de conteo.
 export const TABLE_STATE = {
   libre: {
@@ -60,20 +60,9 @@ export const TABLE_STATE = {
     border: '#D98F2B',
     ink: '#8A5A14',
   },
-  limpieza: {
-    label: 'Limpieza',
-    plural: 'En limpieza',
-    short: 'LIMPIEZA',
-    icon: 'sparkles-outline',
-    color: '#8E8578',
-    tint: 'rgba(142,133,120,0.14)',
-    fill: '#E8E0D3',
-    border: '#8E8578',
-    ink: '#3A3530',
-  },
 };
 
-export const TABLE_STATE_ORDER = ['libre', 'ocupada', 'reservada', 'limpieza'];
+export const TABLE_STATE_ORDER = ['libre', 'ocupada', 'reservada'];
 
 export const getTableState = (status) => TABLE_STATE[status] || TABLE_STATE.libre;
 

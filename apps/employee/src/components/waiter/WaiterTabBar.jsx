@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons as Icon } from '@expo/vector-icons';
+import { Ionicons as Icon, MaterialCommunityIcons } from '@expo/vector-icons';
 import { textStyles } from '@syscor/shared/src/styles/typography';
 import { useAuthMetrics } from '@syscor/shared/src/styles/authTheme';
 import { waiterColors as c } from '../../styles/waiterTheme';
@@ -10,7 +10,14 @@ import { waiterColors as c } from '../../styles/waiterTheme';
 // clientes: la pestaña principal (Mesas) va en un botón elevado al centro.
 //
 // Los íconos son de Ionicons (`tabBarIcon` en las opciones de cada pestaña);
-// `tabBarCenter: true` marca la pestaña que va en el botón central.
+// con `tabBarIconSet: 'material-community'` se toman de MaterialCommunityIcons
+// (Ionicons no tiene una mesa). `tabBarCenter: true` marca la pestaña que va
+// en el botón central.
+function TabIcon({ options, size, color }) {
+  const IconSet = options.tabBarIconSet === 'material-community' ? MaterialCommunityIcons : Icon;
+  return <IconSet name={options.tabBarIcon} size={size} color={color} />;
+}
+
 export default function WaiterTabBar({ state, descriptors, navigation }) {
   const { ms } = useAuthMetrics();
   const insets = useSafeAreaInsets();
@@ -56,7 +63,7 @@ export default function WaiterTabBar({ state, descriptors, navigation }) {
                 accessibilityState={{ selected: active }}
                 accessibilityLabel={label}
               >
-                <Icon name={options.tabBarIcon} size={ms(25)} color={c.white} />
+                <TabIcon options={options} size={ms(27)} color={c.white} />
               </TouchableOpacity>
               <Text style={[textStyles.link, { color: c.primary, fontSize: ms(10.5), marginTop: ms(6) }]}>
                 {label}
@@ -77,7 +84,7 @@ export default function WaiterTabBar({ state, descriptors, navigation }) {
             accessibilityState={{ selected: active }}
             accessibilityLabel={label}
           >
-            <Icon name={options.tabBarIcon} size={ms(21)} color={color} />
+            <TabIcon options={options} size={ms(21)} color={color} />
             <Text style={[active ? textStyles.link : textStyles.body, { color, fontSize: ms(10.5) }]}>
               {label}
             </Text>

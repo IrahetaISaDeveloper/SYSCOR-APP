@@ -68,7 +68,7 @@ function WaiterTabNavigator() {
       <WaiterTab.Screen
         name="Dashboard"
         component={WaiterDashboardScreen}
-        options={{ tabBarLabel: 'Mesas', tabBarIcon: 'restaurant', tabBarCenter: true }}
+        options={{ tabBarLabel: 'Mesas', tabBarIcon: 'table-furniture', tabBarIconSet: 'material-community', tabBarCenter: true }}
       />
       <WaiterTab.Screen
         name="Profile"

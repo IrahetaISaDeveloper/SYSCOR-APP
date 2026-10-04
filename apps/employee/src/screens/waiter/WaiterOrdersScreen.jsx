@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { getFirstName } from "@syscor/shared/src/utils/userDisplay";
 import { textStyles } from "@syscor/shared/src/styles/typography";
 import { useAuthMetrics } from "@syscor/shared/src/styles/authTheme";
 import useWaiterOrders, { ORDER_FILTERS, ORDER_SCOPES } from "../../hooks/useWaiterOrders";
+import useWaiterOrderHistory, { HISTORY_RANGES } from "../../hooks/useWaiterOrderHistory";
 import OrderCard from "../../components/waiter/OrderCard";
 import { waiterColors as c } from "../../styles/waiterTheme";
 
@@ -30,6 +31,141 @@ const shiftLabel = (date = new Date()) => {
 // una comanda lista, aunque la haya tomado otro. "Yo la llevo" avisa a los
 // demás para que no vayan dos al mismo plato; "Mías" deja solo las propias.
 export default function WaiterOrdersScreen() {
+  const [mode, setMode] = useState("active");
+  return mode === "history" ? (
+    <HistoryView mode={mode} setMode={setMode} />
+  ) : (
+    <ActiveView mode={mode} setMode={setMode} />
+  );
+}
+
+// Activas / Historial, arriba de la pantalla.
+function ModeSwitch({ mode, setMode }) {
+  const { ms } = useAuthMetrics();
+  const options = [
+    { key: "active", label: "Activas", icon: "receipt-outline" },
+    { key: "history", label: "Historial", icon: "time-outline" },
+  ];
+  return (
+    <View style={[styles.row, styles.filters, { borderRadius: ms(16), padding: ms(4), gap: ms(4) }]}>
+      {options.map((o) => {
+        const active = mode === o.key;
+        return (
+          <TouchableOpacity
+            key={o.key}
+            onPress={() => setMode(o.key)}
+            activeOpacity={0.8}
+            style={[
+              styles.row,
+              styles.filter,
+              { justifyContent: "center", gap: ms(6), borderRadius: ms(12), paddingVertical: ms(9), backgroundColor: active ? "#C9402F" : "transparent" },
+            ]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
+          >
+            <Icon name={o.icon} size={ms(16)} color={active ? c.white : c.textGray} />
+            <Text style={[active ? textStyles.link : textStyles.body, { color: active ? c.white : c.textGray, fontSize: ms(13.5) }]}>
+              {o.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+// Comandas ya cerradas (servidas o canceladas), sin acciones.
+function HistoryView({ mode, setMode }) {
+  const { ms, gutter } = useAuthMetrics();
+  const { myId, orders, stats, loading, refreshing, error, onRefresh, range, setRange } = useWaiterOrderHistory();
+
+  const header = (
+    <View style={{ gap: ms(14), marginBottom: ms(14) }}>
+      <View style={{ marginTop: ms(14), gap: ms(2) }}>
+        <Text style={[textStyles.kicker, { color: c.textGray, fontSize: ms(10.5) }]}>
+          {stats.served} SERVIDAS · {stats.cancelled} CANCELADAS
+        </Text>
+        <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(28) }]}>Comandas</Text>
+      </View>
+
+      <ModeSwitch mode={mode} setMode={setMode} />
+
+      <View style={[styles.row, { gap: ms(8) }]}>
+        {HISTORY_RANGES.map((r) => {
+          const active = range === r.key;
+          return (
+            <TouchableOpacity
+              key={r.key}
+              onPress={() => setRange(r.key)}
+              activeOpacity={0.85}
+              style={[
+                styles.row,
+                styles.scope,
+                {
+                  borderRadius: ms(20),
+                  paddingHorizontal: ms(14),
+                  height: ms(34),
+                  backgroundColor: active ? c.textDark : c.surface,
+                  borderColor: active ? c.textDark : c.border,
+                },
+              ]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+            >
+              <Text style={[active ? textStyles.link : textStyles.body, { color: active ? c.white : c.textGray, fontSize: ms(13) }]}>
+                {r.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {error ? (
+        <View style={[styles.row, styles.errorBox, { borderRadius: ms(12), padding: ms(12), gap: ms(10) }]}>
+          <Icon name="cloud-offline-outline" size={ms(18)} color={c.error} />
+          <Text style={[textStyles.body, { flex: 1, color: c.textGray, fontSize: ms(13) }]}>{error}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <StatusBar style="dark" />
+      {loading ? (
+        <View style={{ paddingHorizontal: gutter }}>
+          {header}
+          <View style={[styles.center, { paddingVertical: ms(50), gap: ms(12) }]}>
+            <ActivityIndicator size="large" color={c.primary} />
+            <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(13) }]}>Cargando historial…</Text>
+          </View>
+        </View>
+      ) : (
+        <FlatList
+          data={orders}
+          keyExtractor={(order) => String(order._id)}
+          ListHeaderComponent={header}
+          contentContainerStyle={{ paddingHorizontal: gutter, paddingBottom: ms(32), gap: ms(12) }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} colors={[c.primary]} />
+          }
+          renderItem={({ item }) => <OrderCard order={item} myId={myId} history />}
+          ListEmptyComponent={
+            <View style={[styles.center, { paddingVertical: ms(50), gap: ms(10) }]}>
+              <Icon name="time-outline" size={ms(30)} color={c.textLight} />
+              <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(13.5) }]}>
+                Aún no hay comandas cerradas en este periodo.
+              </Text>
+            </View>
+          }
+        />
+      )}
+    </SafeAreaView>
+  );
+}
+
+function ActiveView({ mode, setMode }) {
   const { ms, gutter } = useAuthMetrics();
   const { user } = useAuth();
   const firstName = getFirstName(user);
@@ -61,6 +197,8 @@ export default function WaiterOrdersScreen() {
           <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(28) }]}>Comandas</Text>
         </View>
       </View>
+
+      <ModeSwitch mode={mode} setMode={setMode} />
 
       {/* ── TODAS / MÍAS ── */}
       <View style={[styles.row, { gap: ms(8) }]}>

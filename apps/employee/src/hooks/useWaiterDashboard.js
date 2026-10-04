@@ -98,27 +98,23 @@ export default function useWaiterDashboard() {
     [selectedTable, loadDashboard]
   );
 
-  const sendTableToCleaning = useCallback(() => {
+  // El cliente se fue: la mesa queda Disponible de inmediato.
+  const clientLeft = useCallback(() => {
     if (!selectedTable) return;
     const pendingInKitchen = (selectedTable.activeOrders || []).some((o) => o.status !== "delivered");
     const message = pendingInKitchen
-      ? `La Mesa ${selectedTable.number} tiene comandas sin cobrar. Si pasa a limpieza se cancelarán las que sigan en cocina.`
-      : `La Mesa ${selectedTable.number} pasará a limpieza.`;
+      ? `La Mesa ${selectedTable.number} tiene comandas sin cobrar. Si la liberas se cancelarán las que sigan en cocina.`
+      : `La Mesa ${selectedTable.number} quedará disponible.`;
 
     Alert.alert("Cliente se retiró", message, [
       { text: "Cancelar", style: "cancel" },
       {
-        text: "Pasar a limpieza",
+        text: "Liberar mesa",
         style: "destructive",
-        onPress: () => changeTableStatus("limpieza", "No se pudo pasar la mesa a limpieza."),
+        onPress: () => changeTableStatus("libre", "No se pudo liberar la mesa."),
       },
     ]);
   }, [selectedTable, changeTableStatus]);
-
-  const freeTable = useCallback(
-    () => changeTableStatus("libre", "No se pudo marcar la mesa como libre."),
-    [changeTableStatus]
-  );
 
   const chargeTable = useCallback(
     async (paymentMethod) => {
@@ -137,8 +133,8 @@ export default function useWaiterDashboard() {
           [
             { text: "Mantener ocupada", style: "cancel" },
             {
-              text: "Pasar a limpieza",
-              onPress: () => changeTableStatus("limpieza", "No se pudo pasar la mesa a limpieza."),
+              text: "Liberar mesa",
+              onPress: () => changeTableStatus("libre", "No se pudo liberar la mesa."),
             },
           ]
         );
@@ -173,8 +169,7 @@ export default function useWaiterDashboard() {
     openCharge,
     backToActions,
 
-    sendTableToCleaning,
-    freeTable,
+    clientLeft,
     chargeTable,
   };
 }

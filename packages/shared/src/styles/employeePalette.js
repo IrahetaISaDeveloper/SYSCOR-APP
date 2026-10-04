@@ -20,7 +20,6 @@ const employeePalette = {
   white: '#FFFFFF',
   libre: '#2ECC71',
   ocupada: '#C62828',
-  limpieza: '#F39C12',
   reservada: '#9B59B6',
 };
 

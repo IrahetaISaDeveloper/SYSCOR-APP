@@ -59,8 +59,7 @@ export default function WaiterDashboardScreen({ navigation, route }) {
     closeSheet,
     openCharge,
     backToActions,
-    sendTableToCleaning,
-    freeTable,
+    clientLeft,
     chargeTable,
     markOccupied,
     reload,
@@ -107,7 +106,7 @@ export default function WaiterDashboardScreen({ navigation, route }) {
     [navigation]
   );
 
-  // Mesa libre o reservada: directo al menú. Ocupada o en limpieza: sus acciones.
+  // Mesa libre o reservada: directo al menú. Ocupada: sus acciones.
   const handleTablePress = useCallback(
     (table) => {
       if (table.status === "libre" || table.status === "reservada") goToNewOrder(table);
@@ -138,8 +137,7 @@ export default function WaiterDashboardScreen({ navigation, route }) {
         orderActions={orderActions}
         onAddProducts={handleOpenOrder}
         onCharge={openCharge}
-        onSendToCleaning={sendTableToCleaning}
-        onFreeTable={freeTable}
+        onClientLeft={clientLeft}
       />
     );
   };

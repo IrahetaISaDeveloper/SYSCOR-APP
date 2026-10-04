@@ -24,7 +24,6 @@ const describe = (table) => {
     if (table.peopleCount) parts.push(pluralize(table.peopleCount, 'persona'));
     return parts.join(' · ');
   }
-  if (table.status === 'limpieza') return 'Pendiente de limpiar';
   return orders.length ? pluralize(orders.length, 'comanda') : 'Lista para recibir clientes';
 };
 

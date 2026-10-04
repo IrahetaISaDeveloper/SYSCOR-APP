@@ -17,6 +17,18 @@ const ORDER_STATE = {
   atrasado: { label: "ATRASADA", dot: "#C9402F", bg: "#F8DDD8" },
   ready: { label: "LISTA", dot: "#2E9D5B", bg: "#DDEFE1" },
   delivered: { label: "SERVIDA", dot: "#8E8578", bg: "#ECE6DB" },
+  cancelled: { label: "CANCELADA", dot: "#C9402F", bg: "#F8DDD8" },
+};
+
+// "hoy 14:32" / "12 oct 14:32": cuándo se tomó una comanda del historial.
+const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const historyStamp = (date) => {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  const clock = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const today = new Date();
+  const sameDay = d.toDateString() === today.toDateString();
+  return sameDay ? `hoy ${clock}` : `${d.getDate()} ${MONTHS[d.getMonth()]} ${clock}`;
 };
 
 export const stateOf = (order) => (order.waiting && order.status === "pending" ? "waiting" : order.status);
@@ -47,7 +59,8 @@ function DashedLine() {
 // de qué mesa y ronda es, quién la tomó, qué lleva y qué sigue (marchar,
 // llevarla o marcarla servida). `showTable` pinta el número de mesa (en la
 // hoja de la mesa no hace falta).
-export default function OrderCard({ order, myId, actions, showTable = true }) {
+// `history` es para el historial: muestra la hora en que se tomó, no "hace X".
+export default function OrderCard({ order, myId, actions, showTable = true, history = false }) {
   const { ms } = useAuthMetrics();
   const [expanded, setExpanded] = useState(false);
 
@@ -61,7 +74,7 @@ export default function OrderCard({ order, myId, actions, showTable = true }) {
 
   const metaLine = [
     showTable ? floorLabel(order.tableFloor) : null,
-    elapsed ? `hace ${elapsed}` : null,
+    history ? historyStamp(order.createdAt) : elapsed ? `hace ${elapsed}` : null,
     orderStageLabel(order) || null,
   ]
     .filter(Boolean)
