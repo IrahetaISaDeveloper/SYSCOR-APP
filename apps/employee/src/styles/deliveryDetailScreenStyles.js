@@ -51,6 +51,9 @@ export default StyleSheet.create({
     fontSize: 17,
     color: employeePalette.price,
   },
+  summaryAmountPaid: {
+    color: employeePalette.muted,
+  },
   summaryPayment: {
     fontFamily: fonts.mono,
     fontSize: 9.5,
@@ -153,24 +156,5 @@ export default StyleSheet.create({
     backgroundColor: employeePalette.accentSoft,
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  footerRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  rejectButton: {
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: employeePalette.line,
-    borderRadius: 18,
-    paddingVertical: 15,
-    paddingHorizontal: 17,
-  },
-  rejectLabel: {
-    fontFamily: fonts.sansBold,
-    fontSize: 14,
-    color: employeePalette.muted,
   },
 });

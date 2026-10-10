@@ -3,7 +3,7 @@ import { View, Text, FlatList, RefreshControl, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import SymbolIcon from "../../components/commons/SymbolIcon";
-import { formatMoney } from "../../constants/deliveryStatus";
+import { formatClock, formatMoney, isToday } from "../../constants/deliveryStatus";
 import useDelivery from "../../hooks/useDelivery";
 import { fonts } from "../../styles/fonts";
 import commonStyles from "../../styles/deliveryCommonStyles";
@@ -11,13 +11,13 @@ import commonStyles from "../../styles/deliveryCommonStyles";
 const METHOD_LABELS = { hand: "En mano", reception: "Recepción" };
 
 function HistoryRow({ item }) {
-  const methodKey = item.deliveryMethod || item.method || "hand";
-  const address = item.dropoff?.address || item.address || "Sin dirección";
-  const time =
-    item.deliveredAt ||
-    (item.updatedAt
-      ? new Date(item.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      : "Hoy");
+  const methodKey = item.deliveryMethod || "hand";
+  const address = item.dropoff?.address || "Sin dirección";
+  const time = isToday(item.deliveredAt)
+    ? formatClock(item.deliveredAt)
+    : item.deliveredAt
+    ? new Date(item.deliveredAt).toLocaleDateString("es-SV", { day: "2-digit", month: "short" })
+    : "--";
 
   return (
     <View style={s.row}>
@@ -34,7 +34,7 @@ function HistoryRow({ item }) {
         </Text>
       </View>
       <View style={s.right}>
-        <Text style={s.amount}>{formatMoney(item.total)}</Text>
+        <Text style={s.amount}>{item.collectedAmount > 0 ? formatMoney(item.collectedAmount) : "PAGADO"}</Text>
         <Text style={s.time}>{time}</Text>
       </View>
     </View>

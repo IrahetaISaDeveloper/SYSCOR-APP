@@ -1,20 +1,22 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { Alert } from "react-native";
 import {
-  fetchAvailableDeliveries,
+  fetchDeliveryQueue,
   fetchMyActiveDelivery,
   fetchDeliveryHistory,
-  acceptDelivery,
-  rejectDelivery,
+  startDelivery,
   confirmDelivery,
 } from "../services/deliveryApi";
-import { findMockDelivery, MOCK_STATS } from "../mocks/deliveryMock";
+import { isToday } from "../constants/deliveryStatus";
 
 const DeliveryContext = createContext(null);
 
+const sameId = (a, b) => a != null && b != null && String(a) === String(b);
+const apiMessage = (err, fallback) => err?.response?.data?.message || fallback;
+
 export function DeliveryProvider({ children }) {
   const [activeDelivery, setActiveDelivery] = useState(null);
-  const [available, setAvailable] = useState([]);
+  const [queue, setQueue] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -24,15 +26,12 @@ export function DeliveryProvider({ children }) {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const [active, avail] = await Promise.all([
-        fetchMyActiveDelivery().catch(() => null),
-        fetchAvailableDeliveries().catch(() => []),
-      ]);
+      const [active, pending] = await Promise.all([fetchMyActiveDelivery(), fetchDeliveryQueue()]);
       setActiveDelivery(active);
-      setAvailable(avail || []);
+      setQueue(pending);
     } catch (err) {
       console.error("useDelivery.load error:", err);
-      setError("No se pudieron cargar las entregas.");
+      setError(apiMessage(err, "No se pudieron cargar las entregas."));
     } finally {
       setLoading(false);
     }
@@ -40,8 +39,7 @@ export function DeliveryProvider({ children }) {
 
   const loadHistory = useCallback(async () => {
     try {
-      const hist = await fetchDeliveryHistory().catch(() => []);
-      setHistory(hist || []);
+      setHistory(await fetchDeliveryHistory());
     } catch (err) {
       console.error("useDelivery.loadHistory error:", err);
     }
@@ -53,34 +51,16 @@ export function DeliveryProvider({ children }) {
     setRefreshing(false);
   }, [load, loadHistory]);
 
-  const accept = useCallback(
+  const start = useCallback(
     async (deliveryId) => {
       try {
-        const updated = await acceptDelivery(deliveryId);
+        const updated = await startDelivery(deliveryId);
         setActiveDelivery(updated);
-        setAvailable((prev) => prev.filter((d) => String(d.id) !== String(deliveryId)));
+        setQueue((prev) => prev.filter((d) => !sameId(d.id, deliveryId)));
         return updated;
       } catch (err) {
-        const msg =
-          err?.response?.data?.message ||
-          "No se pudo aceptar la entrega. Puede que ya la haya tomado otro repartidor.";
-        Alert.alert("Error", msg);
+        Alert.alert("No se pudo iniciar", apiMessage(err, "No se pudo iniciar la entrega."));
         await load(true);
-        throw err;
-      }
-    },
-    [load]
-  );
-
-  const reject = useCallback(
-    async (deliveryId) => {
-      try {
-        await rejectDelivery(deliveryId);
-        setActiveDelivery(null);
-        await load(true);
-      } catch (err) {
-        const msg = err?.response?.data?.message || "No se pudo rechazar la entrega.";
-        Alert.alert("Error", msg);
         throw err;
       }
     },
@@ -95,8 +75,7 @@ export function DeliveryProvider({ children }) {
         await Promise.all([load(true), loadHistory()]);
         return result;
       } catch (err) {
-        const msg = err?.response?.data?.message || "No se pudo confirmar la entrega.";
-        Alert.alert("Error", msg);
+        Alert.alert("No se pudo confirmar", apiMessage(err, "No se pudo confirmar la entrega."));
         throw err;
       }
     },
@@ -105,30 +84,23 @@ export function DeliveryProvider({ children }) {
 
   const getDeliveryById = useCallback(
     (id) => {
-      if (!id) return activeDelivery || null;
-      if (activeDelivery && (activeDelivery.id === id || String(activeDelivery.id) === String(id))) {
-        return activeDelivery;
-      }
-      const foundAvail = available.find((d) => d.id === id || String(d.id) === String(id));
-      if (foundAvail) return foundAvail;
-      const foundHist = history.find((d) => d.id === id || String(d.id) === String(id));
-      if (foundHist) return foundHist;
-      return findMockDelivery(id);
+      if (!id) return activeDelivery;
+      if (sameId(activeDelivery?.id, id)) return activeDelivery;
+      return queue.find((d) => sameId(d.id, id)) || history.find((d) => sameId(d.id, id)) || null;
     },
-    [activeDelivery, available, history]
+    [activeDelivery, queue, history]
   );
 
   const stats = useMemo(() => {
-    const deliveredCount = history.length;
-    const toCollect = history
+    const today = history.filter((h) => isToday(h.deliveredAt));
+    const distanceKm = today.reduce((sum, h) => sum + (Number(h.distanceKm) || 0), 0);
+    const collected = today
       .filter((h) => h.paymentMethod === "cash")
-      .reduce((sum, h) => sum + (h.total || 0), 0);
-    const distanceKm = history.reduce((sum, h) => sum + (h.distanceKm || 2.5), 0);
-
+      .reduce((sum, h) => sum + (Number(h.collectedAmount) || 0), 0);
     return {
-      delivered: deliveredCount > 0 ? deliveredCount : MOCK_STATS.delivered,
-      toCollect: toCollect > 0 ? toCollect : MOCK_STATS.toCollect,
-      distanceKm: distanceKm > 0 ? Math.round(distanceKm * 10) / 10 : MOCK_STATS.distanceKm,
+      delivered: today.length,
+      cashCollected: Math.round(collected * 100) / 100,
+      distanceKm: Math.round(distanceKm * 10) / 10,
     };
   }, [history]);
 
@@ -139,7 +111,7 @@ export function DeliveryProvider({ children }) {
 
   const value = {
     activeDelivery,
-    available,
+    queue,
     history,
     stats,
     loading,
@@ -148,8 +120,7 @@ export function DeliveryProvider({ children }) {
     onRefresh,
     load,
     loadHistory,
-    accept,
-    reject,
+    start,
     confirm,
     getDeliveryById,
   };

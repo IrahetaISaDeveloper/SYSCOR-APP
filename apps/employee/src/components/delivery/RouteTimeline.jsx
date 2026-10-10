@@ -30,7 +30,7 @@ export default function RouteTimeline({ pickup, dropoff, pickupLabel, dropoffLab
       </View>
       <View style={[styles.timelineStops, { gap: s.gap }]}>
         {renderStop(pickupLabel, pickup.name, showPickupDetail ? pickup.detail : null)}
-        {renderStop(dropoffLabel, dropoff.address, size === "sm" ? dropoff.shortDetail : dropoff.detail)}
+        {renderStop(dropoffLabel, dropoff.address, size === "sm" ? dropoff.shortDetail || dropoff.detail : dropoff.detail)}
       </View>
     </View>
   );

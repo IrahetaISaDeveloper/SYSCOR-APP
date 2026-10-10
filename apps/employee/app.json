@@ -23,6 +23,12 @@
           "photosPermission": "El Corral Staff usa tus fotos para que elijas tu foto de perfil.",
           "cameraPermission": "El Corral Staff usa la cámara para que te tomes tu foto de perfil."
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "El Corral Staff usa tu ubicación para trazar la ruta hasta el domicilio del cliente."
+        }
       ]
     ],
     "ios": {

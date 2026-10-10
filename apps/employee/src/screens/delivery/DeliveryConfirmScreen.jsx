@@ -1,26 +1,22 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, ScrollView, TouchableOpacity, Alert, Image, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as ImagePicker from "expo-image-picker";
 import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import SymbolIcon from "../../components/commons/SymbolIcon";
 import DeliveryTopBar from "../../components/delivery/DeliveryTopBar";
 import DeliveryFooter from "../../components/delivery/DeliveryFooter";
-import { formatMoney } from "../../constants/deliveryStatus";
+import { COLLECT_DETAIL, HANDOFF_METHODS, collectsOnDelivery, formatMoney } from "../../constants/deliveryStatus";
 import useDelivery from "../../hooks/useDelivery";
 import commonStyles from "../../styles/deliveryCommonStyles";
 import styles from "../../styles/deliveryConfirmStyles";
-
-const DELIVERY_METHODS = [
-  { key: "hand", icon: "person", label: "En mano" },
-  { key: "reception", icon: "meeting_room", label: "Recepción" },
-];
 
 export default function DeliveryConfirmScreen({ navigation, route }) {
   const { getDeliveryById, confirm } = useDelivery();
   const delivery = getDeliveryById(route.params?.deliveryId);
 
   const [selectedMethod, setSelectedMethod] = useState("hand");
-  const [proofUri, setProofUri] = useState(null);
+  const [proof, setProof] = useState(null);
   const [driverNote, setDriverNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -35,87 +31,93 @@ export default function DeliveryConfirmScreen({ navigation, route }) {
     );
   }
 
-  const handleTakePhoto = () => {
-    // Si ya hay foto, permite quitarla o reemplazarla
-    if (proofUri) {
-      Alert.alert("Foto adjunta", "¿Deseas cambiar o eliminar la foto?", [
-        { text: "Eliminar", style: "destructive", onPress: () => setProofUri(null) },
-        { text: "Cancelar", style: "cancel" },
-      ]);
+  const collects = collectsOnDelivery(delivery);
+
+  const takePhoto = async () => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Sin permiso", "Permite el acceso a la cámara para tomar la foto de la entrega.");
       return;
     }
-
-    Alert.alert(
-      "Prueba de entrega",
-      "Selecciona una opción para simular o tomar la foto de entrega.",
-      [
-        {
-          text: "Foto de prueba",
-          onPress: () =>
-            setProofUri(
-              "https://images.unsplash.com/photo-1526367790999-0150786686a2?auto=format&fit=crop&w=600&q=80"
-            ),
-        },
-        { text: "Cancelar", style: "cancel" },
-      ]
-    );
+    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.6 });
+    if (!result.canceled && result.assets?.[0]) setProof(result.assets[0]);
   };
 
-  const handleConfirm = async () => {
+  const handlePhoto = () => {
+    if (submitting) return;
+    if (!proof) {
+      takePhoto();
+      return;
+    }
+    Alert.alert("Foto de la entrega", "¿Qué deseas hacer con la foto?", [
+      { text: "Tomar otra", onPress: takePhoto },
+      { text: "Quitar", style: "destructive", onPress: () => setProof(null) },
+      { text: "Cancelar", style: "cancel" },
+    ]);
+  };
+
+  const submit = async () => {
     try {
       setSubmitting(true);
       await confirm(delivery.id, {
         deliveryMethod: selectedMethod,
         driverNote: driverNote.trim() || undefined,
+        proof,
       });
-
-      Alert.alert(
-        "Entrega confirmada",
-        `La entrega ${delivery.code} fue marcada como entregada con éxito.`,
-        [{ text: "Aceptar", onPress: () => navigation.popToTop() }]
-      );
+      Alert.alert("Entrega confirmada", `La entrega ${delivery.code} quedó marcada como entregada.`, [
+        { text: "Aceptar", onPress: () => navigation.popToTop() },
+      ]);
     } catch {
-      // Error handled in hook
     } finally {
       setSubmitting(false);
     }
   };
 
-  const isCard = delivery.paymentMethod === "card" || delivery.paymentMethod === "online";
-  const changeNote = isCard
-    ? null
-    : delivery.cashGiven
-    ? `$${delivery.cashGiven.toFixed(2)}`
-    : null;
+  const handleConfirm = () => {
+    if (!collects) {
+      submit();
+      return;
+    }
+    const how = delivery.paymentMethod === "card_on_delivery" ? "con el POS" : "en efectivo";
+    Alert.alert("Confirmar cobro", `¿Cobraste ${formatMoney(delivery.amountToCollect)} ${how}?`, [
+      { text: "Aún no", style: "cancel" },
+      { text: "Sí, cobré", onPress: submit },
+    ]);
+  };
 
   return (
     <SafeAreaView style={commonStyles.screen} edges={["top", "left", "right"]}>
       <DeliveryTopBar
         title="Confirmar entrega"
-        subtitle={`${delivery.code} · ${(delivery.customer?.name || "CLIENTE").toUpperCase()}`}
+        subtitle={`${delivery.code} · ${(delivery.customer?.name || "Cliente").toUpperCase()}`}
         onBack={() => navigation.goBack()}
       />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.collectCard}>
           <View style={styles.collectRow}>
-            <Text style={styles.collectTitle}>Cobrar al cliente</Text>
-            <Text style={styles.collectAmount}>{formatMoney(delivery.total)}</Text>
+            <Text style={styles.collectTitle}>{collects ? "Cobrar al cliente" : "Pedido pagado"}</Text>
+            <Text style={[styles.collectAmount, !collects && styles.collectAmountPaid]}>
+              {formatMoney(collects ? delivery.amountToCollect : delivery.total)}
+            </Text>
           </View>
           <View style={styles.collectDivider} />
           <View style={styles.collectDetails}>
             <SymbolIcon name="payments" size={16} color={employeePalette.muted} />
             <Text style={styles.collectDetailText}>
-              {isCard ? "Pago con tarjeta · ya cobrado" : "Pago en efectivo · cobrar al entregar"}
+              {collects ? COLLECT_DETAIL[delivery.paymentMethod] : "Pagado en línea · no cobrar"}
             </Text>
-            {changeNote ? <Text style={styles.collectChange}>{changeNote}</Text> : null}
           </View>
         </View>
 
         <View style={{ gap: 9 }}>
           <Text style={styles.sectionLabel}>CÓMO SE ENTREGÓ</Text>
           <View style={styles.methodGrid}>
-            {DELIVERY_METHODS.map((m) => {
+            {HANDOFF_METHODS.map((m) => {
               const active = selectedMethod === m.key;
               return (
                 <TouchableOpacity
@@ -124,14 +126,8 @@ export default function DeliveryConfirmScreen({ navigation, route }) {
                   onPress={() => setSelectedMethod(m.key)}
                   activeOpacity={0.8}
                 >
-                  <SymbolIcon
-                    name={m.icon}
-                    size={17}
-                    color={active ? employeePalette.accent : employeePalette.muted}
-                  />
-                  <Text style={[styles.methodLabel, active && styles.methodLabelSelected]}>
-                    {m.label}
-                  </Text>
+                  <SymbolIcon name={m.icon} size={17} color={active ? employeePalette.accent : employeePalette.muted} />
+                  <Text style={[styles.methodLabel, active && styles.methodLabelSelected]}>{m.label}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -141,12 +137,12 @@ export default function DeliveryConfirmScreen({ navigation, route }) {
         <View style={styles.proofSection}>
           <Text style={styles.sectionLabel}>PRUEBA DE ENTREGA</Text>
           <TouchableOpacity
-            style={[styles.proofSlot, proofUri && styles.proofSlotFilled]}
-            onPress={handleTakePhoto}
+            style={[styles.proofSlot, proof && styles.proofSlotFilled]}
+            onPress={handlePhoto}
             activeOpacity={0.85}
           >
-            {proofUri ? (
-              <Image source={{ uri: proofUri }} style={styles.proofImage} />
+            {proof ? (
+              <Image source={{ uri: proof.uri }} style={styles.proofImage} />
             ) : (
               <>
                 <SymbolIcon name="photo_camera" size={22} color={employeePalette.muted} />
@@ -154,9 +150,9 @@ export default function DeliveryConfirmScreen({ navigation, route }) {
               </>
             )}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.cameraButton} onPress={handleTakePhoto} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.cameraButton} onPress={handlePhoto} activeOpacity={0.8}>
             <SymbolIcon name="photo_camera" size={17} color={employeePalette.accent} />
-            <Text style={styles.cameraLabel}>{proofUri ? "Cambiar foto" : "Tomar foto"}</Text>
+            <Text style={styles.cameraLabel}>{proof ? "Cambiar foto" : "Tomar foto"}</Text>
           </TouchableOpacity>
         </View>
 
@@ -171,6 +167,7 @@ export default function DeliveryConfirmScreen({ navigation, route }) {
             placeholderTextColor={employeePalette.muted}
             value={driverNote}
             onChangeText={setDriverNote}
+            maxLength={300}
             multiline
           />
         </View>

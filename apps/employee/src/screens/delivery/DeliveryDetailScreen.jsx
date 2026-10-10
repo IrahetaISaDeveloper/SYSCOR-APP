@@ -1,5 +1,5 @@
 import React, { Fragment, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import SymbolIcon from "../../components/commons/SymbolIcon";
@@ -7,16 +7,20 @@ import DeliveryTopBar from "../../components/delivery/DeliveryTopBar";
 import RouteTimeline from "../../components/delivery/RouteTimeline";
 import DeliveryFooter from "../../components/delivery/DeliveryFooter";
 import CustomerContactCard from "../../components/delivery/CustomerContactCard";
-import { PAYMENT_LABELS, formatMoney, formatKm } from "../../constants/deliveryStatus";
+import {
+  collectsOnDelivery,
+  formatKm,
+  formatMinutes,
+  formatMoney,
+  paymentLabel,
+} from "../../constants/deliveryStatus";
 import useDelivery from "../../hooks/useDelivery";
 import commonStyles from "../../styles/deliveryCommonStyles";
 import styles from "../../styles/deliveryDetailScreenStyles";
 
 export default function DeliveryDetailScreen({ navigation, route }) {
-  const { getDeliveryById, accept, reject } = useDelivery();
-  const deliveryId = route.params?.deliveryId;
-  const delivery = getDeliveryById(deliveryId);
-
+  const { getDeliveryById, start } = useDelivery();
+  const delivery = getDeliveryById(route.params?.deliveryId);
   const [submitting, setSubmitting] = useState(false);
 
   if (!delivery) {
@@ -24,48 +28,20 @@ export default function DeliveryDetailScreen({ navigation, route }) {
       <SafeAreaView style={commonStyles.screen} edges={["top", "left", "right"]}>
         <DeliveryTopBar title="Entrega" onBack={() => navigation.goBack()} />
         <View style={[commonStyles.emptyBox, { marginTop: 40 }]}>
-          <Text style={commonStyles.emptyText}>Entrega no encontrada.</Text>
+          <Text style={commonStyles.emptyText}>Este pedido ya no está en la cola.</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  const handleReject = () => {
-    Alert.alert(
-      "Rechazar entrega",
-      `La entrega ${delivery.code} quedará disponible para otro repartidor.`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Rechazar",
-          style: "destructive",
-          onPress: async () => {
-            if (delivery.status === "on_route" || delivery.status === "accepted") {
-              try {
-                setSubmitting(true);
-                await reject(delivery.id);
-                navigation.goBack();
-              } catch {
-                // Error handled in hook
-              } finally {
-                setSubmitting(false);
-              }
-            } else {
-              navigation.goBack();
-            }
-          },
-        },
-      ]
-    );
-  };
+  const collects = collectsOnDelivery(delivery);
 
-  const handleAccept = async () => {
+  const handleStart = async () => {
     try {
       setSubmitting(true);
-      await accept(delivery.id);
+      await start(delivery.id);
       navigation.replace("DeliveryRoute", { deliveryId: delivery.id });
     } catch {
-      // Error handled in hook
     } finally {
       setSubmitting(false);
     }
@@ -73,7 +49,7 @@ export default function DeliveryDetailScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={commonStyles.screen} edges={["top", "left", "right"]}>
-      <DeliveryTopBar title={delivery.code} monoTitle subtitle="NUEVA ASIGNACIÓN" onBack={() => navigation.goBack()} />
+      <DeliveryTopBar title={delivery.code} monoTitle subtitle="LISTO PARA ENTREGAR" onBack={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.summary}>
@@ -83,12 +59,14 @@ export default function DeliveryDetailScreen({ navigation, route }) {
           <View style={styles.summaryTexts}>
             <Text style={styles.summaryLabel}>DISTANCIA TOTAL</Text>
             <Text style={styles.summaryValue} numberOfLines={1}>
-              {formatKm(delivery.distanceKm)} · {delivery.etaMinutes || 12} min estimados
+              {formatKm(delivery.distanceKm)} · {formatMinutes(delivery.etaMinutes)} estimados
             </Text>
           </View>
           <View style={styles.summaryAmountBox}>
-            <Text style={styles.summaryAmount}>{formatMoney(delivery.total)}</Text>
-            <Text style={styles.summaryPayment}>{PAYMENT_LABELS[delivery.paymentMethod] || delivery.paymentMethod}</Text>
+            <Text style={[styles.summaryAmount, !collects && styles.summaryAmountPaid]}>
+              {formatMoney(collects ? delivery.amountToCollect : delivery.total)}
+            </Text>
+            <Text style={styles.summaryPayment}>{paymentLabel(delivery)}</Text>
           </View>
         </View>
 
@@ -120,35 +98,25 @@ export default function DeliveryDetailScreen({ navigation, route }) {
           ) : null}
         </View>
 
-        <CustomerContactCard customer={delivery.customer} />
+        {delivery.customer ? <CustomerContactCard customer={delivery.customer} /> : null}
       </ScrollView>
 
       <DeliveryFooter>
-        <View style={styles.footerRow}>
-          <TouchableOpacity
-            style={styles.rejectButton}
-            onPress={handleReject}
-            activeOpacity={0.8}
-            disabled={submitting}
-          >
-            <Text style={styles.rejectLabel}>Rechazar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[commonStyles.primaryButton, { flex: 1 }, submitting && { opacity: 0.7 }]}
-            onPress={handleAccept}
-            activeOpacity={0.85}
-            disabled={submitting}
-          >
-            {submitting ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <SymbolIcon name="check" size={17} color="#FFFFFF" />
-                <Text style={commonStyles.primaryButtonLabel}>Aceptar entrega</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[commonStyles.primaryButton, submitting && { opacity: 0.7 }]}
+          onPress={handleStart}
+          activeOpacity={0.85}
+          disabled={submitting}
+        >
+          {submitting ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <SymbolIcon name="navigation" size={17} color="#FFFFFF" />
+              <Text style={commonStyles.primaryButtonLabel}>Iniciar entrega</Text>
+            </>
+          )}
+        </TouchableOpacity>
       </DeliveryFooter>
     </SafeAreaView>
   );

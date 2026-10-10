@@ -4,15 +4,18 @@ import SymbolIcon from "../commons/SymbolIcon";
 import RouteTimeline from "./RouteTimeline";
 import {
   DELIVERY_BADGE,
-  PAYMENT_LABELS,
-  formatMoney,
+  collectsOnDelivery,
   formatKm,
+  formatMinutes,
+  formatMoney,
+  paymentLabel,
   platillosLabel,
 } from "../../constants/deliveryStatus";
 import styles from "../../styles/deliveriesScreenStyles";
 
 export default function ActiveDeliveryCard({ delivery, onContinue }) {
   const badge = DELIVERY_BADGE[delivery.status] || DELIVERY_BADGE.on_route;
+  const collects = collectsOnDelivery(delivery);
 
   return (
     <View style={styles.activeCard}>
@@ -25,12 +28,14 @@ export default function ActiveDeliveryCard({ delivery, onContinue }) {
             </View>
           </View>
           <Text style={styles.activeSubtitle} numberOfLines={1}>
-            {delivery.customer.name} · {platillosLabel(delivery.items)}
+            {delivery.customer?.name} · {platillosLabel(delivery.items)}
           </Text>
         </View>
         <View style={styles.amountBox}>
-          <Text style={styles.amount}>{formatMoney(delivery.total)}</Text>
-          <Text style={styles.amountLabel}>{PAYMENT_LABELS[delivery.paymentMethod]}</Text>
+          <Text style={[styles.amount, !collects && styles.amountPaid]}>
+            {formatMoney(collects ? delivery.amountToCollect : delivery.total)}
+          </Text>
+          <Text style={styles.amountLabel}>{paymentLabel(delivery)}</Text>
         </View>
       </View>
 
@@ -47,7 +52,7 @@ export default function ActiveDeliveryCard({ delivery, onContinue }) {
         </View>
         <View style={styles.activeRouteMetrics}>
           <Text style={styles.routeKm}>{formatKm(delivery.distanceKm)}</Text>
-          <Text style={styles.routeMin}>{delivery.etaMinutes} MIN</Text>
+          <Text style={styles.routeMin}>{formatMinutes(delivery.etaMinutes).toUpperCase()}</Text>
         </View>
       </View>
 

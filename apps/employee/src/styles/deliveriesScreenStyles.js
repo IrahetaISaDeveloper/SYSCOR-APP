@@ -124,6 +124,9 @@ export default StyleSheet.create({
     fontSize: 15,
     color: employeePalette.price,
   },
+  amountPaid: {
+    color: employeePalette.muted,
+  },
   amountLabel: {
     fontFamily: fonts.mono,
     fontSize: 10,
@@ -169,7 +172,7 @@ export default StyleSheet.create({
     color: "#FFFFFF",
   },
 
-  availableRow: {
+  pendingRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
@@ -180,7 +183,7 @@ export default StyleSheet.create({
     paddingVertical: 13,
     paddingHorizontal: 14,
   },
-  availableIcon: {
+  pendingIcon: {
     width: 38,
     height: 38,
     borderRadius: 13,
@@ -188,17 +191,17 @@ export default StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  availableTexts: {
+  pendingTexts: {
     flex: 1,
     minWidth: 0,
     gap: 3,
   },
-  availableCodeRow: {
+  pendingCodeRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-  availableCode: {
+  pendingCode: {
     fontFamily: fonts.monoMedium,
     fontSize: 13.5,
     color: employeePalette.ink,
@@ -215,23 +218,23 @@ export default StyleSheet.create({
     letterSpacing: 0.54,
     color: employeePalette.ink,
   },
-  availableSubtitle: {
+  pendingSubtitle: {
     fontFamily: fonts.sans,
     fontSize: 11,
     color: employeePalette.muted,
   },
-  availableRight: {
+  pendingRight: {
     alignItems: "flex-end",
     gap: 4,
   },
-  availableAmount: {
+  pendingAmount: {
     fontFamily: fonts.monoMedium,
     fontSize: 13,
     color: employeePalette.ink,
   },
-  acceptText: {
+  pendingWait: {
     fontFamily: fonts.sansBold,
     fontSize: 11,
-    color: employeePalette.price,
+    color: employeePalette.warnInk,
   },
 });

@@ -32,6 +32,9 @@ export default StyleSheet.create({
     letterSpacing: -0.52,
     color: employeePalette.price,
   },
+  collectAmountPaid: {
+    color: employeePalette.muted,
+  },
   collectDivider: {
     height: 1,
     backgroundColor: employeePalette.line,
@@ -46,11 +49,6 @@ export default StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: 12.5,
     color: employeePalette.muted,
-  },
-  collectChange: {
-    fontFamily: fonts.monoMedium,
-    fontSize: 11,
-    color: employeePalette.ink,
   },
 
   sectionLabel: {

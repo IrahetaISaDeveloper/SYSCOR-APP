@@ -7,8 +7,8 @@ import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import SymbolIcon from "../../components/commons/SymbolIcon";
 import DeliveryStatTiles from "../../components/delivery/DeliveryStatTiles";
 import ActiveDeliveryCard from "../../components/delivery/ActiveDeliveryCard";
-import AvailableDeliveryRow from "../../components/delivery/AvailableDeliveryRow";
-import { formatMoney, formatKm } from "../../constants/deliveryStatus";
+import PendingDeliveryRow from "../../components/delivery/PendingDeliveryRow";
+import { formatKm, formatMoney } from "../../constants/deliveryStatus";
 import useDelivery from "../../hooks/useDelivery";
 import commonStyles from "../../styles/deliveryCommonStyles";
 import styles from "../../styles/deliveriesScreenStyles";
@@ -20,10 +20,11 @@ export default function DeliveriesScreen({ navigation }) {
 
   const {
     activeDelivery,
-    available,
+    queue,
     stats,
     loading,
     refreshing,
+    error,
     onRefresh,
   } = useDelivery();
 
@@ -47,7 +48,7 @@ export default function DeliveriesScreen({ navigation }) {
       <DeliveryStatTiles
         tiles={[
           { label: "ENTREGADAS", value: String(stats.delivered) },
-          { label: "POR COBRAR", value: formatMoney(stats.toCollect), color: employeePalette.price },
+          { label: "EFECTIVO", value: formatMoney(stats.cashCollected), color: employeePalette.price },
           { label: "RECORRIDO", value: formatKm(stats.distanceKm) },
         ]}
       />
@@ -63,7 +64,7 @@ export default function DeliveriesScreen({ navigation }) {
           />
         }
       >
-        <Text style={commonStyles.sectionLabel}>MI ENTREGA ACTIVA</Text>
+        <Text style={commonStyles.sectionLabel}>MI ENTREGA EN CURSO</Text>
         {loading && !activeDelivery ? (
           <View style={[commonStyles.emptyBox, { paddingVertical: 20 }]}>
             <ActivityIndicator size="small" color={employeePalette.accent} />
@@ -80,14 +81,14 @@ export default function DeliveriesScreen({ navigation }) {
           </View>
         )}
 
-        <Text style={[commonStyles.sectionLabel, { paddingTop: 2 }]}>DISPONIBLES CERCA</Text>
-        {loading && available.length === 0 ? (
+        <Text style={[commonStyles.sectionLabel, { paddingTop: 2 }]}>POR ENTREGAR</Text>
+        {loading && queue.length === 0 ? (
           <View style={[commonStyles.emptyBox, { paddingVertical: 20 }]}>
             <ActivityIndicator size="small" color={employeePalette.accent} />
           </View>
-        ) : available.length > 0 ? (
-          available.map((delivery) => (
-            <AvailableDeliveryRow
+        ) : queue.length > 0 ? (
+          queue.map((delivery) => (
+            <PendingDeliveryRow
               key={delivery.id}
               delivery={delivery}
               onPress={() => navigation.navigate("DeliveryDetail", { deliveryId: delivery.id })}
@@ -95,8 +96,8 @@ export default function DeliveriesScreen({ navigation }) {
           ))
         ) : (
           <View style={commonStyles.emptyBox}>
-            <SymbolIcon name="location_on" size={24} color={employeePalette.muted} />
-            <Text style={commonStyles.emptyText}>No hay entregas disponibles por ahora.</Text>
+            <SymbolIcon name={error ? "error" : "location_on"} size={24} color={employeePalette.muted} />
+            <Text style={commonStyles.emptyText}>{error || "No hay pedidos listos para entregar."}</Text>
           </View>
         )}
       </ScrollView>

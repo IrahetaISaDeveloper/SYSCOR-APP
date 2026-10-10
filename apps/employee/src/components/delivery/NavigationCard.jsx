@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text } from "react-native";
 import SymbolIcon from "../commons/SymbolIcon";
 import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
-import { formatKm } from "../../constants/deliveryStatus";
+import { formatKm, formatMinutes } from "../../constants/deliveryStatus";
 import styles from "../../styles/deliveryRouteScreenStyles";
 
 export default function NavigationCard({ navigation, arrivalClock, distanceKm, etaMinutes }) {
@@ -30,7 +30,7 @@ export default function NavigationCard({ navigation, arrivalClock, distanceKm, e
         </View>
         <View style={styles.navMetrics}>
           <Text style={[styles.navMono, styles.navMonoDim]}>{formatKm(distanceKm).toUpperCase()}</Text>
-          <Text style={[styles.navMono, styles.navMonoStrong]}>{etaMinutes} MIN</Text>
+          <Text style={[styles.navMono, styles.navMonoStrong]}>{formatMinutes(etaMinutes).toUpperCase()}</Text>
         </View>
       </View>
     </View>

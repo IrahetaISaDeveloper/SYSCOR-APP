@@ -8,7 +8,10 @@ import DeliveryFooter from "../../components/delivery/DeliveryFooter";
 import NavigationCard from "../../components/delivery/NavigationCard";
 import DeliveryProgress from "../../components/delivery/DeliveryProgress";
 import { callPhone, sendSms } from "../../utils/deliveryContact";
+import { formatKm, formatClock } from "../../constants/deliveryStatus";
 import useDelivery from "../../hooks/useDelivery";
+import useDeliveryRoute from "../../hooks/useDeliveryRoute";
+import DeliveryMap from "../../components/delivery/DeliveryMap";
 import commonStyles from "../../styles/deliveryCommonStyles";
 import styles from "../../styles/deliveryRouteScreenStyles";
 
@@ -21,6 +24,7 @@ const PROBLEM_OPTIONS = [
 export default function DeliveryRouteScreen({ navigation, route }) {
   const { getDeliveryById } = useDelivery();
   const delivery = getDeliveryById(route.params?.deliveryId);
+  const routeInfo = useDeliveryRoute(delivery);
 
   if (!delivery) {
     return (
@@ -33,13 +37,19 @@ export default function DeliveryRouteScreen({ navigation, route }) {
     );
   }
 
-  const nav = delivery.navigation || {
-    icon: "turn_right",
-    instruction: "Gira a la derecha",
-    street: "hacia el destino de entrega",
-    distance: "450 m",
+  const nav = routeInfo.navigation || {
+    icon: "navigation",
+    instruction: "Dirígete al destino",
+    street: delivery.dropoff?.address,
+    distance: formatKm(delivery.distanceKm),
   };
-  const arrivalClock = delivery.arrivalClock || "18:41";
+  const distanceKm = routeInfo.distanceKm ?? delivery.distanceKm;
+  const etaMinutes = routeInfo.etaMinutes ?? delivery.etaMinutes;
+  const arrivalClock = routeInfo.arrivalAt
+    ? formatClock(routeInfo.arrivalAt)
+    : delivery.etaMinutes
+    ? formatClock(new Date(delivery.startedAt || Date.now()).getTime() + delivery.etaMinutes * 60000)
+    : null;
 
   const handleProblem = () => {
     Alert.alert("Reportar un problema", "Se avisará a la sucursal.", [
@@ -52,14 +62,16 @@ export default function DeliveryRouteScreen({ navigation, route }) {
   };
 
   const handleOpenMap = () => {
-    const address = delivery.dropoff?.address;
-    if (!address) return;
+    const { address, latitude, longitude } = delivery.dropoff || {};
+    const hasCoords = latitude != null && longitude != null;
+    if (!address && !hasCoords) return;
+    const query = encodeURIComponent(hasCoords ? `${latitude},${longitude}` : address);
     const url = Platform.select({
-      ios: `maps:0,0?q=${encodeURIComponent(address)}`,
-      android: `geo:0,0?q=${encodeURIComponent(address)}`,
+      ios: `maps:0,0?q=${query}`,
+      android: `geo:0,0?q=${query}`,
     });
     Linking.openURL(url).catch(() => {
-      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`);
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
     });
   };
 
@@ -80,11 +92,26 @@ export default function DeliveryRouteScreen({ navigation, route }) {
         <TouchableOpacity activeOpacity={0.9} onPress={handleOpenMap}>
           <NavigationCard
             navigation={nav}
-            arrivalClock={arrivalClock}
-            distanceKm={delivery.distanceKm || 3.2}
-            etaMinutes={delivery.etaMinutes || 12}
+            arrivalClock={arrivalClock || "--:--"}
+            distanceKm={distanceKm}
+            etaMinutes={etaMinutes}
           />
         </TouchableOpacity>
+
+        <DeliveryMap
+          origin={routeInfo.origin}
+          destination={routeInfo.destination}
+          coordinates={routeInfo.route?.coordinates}
+          loading={routeInfo.loading}
+          error={routeInfo.error}
+          onRetry={routeInfo.destination ? routeInfo.recalculate : null}
+        />
+
+        {routeInfo.permissionDenied ? (
+          <Text style={styles.permissionNote}>
+            Sin permiso de ubicación: la ruta se traza desde el local.
+          </Text>
+        ) : null}
 
         <DeliveryProgress stage="on_route" />
 
@@ -95,7 +122,7 @@ export default function DeliveryRouteScreen({ navigation, route }) {
         >
           <View style={styles.destinationHeader}>
             <SymbolIcon name="home_pin" size={16} color={employeePalette.accent} />
-            <Text style={styles.destinationLabel}>DESTINO (TOCA PARA ABRIR MAPA)</Text>
+            <Text style={styles.destinationLabel}>DESTINO</Text>
           </View>
           <Text style={styles.destinationAddress}>{delivery.dropoff?.address || "Sin dirección"}</Text>
           {delivery.dropoff?.detail ? (
