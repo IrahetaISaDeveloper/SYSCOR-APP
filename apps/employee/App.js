@@ -9,24 +9,32 @@ import { useFonts } from 'expo-font';
 
 import { AuthProvider, useAuth } from '@syscor/shared/src/context/AuthContext';
 import { ROLES, EMPLOYEE_TYPES } from '@syscor/shared/src/constants/roles';
-import BootGate from '@syscor/shared/src/navigation/BootGate';
+import { fontAssets as authFontAssets } from '@syscor/shared/src/styles/typography';
+import EmployeeBootGate from './src/navigation/EmployeeBootGate';
 import UnsupportedRoleScreen from '@syscor/shared/src/screens/UnsupportedRoleScreen';
 
 // Auth (solo empleados)
 import LoginEmployeeScreen from './src/screens/auth/LoginEmployeeScreen';
+import RequestRecoveryCodeScreen from './src/screens/auth/RequestRecoveryCodeScreen';
+import VerifyRecoveryCodeScreen from './src/screens/auth/VerifyRecoveryCodeScreen';
+import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 
 // Mesero
 import WaiterDashboardScreen from './src/screens/waiter/WaiterDashboardScreen';
 import WaiterOrdersScreen from './src/screens/waiter/WaiterOrdersScreen';
-import WaiterNewOrderScreen from './src/screens/waiter/WaiterNewOrderScreen';
+import WaiterMenuScreen from './src/screens/waiter/WaiterMenuScreen';
 import WaiterProfileScreen from './src/screens/waiter/WaiterProfileScreen';
 import EmployeeTabBar from './src/components/commons/EmployeeTabBar';
+import WaiterTabBar from './src/components/waiter/WaiterTabBar';
 import { fontAssets } from './src/styles/fonts';
 
 // Cocina
 import Orders from './src/screens/chef/Orders';
 import KitchenHistoryScreen from './src/screens/chef/KitchenHistoryScreen';
 import KitchenProfileScreen from './src/screens/chef/KitchenProfileScreen';
+
+// Reparto
+import DeliveryNavigator from './src/navigation/DeliveryNavigator';
 
 const AuthStack = createNativeStackNavigator();
 const WaiterStack = createNativeStackNavigator();
@@ -35,32 +43,37 @@ const KitchenTab = createBottomTabNavigator();
 
 function AuthNavigator() {
   return (
-    <AuthStack.Navigator screenOptions={{ headerShown: false }}>
-      <AuthStack.Screen name="EmployeeLogin" component={LoginEmployeeScreen} />
+    <AuthStack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+      <AuthStack.Screen name="Login" component={LoginEmployeeScreen} />
+      <AuthStack.Screen name="ForgotPassword" component={RequestRecoveryCodeScreen} />
+      <AuthStack.Screen name="VerifyRecoveryCode" component={VerifyRecoveryCodeScreen} />
+      <AuthStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
     </AuthStack.Navigator>
   );
 }
 
 function WaiterTabNavigator() {
+  // Mesas va al centro, en el botón elevado (ver WaiterTabBar).
   return (
     <WaiterTab.Navigator
-      tabBar={(props) => <EmployeeTabBar {...props} />}
+      initialRouteName="Dashboard"
+      tabBar={(props) => <WaiterTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
       <WaiterTab.Screen
-        name="Dashboard"
-        component={WaiterDashboardScreen}
-        options={{ tabBarLabel: 'Mesas', tabBarIcon: 'table_restaurant' }}
-      />
-      <WaiterTab.Screen
         name="Orders"
         component={WaiterOrdersScreen}
-        options={{ tabBarLabel: 'Comandas', tabBarIcon: 'receipt_long' }}
+        options={{ tabBarLabel: 'Comandas', tabBarIcon: 'receipt-outline' }}
+      />
+      <WaiterTab.Screen
+        name="Dashboard"
+        component={WaiterDashboardScreen}
+        options={{ tabBarLabel: 'Mesas', tabBarIcon: 'table-furniture', tabBarIconSet: 'material-community', tabBarCenter: true }}
       />
       <WaiterTab.Screen
         name="Profile"
         component={WaiterProfileScreen}
-        options={{ tabBarLabel: 'Perfil', tabBarIcon: 'person' }}
+        options={{ tabBarLabel: 'Perfil', tabBarIcon: 'person-outline' }}
       />
     </WaiterTab.Navigator>
   );
@@ -72,7 +85,7 @@ function WaiterNavigator() {
       <WaiterStack.Screen name="WaiterTabs" component={WaiterTabNavigator} />
       <WaiterStack.Screen
         name="NewOrder"
-        component={WaiterNewOrderScreen}
+        component={WaiterMenuScreen}
         options={{ animation: 'slide_from_bottom', gestureEnabled: false }}
       />
     </WaiterStack.Navigator>
@@ -121,25 +134,28 @@ function RootNavigator() {
   if (user.role === ROLES.EMPLOYEE) {
     if (user.type === EMPLOYEE_TYPES.WAITER) return <WaiterNavigator />;
     if (user.type === EMPLOYEE_TYPES.KITCHEN) return <KitchenTabNavigator />;
+    if (user.type === EMPLOYEE_TYPES.DELIVERY) return <DeliveryNavigator />;
   }
 
   return <UnsupportedRoleScreen />;
 }
 
 export default function App() {
-  const [fontsLoaded, fontError] = useFonts(fontAssets);
+  // DM Sans/Mono para las pantallas de trabajo y el juego compartido
+  // (Archivo, Inter, IBM Plex Mono) para la introducción y el login.
+  const [fontsLoaded, fontError] = useFonts({ ...fontAssets, ...authFontAssets });
 
   if (!fontsLoaded && !fontError) return null;
 
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <BootGate>
+        <EmployeeBootGate>
           <NavigationContainer>
             <StatusBar style="dark" />
             <RootNavigator />
           </NavigationContainer>
-        </BootGate>
+        </EmployeeBootGate>
       </AuthProvider>
     </SafeAreaProvider>
   );

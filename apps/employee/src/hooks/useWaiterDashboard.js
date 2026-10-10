@@ -46,6 +46,16 @@ export default function useWaiterDashboard() {
     }, [loadDashboard])
   );
 
+  // La comanda se mandó desde el menú y el servidor ya ocupó la mesa: se
+  // pinta ocupada al instante, sin esperar la recarga.
+  const markOccupied = useCallback(
+    (tableId) => {
+      setTables((prev) => prev.map((t) => (t._id === tableId ? { ...t, status: "ocupada" } : t)));
+      loadDashboard({ silent: true });
+    },
+    [loadDashboard]
+  );
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadDashboard({ silent: true });
@@ -63,40 +73,12 @@ export default function useWaiterDashboard() {
 
   const openTable = useCallback((table) => {
     setSelectedTableId(table._id);
-    setActiveSheet(table.status === "libre" || table.status === "reservada" ? "assign" : "actions");
+    setActiveSheet("actions");
   }, []);
 
   const closeSheet = useCallback(() => setActiveSheet(null), []);
   const openCharge = useCallback(() => setActiveSheet("charge"), []);
   const backToActions = useCallback(() => setActiveSheet("actions"), []);
-
-  const occupyTable = useCallback(
-    async ({ customerName, peopleCount }) => {
-      if (!selectedTable) return null;
-      setBusy(true);
-      try {
-        await updateTableStatus(selectedTable._id, "ocupada", {
-          customerName: customerName || "",
-          peopleCount,
-        });
-        setActiveSheet(null);
-        await loadDashboard({ silent: true });
-        return {
-          _id: selectedTable._id,
-          number: selectedTable.number,
-          customerName: customerName || null,
-          peopleCount,
-        };
-      } catch (err) {
-        console.error("useWaiterDashboard.occupyTable:", err);
-        Alert.alert("Error", errorMessage(err, "No se pudo ocupar la mesa. Intenta de nuevo."));
-        return null;
-      } finally {
-        setBusy(false);
-      }
-    },
-    [selectedTable, loadDashboard]
-  );
 
   const changeTableStatus = useCallback(
     async (status, fallbackMessage) => {
@@ -116,27 +98,23 @@ export default function useWaiterDashboard() {
     [selectedTable, loadDashboard]
   );
 
-  const sendTableToCleaning = useCallback(() => {
+  // El cliente se fue: la mesa queda Disponible de inmediato.
+  const clientLeft = useCallback(() => {
     if (!selectedTable) return;
     const pendingInKitchen = (selectedTable.activeOrders || []).some((o) => o.status !== "delivered");
     const message = pendingInKitchen
-      ? `La Mesa ${selectedTable.number} tiene comandas sin cobrar. Si pasa a limpieza se cancelarán las que sigan en cocina.`
-      : `La Mesa ${selectedTable.number} pasará a limpieza.`;
+      ? `La Mesa ${selectedTable.number} tiene comandas sin cobrar. Si la liberas se cancelarán las que sigan en cocina.`
+      : `La Mesa ${selectedTable.number} quedará disponible.`;
 
     Alert.alert("Cliente se retiró", message, [
       { text: "Cancelar", style: "cancel" },
       {
-        text: "Pasar a limpieza",
+        text: "Liberar mesa",
         style: "destructive",
-        onPress: () => changeTableStatus("limpieza", "No se pudo pasar la mesa a limpieza."),
+        onPress: () => changeTableStatus("libre", "No se pudo liberar la mesa."),
       },
     ]);
   }, [selectedTable, changeTableStatus]);
-
-  const freeTable = useCallback(
-    () => changeTableStatus("libre", "No se pudo marcar la mesa como libre."),
-    [changeTableStatus]
-  );
 
   const chargeTable = useCallback(
     async (paymentMethod) => {
@@ -155,8 +133,8 @@ export default function useWaiterDashboard() {
           [
             { text: "Mantener ocupada", style: "cancel" },
             {
-              text: "Pasar a limpieza",
-              onPress: () => changeTableStatus("limpieza", "No se pudo pasar la mesa a limpieza."),
+              text: "Liberar mesa",
+              onPress: () => changeTableStatus("libre", "No se pudo liberar la mesa."),
             },
           ]
         );
@@ -170,7 +148,12 @@ export default function useWaiterDashboard() {
     [selectedTable, loadDashboard, changeTableStatus]
   );
 
+  // Recarga sin indicador (después de servir, marchar o "yo la llevo").
+  const reload = useCallback(() => loadDashboard({ silent: true }), [loadDashboard]);
+
   return {
+    reload,
+    markOccupied,
     tables,
     loading,
     refreshing,
@@ -186,9 +169,7 @@ export default function useWaiterDashboard() {
     openCharge,
     backToActions,
 
-    occupyTable,
-    sendTableToCleaning,
-    freeTable,
+    clientLeft,
     chargeTable,
   };
 }

@@ -4,6 +4,7 @@ import {
   verifyRecoveryCode,
   setNewPassword as setNewPasswordRequest,
 } from "../services/recoveryPasswordApi";
+import { firstPasswordProblem } from '@syscor/shared/src/utils/passwordRules';
 
 const RESEND_COOLDOWN_SECONDS = 120;
 
@@ -131,12 +132,10 @@ export default function useRecoveryPassword() {
 
     setIsLoading(true);
     try {
-      console.log('[Recovery] verify-code →', { code: codeRequest, codeRequest, email: emailToUse });
       await verifyRecoveryCode({ code: codeRequest, codeRequest, email: emailToUse });
       setSuccess(true);
       return { ok: true };
     } catch (err) {
-      console.error('[Recovery] verify-code ERROR:', err.response?.status, err.response?.data);
       setApiError({
         title: err.response?.data?.title || "Código inválido",
         message: err.response?.data?.message || "El código es incorrecto o ha expirado.",
@@ -151,7 +150,7 @@ export default function useRecoveryPassword() {
   const handleResetPassword = useCallback(async (explicitEmail) => {
     clearMessages();
 
-    if (!newPassword.trim() || !confirmPassword.trim()) {
+    if (!newPassword || !confirmPassword) {
       setInputError("Por favor, ingresa y confirma la nueva contraseña");
       return { ok: false };
     }
@@ -159,8 +158,11 @@ export default function useRecoveryPassword() {
       setInputError("Las contraseñas no coinciden");
       return { ok: false };
     }
-    if (newPassword.length < 6) {
-      setInputError("La contraseña debe tener al menos 6 caracteres");
+    // Mismas reglas que aplica el backend: avisarlas aquí evita que el
+    // servidor rechace el cambio después de haber pedido el código.
+    const problem = firstPasswordProblem(newPassword);
+    if (problem) {
+      setInputError(problem);
       return { ok: false };
     }
 
@@ -168,8 +170,10 @@ export default function useRecoveryPassword() {
     try {
       const emailToUse = (explicitEmail ?? email).trim();
       await setNewPasswordRequest({
-        newPassword: newPassword.trim(),
-        confirmNewPassword: confirmPassword.trim(),
+        // Sin `trim`: la contraseña se guarda tal cual se escribió, o el
+        // cliente no podría volver a entrar con lo que él tecleó.
+        newPassword,
+        confirmNewPassword: confirmPassword,
         email: emailToUse,
       });
       setSuccess(true);

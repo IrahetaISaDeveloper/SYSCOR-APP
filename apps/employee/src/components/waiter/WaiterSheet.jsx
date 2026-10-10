@@ -7,6 +7,7 @@ import {
   Animated,
   Easing,
   KeyboardAvoidingView,
+  StyleSheet,
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -58,9 +59,14 @@ export default function WaiterSheet({ visible, onClose, children }) {
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView behavior="padding" style={waiterSheetStyles.root}>
-        <Animated.View style={[waiterSheetStyles.backdrop, { opacity: backdropOpacity }]}>
-          <Pressable style={{ flex: 1 }} onPress={onClose} />
-        </Animated.View>
+        {/* Fondo oscuro (solo visual) y, encima, un área que cierra al tocar fuera de la hoja. */}
+        <Animated.View pointerEvents="none" style={[waiterSheetStyles.backdrop, { opacity: backdropOpacity }]} />
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Cerrar"
+        />
 
         <Animated.View
           style={[

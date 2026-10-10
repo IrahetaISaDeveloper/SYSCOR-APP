@@ -7,6 +7,7 @@ import ProfileHeader from '@syscor/shared/src/components/commons/ProfileHeader';
 import InfoSection from '@syscor/shared/src/components/commons/InfoSection';
 import InfoRow from '@syscor/shared/src/components/commons/InfoRow';
 import kitchenProfileScreenStyles from "../../styles/kitchenProfileScreenStyles";
+import { getScheduleText, getShiftText } from "../../utils/workSchedule";
 
 export default function KitchenProfileScreen({ navigation }) {
   const { logout } = useAuth();
@@ -47,8 +48,8 @@ export default function KitchenProfileScreen({ navigation }) {
         <InfoSection title="Información laboral">
           <InfoRow label="Puesto" value={typeLabel} />
           <InfoRow label="Estado" value={statusLabel} />
-          <InfoRow label="Turno" value={workInfo.shift} />
-          <InfoRow label="Horario" value={workInfo.schedule} />
+          <InfoRow label="Turno" value={getShiftText(workInfo)} />
+          <InfoRow label="Horario" value={getScheduleText(workInfo)} />
           <InfoRow label="Seguro médico" value={workInfo.workInsurance ? "Sí" : "No"} />
         </InfoSection>
 

@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useAuth } from '@syscor/shared/src/context/AuthContext';
 import apiClient from '@syscor/shared/src/services/apiClient';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Mismas validaciones que el login de clientes; solo cambia la ruta del backend.
 export const LoginEmployees = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -10,10 +13,28 @@ export const LoginEmployees = () => {
   const { login } = useAuth();
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
+    const cleanEmail = email.trim();
+
+    if (!cleanEmail || !password.trim()) {
       setError({
-        title: 'Incomplete fields',
-        message: 'You must fill in both email and password.',
+        title: 'Campos incompletos',
+        message: 'Debes ingresar tu correo y contraseña.',
+      });
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(cleanEmail)) {
+      setError({
+        title: 'Correo inválido',
+        message: 'Ingresa un formato de correo válido sin espacios.',
+      });
+      return;
+    }
+
+    if (password.includes(' ')) {
+      setError({
+        title: 'Contraseña inválida',
+        message: 'Por seguridad, la contraseña no puede contener espacios.',
       });
       return;
     }
@@ -23,24 +44,23 @@ export const LoginEmployees = () => {
 
     try {
       await apiClient.post('/auth/employees/login', {
-        email: email.trim(),
+        email: cleanEmail,
         password,
       });
 
       const { data: userData } = await apiClient.get('/auth/me');
       login(userData);
-
     } catch (err) {
-      console.error(err);
+      console.error('Error en el login de empleado:', err);
       if (err.response) {
         setError({
-          title: err.response.data?.title || 'Login error',
-          message: err.response.data?.message || 'Invalid credentials',
+          title: err.response.data?.title || 'Error de inicio de sesión',
+          message: err.response.data?.message || 'Credenciales inválidas',
         });
       } else {
         setError({
-          title: 'Connection error',
-          message: 'Could not connect to the server.',
+          title: 'Error de conexión',
+          message: 'No se pudo conectar con el servidor. Revisa tu internet.',
         });
       }
     } finally {

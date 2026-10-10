@@ -5,7 +5,7 @@ import TableSummaryHeader from "./TableSummaryHeader";
 import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import {
   IN_KITCHEN_STATUSES,
-  formatOrderId,
+  orderCode,
   formatMoney,
   pluralize,
 } from "../../constants/waiterStatus";
@@ -39,7 +39,7 @@ export default function ChargeTableSheet({ table, busy, onBack, onConfirm }) {
           <View key={order._id} style={styles.boxRow}>
             <SymbolIcon name="receipt_long" size={16} color={employeePalette.muted} />
             <Text style={styles.boxRowText} numberOfLines={1}>
-              {formatOrderId(order._id)} · {pluralize(order.itemCount || 0, "platillo")}
+              {orderCode(order) || "Comanda"} · {pluralize(order.itemCount || 0, "platillo")}
             </Text>
             <Text style={styles.boxRowAmount}>{formatMoney(order.total)}</Text>
           </View>

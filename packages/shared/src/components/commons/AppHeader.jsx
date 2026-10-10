@@ -2,11 +2,12 @@ import React from "react";
 import { View, Text } from "react-native";
 import appHeaderStyles from "../../styles/appHeaderStyles";
 
-export default function AppHeader({ title, subtitle, accessory }) {
+export default function AppHeader({ eyebrow, title, subtitle, accessory }) {
   return (
     <View style={appHeaderStyles.container}>
       <View style={appHeaderStyles.topRow}>
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, gap: 3 }}>
+          {eyebrow ? <Text style={appHeaderStyles.eyebrow}>{eyebrow}</Text> : null}
           <Text style={appHeaderStyles.title}>{title}</Text>
           {subtitle ? <Text style={appHeaderStyles.subtitle}>{subtitle}</Text> : null}
         </View>

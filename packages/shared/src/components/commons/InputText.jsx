@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TextInput, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, radius, spacing } from '../../styles/theme';
+import { darkPalette as d } from '../../styles/darkPalette';
 
 const InputText = ({
   label,
@@ -15,6 +16,9 @@ const InputText = ({
   autoCapitalize = 'none',
   maxLength,
   containerStyle,
+  // Opcional: la app de clientes lo pasa en modo oscuro. Sin él se ve como
+  // siempre (la app de empleados no lo usa).
+  dark = false,
 }) => {
   const hasError = Boolean(error);
   const errorMessage = typeof error === 'string' ? error : null;
@@ -23,14 +27,14 @@ const InputText = ({
 
   return (
     <View style={[styles.container, containerStyle]}>
-      {label ? <Text style={styles.label}>{label}</Text> : null}
-      <View style={[styles.inputWrapper, hasError && styles.inputWrapperError]}>
+      {label ? <Text style={[styles.label, dark && darkStyles.text]}>{label}</Text> : null}
+      <View style={[styles.inputWrapper, dark && darkStyles.inputWrapper, hasError && styles.inputWrapperError]}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, dark && darkStyles.text]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={colors.textLight}
+          placeholderTextColor={dark ? d.textLight : colors.textLight}
           secureTextEntry={secureTextEntry}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
@@ -86,6 +90,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
+});
+
+// Capa para modo oscuro (solo con `dark`): solo cambia colores.
+const darkStyles = StyleSheet.create({
+  inputWrapper: { backgroundColor: d.surface, borderColor: d.border },
+  text: { color: d.textDark },
 });
 
 export default InputText;

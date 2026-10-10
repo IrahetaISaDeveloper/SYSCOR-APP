@@ -1,96 +1,177 @@
-import React from "react";
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+  StyleSheet,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
+import { Ionicons as Icon } from "@expo/vector-icons";
 import { useAuth } from "@syscor/shared/src/context/AuthContext";
 import { getFirstName } from "@syscor/shared/src/utils/userDisplay";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
-import useWaiterOrders, { ORDER_FILTERS } from "../../hooks/useWaiterOrders";
-import WaiterHeader from "../../components/waiter/WaiterHeader";
-import SymbolIcon from "../../components/commons/SymbolIcon";
-import {
-  getOrderStatusMeta,
-  formatOrderId,
-  formatMoney,
-  formatElapsed,
-  minutesSince,
-} from "../../constants/waiterStatus";
-import styles from "../../styles/waiterOrdersScreenStyles";
+import { textStyles } from "@syscor/shared/src/styles/typography";
+import { useAuthMetrics } from "@syscor/shared/src/styles/authTheme";
+import useWaiterOrders, { ORDER_FILTERS, ORDER_SCOPES } from "../../hooks/useWaiterOrders";
+import useWaiterOrderHistory, { HISTORY_RANGES } from "../../hooks/useWaiterOrderHistory";
+import OrderCard from "../../components/waiter/OrderCard";
+import { waiterColors as c } from "../../styles/waiterTheme";
 
-function OrderCard({ order, updating, onMarkDelivered }) {
-  const meta = getOrderStatusMeta(order.status);
-  const elapsed = formatElapsed(minutesSince(order.createdAt));
-  const subtitle = [order.customerName || "Cliente sin nombre", elapsed ? `hace ${elapsed}` : null]
-    .filter(Boolean)
-    .join(" · ");
+const shiftLabel = (date = new Date()) => {
+  const hour = date.getHours();
+  if (hour < 12) return "TURNO MAÑANA";
+  if (hour < 18) return "TURNO TARDE";
+  return "TURNO NOCHE";
+};
 
+// Comandas de todo el restaurante: cualquier mesero puede llevar a la mesa
+// una comanda lista, aunque la haya tomado otro. "Yo la llevo" avisa a los
+// demás para que no vayan dos al mismo plato; "Mías" deja solo las propias.
+export default function WaiterOrdersScreen() {
+  const [mode, setMode] = useState("active");
+  return mode === "history" ? (
+    <HistoryView mode={mode} setMode={setMode} />
+  ) : (
+    <ActiveView mode={mode} setMode={setMode} />
+  );
+}
+
+// Activas / Historial, arriba de la pantalla.
+function ModeSwitch({ mode, setMode }) {
+  const { ms } = useAuthMetrics();
+  const options = [
+    { key: "active", label: "Activas", icon: "receipt-outline" },
+    { key: "history", label: "Historial", icon: "time-outline" },
+  ];
   return (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <View style={styles.tableAvatar}>
-          <Text style={styles.tableAvatarNumber}>{order.tableNumber}</Text>
-          <Text style={styles.tableAvatarLabel}>MESA</Text>
-        </View>
-        <View style={styles.cardTexts}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            {formatOrderId(order._id)} · Mesa {order.tableNumber}
-          </Text>
-          <Text style={styles.cardSubtitle} numberOfLines={1}>{subtitle}</Text>
-        </View>
-        <View style={styles.statusBox}>
-          <SymbolIcon name={meta.icon} size={15} color={meta.color} />
-          <Text style={[styles.statusLabel, { color: meta.color }]}>{meta.label}</Text>
-        </View>
-      </View>
-
-      {order.items?.length > 0 && (
-        <View style={styles.itemsBox}>
-          {order.items.map((item, index) => (
-            <View key={item._id || index} style={styles.itemRow}>
-              <Text style={styles.itemQuantity}>{item.quantity}×</Text>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemPrice}>{formatMoney((item.price || 0) * (item.quantity || 1))}</Text>
-            </View>
-          ))}
-        </View>
-      )}
-
-      {order.notes ? (
-        <View style={styles.notesRow}>
-          <SymbolIcon name="edit_note" size={15} color={employeePalette.muted} />
-          <Text style={styles.notesText}>{order.notes}</Text>
-        </View>
-      ) : null}
-
-      <View style={styles.cardFooter}>
-        <Text style={styles.totalLabel}>TOTAL</Text>
-        <Text style={styles.totalAmount}>{formatMoney(order.total)}</Text>
-        {order.status === "ready" && (
+    <View style={[styles.row, styles.filters, { borderRadius: ms(16), padding: ms(4), gap: ms(4) }]}>
+      {options.map((o) => {
+        const active = mode === o.key;
+        return (
           <TouchableOpacity
-            style={styles.deliverButton}
-            onPress={() => onMarkDelivered(order._id)}
-            disabled={updating}
-            activeOpacity={0.85}
+            key={o.key}
+            onPress={() => setMode(o.key)}
+            activeOpacity={0.8}
+            style={[
+              styles.row,
+              styles.filter,
+              { justifyContent: "center", gap: ms(6), borderRadius: ms(12), paddingVertical: ms(9), backgroundColor: active ? "#C9402F" : "transparent" },
+            ]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
           >
-            {updating ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <SymbolIcon name="done_all" size={15} color="#FFFFFF" />
-                <Text style={styles.deliverButtonLabel}>Marcar servida</Text>
-              </>
-            )}
+            <Icon name={o.icon} size={ms(16)} color={active ? c.white : c.textGray} />
+            <Text style={[active ? textStyles.link : textStyles.body, { color: active ? c.white : c.textGray, fontSize: ms(13.5) }]}>
+              {o.label}
+            </Text>
           </TouchableOpacity>
-        )}
-      </View>
+        );
+      })}
     </View>
   );
 }
 
-export default function WaiterOrdersScreen() {
+// Comandas ya cerradas (servidas o canceladas), sin acciones.
+function HistoryView({ mode, setMode }) {
+  const { ms, gutter } = useAuthMetrics();
+  const { myId, orders, stats, loading, refreshing, error, onRefresh, range, setRange } = useWaiterOrderHistory();
+
+  const header = (
+    <View style={{ gap: ms(14), marginBottom: ms(14) }}>
+      <View style={{ marginTop: ms(14), gap: ms(2) }}>
+        <Text style={[textStyles.kicker, { color: c.textGray, fontSize: ms(10.5) }]}>
+          {stats.served} SERVIDAS · {stats.cancelled} CANCELADAS
+        </Text>
+        <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(28) }]}>Comandas</Text>
+      </View>
+
+      <ModeSwitch mode={mode} setMode={setMode} />
+
+      <View style={[styles.row, { gap: ms(8) }]}>
+        {HISTORY_RANGES.map((r) => {
+          const active = range === r.key;
+          return (
+            <TouchableOpacity
+              key={r.key}
+              onPress={() => setRange(r.key)}
+              activeOpacity={0.85}
+              style={[
+                styles.row,
+                styles.scope,
+                {
+                  borderRadius: ms(20),
+                  paddingHorizontal: ms(14),
+                  height: ms(34),
+                  backgroundColor: active ? c.textDark : c.surface,
+                  borderColor: active ? c.textDark : c.border,
+                },
+              ]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+            >
+              <Text style={[active ? textStyles.link : textStyles.body, { color: active ? c.white : c.textGray, fontSize: ms(13) }]}>
+                {r.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {error ? (
+        <View style={[styles.row, styles.errorBox, { borderRadius: ms(12), padding: ms(12), gap: ms(10) }]}>
+          <Icon name="cloud-offline-outline" size={ms(18)} color={c.error} />
+          <Text style={[textStyles.body, { flex: 1, color: c.textGray, fontSize: ms(13) }]}>{error}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <StatusBar style="dark" />
+      {loading ? (
+        <View style={{ paddingHorizontal: gutter }}>
+          {header}
+          <View style={[styles.center, { paddingVertical: ms(50), gap: ms(12) }]}>
+            <ActivityIndicator size="large" color={c.primary} />
+            <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(13) }]}>Cargando historial…</Text>
+          </View>
+        </View>
+      ) : (
+        <FlatList
+          data={orders}
+          keyExtractor={(order) => String(order._id)}
+          ListHeaderComponent={header}
+          contentContainerStyle={{ paddingHorizontal: gutter, paddingBottom: ms(32), gap: ms(12) }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} colors={[c.primary]} />
+          }
+          renderItem={({ item }) => <OrderCard order={item} myId={myId} history />}
+          ListEmptyComponent={
+            <View style={[styles.center, { paddingVertical: ms(50), gap: ms(10) }]}>
+              <Icon name="time-outline" size={ms(30)} color={c.textLight} />
+              <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(13.5) }]}>
+                Aún no hay comandas cerradas en este periodo.
+              </Text>
+            </View>
+          }
+        />
+      )}
+    </SafeAreaView>
+  );
+}
+
+function ActiveView({ mode, setMode }) {
+  const { ms, gutter } = useAuthMetrics();
   const { user } = useAuth();
   const firstName = getFirstName(user);
 
   const {
+    myId,
     orders,
     counts,
     loading,
@@ -99,65 +180,120 @@ export default function WaiterOrdersScreen() {
     onRefresh,
     activeFilter,
     setActiveFilter,
-    updatingId,
-    markDelivered,
+    scope,
+    setScope,
+    actions,
   } = useWaiterOrders();
 
-  return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <WaiterHeader
-        eyebrow={firstName ? `HOLA, ${firstName.toUpperCase()} · MESERA` : "MESERA"}
-        title="Comandas"
-        subtitle="Sigue tus comandas y marca las que ya serviste"
-        accessoryIcon="receipt_long"
-      />
+  const header = (
+    <View style={{ gap: ms(14), marginBottom: ms(14) }}>
+      {/* ── ENCABEZADO ── */}
+      <View style={[styles.row, { marginTop: ms(14), gap: ms(12) }]}>
+        <View style={{ flex: 1, gap: ms(2) }}>
+          <Text style={[textStyles.kicker, { color: c.textGray, fontSize: ms(10.5) }]} numberOfLines={1}>
+            {shiftLabel()}
+            {firstName ? ` · ${firstName.toUpperCase()}` : ""}
+          </Text>
+          <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(28) }]}>Comandas</Text>
+        </View>
+      </View>
 
-      <View style={styles.filters}>
-        {ORDER_FILTERS.map((filter) => {
-          const active = activeFilter === filter.key;
+      <ModeSwitch mode={mode} setMode={setMode} />
+
+      {/* ── TODAS / MÍAS ── */}
+      <View style={[styles.row, { gap: ms(8) }]}>
+        {ORDER_SCOPES.map((s) => {
+          const active = scope === s.key;
           return (
             <TouchableOpacity
-              key={filter.key}
-              style={[styles.filterPill, active && styles.filterPillActive]}
-              onPress={() => setActiveFilter(filter.key)}
-              activeOpacity={0.8}
+              key={s.key}
+              onPress={() => setScope(s.key)}
+              activeOpacity={0.85}
+              style={[
+                styles.row,
+                styles.scope,
+                {
+                  borderRadius: ms(20),
+                  paddingHorizontal: ms(14),
+                  height: ms(34),
+                  gap: ms(6),
+                  backgroundColor: active ? "#C9402F" : c.surface,
+                  borderColor: active ? "#C9402F" : c.border,
+                },
+              ]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
             >
-              <Text style={[styles.filterLabel, active && styles.filterLabelActive]}>
-                {filter.label} · {counts[filter.key] ?? 0}
+              <Icon name={s.key === "mine" ? "person-outline" : "people-outline"} size={ms(15)} color={active ? c.white : c.textGray} />
+              <Text style={[active ? textStyles.link : textStyles.body, { color: active ? c.white : c.textGray, fontSize: ms(13) }]}>
+                {s.label}
               </Text>
             </TouchableOpacity>
           );
         })}
       </View>
 
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {/* ── FILTROS POR ESTADO ── */}
+      <View style={[styles.row, styles.filters, { borderRadius: ms(16), padding: ms(4), gap: ms(4) }]}>
+        {ORDER_FILTERS.map((filter) => {
+          const active = activeFilter === filter.key;
+          return (
+            <TouchableOpacity
+              key={filter.key}
+              style={[styles.filter, { borderRadius: ms(12), paddingVertical: ms(8), backgroundColor: active ? c.textDark : "transparent" }]}
+              onPress={() => setActiveFilter(filter.key)}
+              activeOpacity={0.8}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+            >
+              <Text style={[textStyles.title, { color: active ? c.white : c.textDark, fontSize: ms(16) }]}>
+                {counts[filter.key] ?? 0}
+              </Text>
+              <Text style={[active ? textStyles.link : textStyles.body, { color: active ? c.white : c.textDark, fontSize: ms(11.5) }]}>
+                {filter.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
+      {error ? (
+        <View style={[styles.row, styles.errorBox, { borderRadius: ms(12), padding: ms(12), gap: ms(10) }]}>
+          <Icon name="cloud-offline-outline" size={ms(18)} color={c.error} />
+          <Text style={[textStyles.body, { flex: 1, color: c.textGray, fontSize: ms(13) }]}>{error}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <StatusBar style="dark" />
       {loading ? (
-        <View style={styles.stateBox}>
-          <ActivityIndicator size="large" color={employeePalette.accent} />
-          <Text style={styles.stateText}>Cargando comandas...</Text>
+        <View style={{ paddingHorizontal: gutter }}>
+          {header}
+          <View style={[styles.center, { paddingVertical: ms(50), gap: ms(12) }]}>
+            <ActivityIndicator size="large" color={c.primary} />
+            <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(13) }]}>Cargando comandas…</Text>
+          </View>
         </View>
       ) : (
         <FlatList
           data={orders}
           keyExtractor={(order) => String(order._id)}
-          contentContainerStyle={styles.list}
+          ListHeaderComponent={header}
+          contentContainerStyle={{ paddingHorizontal: gutter, paddingBottom: ms(32), gap: ms(12) }}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={employeePalette.accent}
-              colors={[employeePalette.accent]}
-            />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} colors={[c.primary]} />
           }
-          renderItem={({ item }) => (
-            <OrderCard order={item} updating={updatingId === item._id} onMarkDelivered={markDelivered} />
-          )}
+          renderItem={({ item }) => <OrderCard order={item} myId={myId} actions={actions} />}
           ListEmptyComponent={
-            <View style={styles.stateBox}>
-              <SymbolIcon name="receipt_long" size={28} color={employeePalette.muted} />
-              <Text style={styles.stateText}>No hay comandas en esta vista.</Text>
+            <View style={[styles.center, { paddingVertical: ms(50), gap: ms(10) }]}>
+              <Icon name="receipt-outline" size={ms(30)} color={c.textLight} />
+              <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(13.5) }]}>
+                {scope === "mine" ? "No tienes comandas en esta vista." : "No hay comandas en esta vista."}
+              </Text>
             </View>
           }
         />
@@ -165,3 +301,35 @@ export default function WaiterOrdersScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: c.background,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  center: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scope: {
+    borderWidth: 1,
+  },
+  filters: {
+    backgroundColor: c.surface,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  filter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  errorBox: {
+    backgroundColor: c.surface,
+    borderWidth: 1,
+    borderColor: c.error,
+  },
+});

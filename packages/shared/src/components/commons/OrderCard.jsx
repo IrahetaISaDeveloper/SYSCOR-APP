@@ -1,28 +1,28 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
-import ordersStyles, { colors } from '../../styles/Orders';
+import ordersStyles, { kitchenPalette } from '../../styles/Orders';
 
-// ── ESTILOS LOCALES (para las secciones nuevas de esta tarjeta) ──────
+// ── ESTILOS LOCALES (secciones que no están en la hoja de estilos general) ──
 const local = StyleSheet.create({
-  // Sección de empleado asignado
+  // Barra de empleado (mesero) asignado
   waiterRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0F4FF',
+    backgroundColor: kitchenPalette.surface2,
     paddingHorizontal: 14,
     paddingVertical: 7,
-    gap: 6,
+    gap: 7,
   },
   waiterLabel: {
-    fontSize: 11,
-    color: '#5B6A99',
-    fontWeight: '600',
-    letterSpacing: 0.3,
+    fontFamily: 'monospace',
+    fontSize: 10,
+    letterSpacing: 0.4,
+    color: kitchenPalette.muted,
   },
   waiterName: {
-    fontSize: 12,
-    color: '#2B3E82',
+    fontSize: 11.5,
+    color: kitchenPalette.ink,
     fontWeight: '700',
   },
 
@@ -33,36 +33,33 @@ const local = StyleSheet.create({
     paddingHorizontal: 14,
     paddingTop: 10,
     paddingBottom: 4,
-    gap: 5,
+    gap: 6,
   },
   cookSectionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textGray,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    fontFamily: 'monospace',
+    fontSize: 10,
+    letterSpacing: 0.6,
+    color: kitchenPalette.muted,
   },
 
   // Tarjeta de cada ítem a cocinar
-  itemCard: {
-    marginHorizontal: 14,
-    marginBottom: 8,
-    borderRadius: 8,
-    backgroundColor: '#FAFAFA',
-    borderWidth: 1,
-    borderColor: '#EBEBEB',
-    overflow: 'hidden',
+  itemsList: {
+    paddingHorizontal: 14,
+    paddingBottom: 8,
+    gap: 7,
   },
-  itemCardLate: {
-    borderColor: '#E8B4B4',
-    backgroundColor: '#FFF8F8',
+  itemCard: {
+    borderWidth: 1,
+    borderColor: kitchenPalette.line,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   itemHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 8,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+    gap: 9,
   },
   itemTypeDot: {
     width: 8,
@@ -71,46 +68,45 @@ const local = StyleSheet.create({
   },
   itemName: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '700',
-    color: colors.textDark,
+    color: kitchenPalette.ink,
   },
 
   // Caja de especificaciones / notas del cliente
   notesBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#FFF3CD',
+    backgroundColor: kitchenPalette.warnSurface,
     borderTopWidth: 1,
-    borderTopColor: '#FFE08A',
-    paddingHorizontal: 12,
+    borderTopColor: kitchenPalette.warnLine,
+    paddingHorizontal: 11,
     paddingVertical: 7,
-    gap: 6,
-  },
-  notesText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#7A5C00',
-    fontWeight: '600',
-    fontStyle: 'italic',
-  },
-  notesLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#A07800',
-    letterSpacing: 0.4,
-    marginBottom: 1,
+    gap: 7,
   },
   notesColumn: {
     flex: 1,
+    gap: 1,
+  },
+  notesLabel: {
+    fontFamily: 'monospace',
+    fontSize: 9.5,
+    letterSpacing: 0.4,
+    color: kitchenPalette.warnInk,
+  },
+  notesText: {
+    fontSize: 11.5,
+    fontWeight: '500',
+    fontStyle: 'italic',
+    color: kitchenPalette.warnText,
   },
 });
 
 // Colores de los puntos indicadores según el tipo de ítem
 const itemTypeDotColor = {
-  combo: '#8B1E1E',
-  extra: '#E38B29',
-  drink: '#2E8B57',
+  combo: kitchenPalette.comboDot,
+  extra: kitchenPalette.extraDot,
+  drink: kitchenPalette.drinkDot,
 };
 
 // Configuración de estilos del badge de estado
@@ -124,10 +120,10 @@ const statusBadgeStyleMap = {
 
 // Color del reloj según urgencia
 const getTimeColor = (status) => {
-  if (status === 'late')    return colors.danger;
-  if (status === 'ready')   return colors.success;
-  if (status === 'preparing') return colors.warning;
-  return colors.textDark;
+  if (status === 'late')      return kitchenPalette.price;
+  if (status === 'ready')     return kitchenPalette.ready;
+  if (status === 'preparing') return kitchenPalette.preparing;
+  return kitchenPalette.ink;
 };
 
 /**
@@ -148,7 +144,7 @@ const OrderCard = ({ order, statusLabel, onPrimaryAction, onSecondaryAction }) =
       return (
         <View style={ordersStyles.actionsRow}>
           <TouchableOpacity
-            style={[ordersStyles.actionButton, ordersStyles.secondaryButton, ordersStyles.actionButtonSpacing]}
+            style={[ordersStyles.actionButton, ordersStyles.secondaryButton]}
             onPress={() => onSecondaryAction(order.id)}
           >
             <Text style={[ordersStyles.actionButtonText, ordersStyles.secondaryButtonText]}>Continuar</Text>
@@ -157,7 +153,7 @@ const OrderCard = ({ order, statusLabel, onPrimaryAction, onSecondaryAction }) =
             style={[ordersStyles.actionButton, ordersStyles.primaryButton]}
             onPress={() => onPrimaryAction(order.id)}
           >
-            <Icon name="checkmark" size={16} color={colors.white} style={{ marginRight: 4 }} />
+            <Icon name="checkmark" size={16} color={kitchenPalette.white} style={{ marginRight: 4 }} />
             <Text style={ordersStyles.actionButtonText}>Lista</Text>
           </TouchableOpacity>
         </View>
@@ -170,7 +166,7 @@ const OrderCard = ({ order, statusLabel, onPrimaryAction, onSecondaryAction }) =
             style={[ordersStyles.actionButton, ordersStyles.primaryButton]}
             onPress={() => onPrimaryAction(order.id)}
           >
-            <Icon name="checkmark" size={16} color={colors.white} style={{ marginRight: 4 }} />
+            <Icon name="checkmark" size={16} color={kitchenPalette.white} style={{ marginRight: 4 }} />
             <Text style={ordersStyles.actionButtonText}>Marcar Lista</Text>
           </TouchableOpacity>
         </View>
@@ -183,8 +179,8 @@ const OrderCard = ({ order, statusLabel, onPrimaryAction, onSecondaryAction }) =
             style={[ordersStyles.actionButton, ordersStyles.darkButton]}
             onPress={() => onPrimaryAction(order.id)}
           >
-            <Icon name="flame" size={16} color={colors.white} style={{ marginRight: 4 }} />
-            <Text style={ordersStyles.actionButtonText}>Empezar a Preparar</Text>
+            <Icon name="flame" size={16} color={kitchenPalette.bg} style={{ marginRight: 4 }} />
+            <Text style={[ordersStyles.actionButtonText, ordersStyles.darkButtonText]}>Empezar a preparar</Text>
           </TouchableOpacity>
         </View>
       );
@@ -193,8 +189,8 @@ const OrderCard = ({ order, statusLabel, onPrimaryAction, onSecondaryAction }) =
       return (
         <View style={ordersStyles.actionsRow}>
           <View style={[ordersStyles.actionButton, ordersStyles.disabledButton, { flexDirection: 'row' }]}>
-            <Icon name="checkmark-circle" size={16} color={colors.success} style={{ marginRight: 4 }} />
-            <Text style={[ordersStyles.actionButtonText, { color: colors.success }]}>Entregada al mesero</Text>
+            <Icon name="checkmark-circle" size={16} color={kitchenPalette.ready} style={{ marginRight: 4 }} />
+            <Text style={[ordersStyles.actionButtonText, { color: kitchenPalette.ready }]}>Entregada al mesero</Text>
           </View>
         </View>
       );
@@ -219,8 +215,8 @@ const OrderCard = ({ order, statusLabel, onPrimaryAction, onSecondaryAction }) =
             </View>
           </View>
           {order.tableLabel && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3, gap: 4 }}>
-              <Icon name="grid-outline" size={12} color={colors.textGray} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <Icon name="grid-outline" size={13} color={kitchenPalette.muted} />
               <Text style={ordersStyles.customerName}>{order.tableLabel}</Text>
             </View>
           )}
@@ -228,8 +224,8 @@ const OrderCard = ({ order, statusLabel, onPrimaryAction, onSecondaryAction }) =
         <View style={ordersStyles.cardHeaderRight}>
           <View style={ordersStyles.timeRow}>
             {isReady
-              ? <Icon name="checkmark-circle" size={16} color={colors.success} />
-              : <Icon name="time-outline" size={16} color={getTimeColor(order.status)} />
+              ? <Icon name="checkmark-circle" size={15} color={kitchenPalette.ready} />
+              : <Icon name="time-outline" size={15} color={getTimeColor(order.status)} />
             }
             <Text style={[ordersStyles.timeText, { color: getTimeColor(order.status) }]}>
               {order.time}
@@ -244,8 +240,8 @@ const OrderCard = ({ order, statusLabel, onPrimaryAction, onSecondaryAction }) =
       {/* ── EMPLEADO ASIGNADO (mesero) ── */}
       {order.waiterName && (
         <View style={local.waiterRow}>
-          <Icon name="person-circle-outline" size={15} color="#5B6A99" />
-          <Text style={local.waiterLabel}>ASIGNADO A </Text>
+          <Icon name="person-circle-outline" size={15} color={kitchenPalette.muted} />
+          <Text style={local.waiterLabel}>ASIGNADO A</Text>
           <Text style={local.waiterName}>{order.waiterName}</Text>
         </View>
       )}
@@ -254,32 +250,29 @@ const OrderCard = ({ order, statusLabel, onPrimaryAction, onSecondaryAction }) =
 
       {/* ── PLATILLOS A COCINAR con sus especificaciones ── */}
       <View style={local.cookSectionHeader}>
-        <Icon name="restaurant-outline" size={13} color={colors.textGray} />
-        <Text style={local.cookSectionLabel}>Qué cocinar</Text>
+        <Icon name="restaurant-outline" size={14} color={kitchenPalette.muted} />
+        <Text style={local.cookSectionLabel}>QUÉ COCINAR</Text>
       </View>
 
-      <View style={{ paddingBottom: 6 }}>
+      <View style={local.itemsList}>
         {(order.items || []).map((item) => (
-          <View
-            key={item.id}
-            style={[local.itemCard, isLate && local.itemCardLate]}
-          >
+          <View key={item.id} style={local.itemCard}>
             {/* Nombre del platillo con punto de color según tipo (combo / extra / bebida) */}
             <View style={local.itemHeader}>
               <View style={[
                 local.itemTypeDot,
-                { backgroundColor: itemTypeDotColor[item.itemType] || colors.primary },
+                { backgroundColor: itemTypeDotColor[item.itemType] || kitchenPalette.accent },
               ]} />
               <Text style={local.itemName}>{item.name}</Text>
               {item.hasNotes && (
-                <Icon name="alert-circle" size={16} color="#E38B29" />
+                <Icon name="alert-circle" size={16} color={kitchenPalette.warnInk} />
               )}
             </View>
 
             {/* Especificaciones del cliente (notas como "sin cebolla", "extra salsa") */}
             {item.hasNotes && (
               <View style={local.notesBox}>
-                <Icon name="create-outline" size={14} color="#A07800" />
+                <Icon name="create-outline" size={14} color={kitchenPalette.warnInk} />
                 <View style={local.notesColumn}>
                   <Text style={local.notesLabel}>ESPECIFICACIONES</Text>
                   <Text style={local.notesText}>{item.notes}</Text>

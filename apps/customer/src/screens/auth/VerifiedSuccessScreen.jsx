@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import styles from '../../styles/VerifiedSuccess';
+import { View, Text, TouchableOpacity, useColorScheme } from 'react-native';
+import { getVerifiedSuccessStyles } from '../../styles/VerifiedSuccess';
 
 export default function VerifiedSuccessScreen({ navigation }) {
+  const styles = getVerifiedSuccessStyles(useColorScheme() === 'dark');
   const handleGoToLogin = () => {
     navigation.replace('Login');
   };

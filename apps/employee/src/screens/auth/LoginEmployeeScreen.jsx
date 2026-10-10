@@ -1,317 +1,248 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  ScrollView,
-  Platform,
-} from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
-import Button from '@syscor/shared/src/components/commons/Button';
-import Toast from '@syscor/shared/src/components/commons/Toast';
+import { useAuthTheme } from '@syscor/shared/src/styles/authTheme';
+import { textStyles } from '@syscor/shared/src/styles/typography';
+import AuthScreenLayout from '@syscor/shared/src/components/auth/AuthScreenLayout';
+import AuthHeader from '@syscor/shared/src/components/auth/AuthHeader';
+import AuthField from '@syscor/shared/src/components/auth/AuthField';
+import AuthButton from '@syscor/shared/src/components/auth/AuthButton';
+import PanchitaBubble from '@syscor/shared/src/components/panchita/PanchitaBubble';
+import PanchitaChatSheet from '@syscor/shared/src/components/panchita/PanchitaChatSheet';
 import { LoginEmployees } from '../../hooks/LoginEmployees';
-import { colors, radius, spacing } from '@syscor/shared/src/styles/theme';
+import { EMPLOYEE_LOGIN_FAQ, EMPLOYEE_LOGIN_WELCOME } from '../../constants/loginFaq';
 
-// Paleta exacta del mockup de diseño (Login.dc.html) — distinta de la paleta
-// genérica de la app, se mantiene local a esta pantalla.
-const palette = {
-  bg: '#F7F3E9',
-  ink: '#1B1613',
-  surface: '#FFFFFF',
-  line: '#E3DACA',
-  muted: '#6E665C',
-  accent: '#8E2222',
-  price: '#A8261C',
-};
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function LoginEmployeeScreen() {
-  const { email, setEmail, password, setPassword, loading, error, handleLogin } = LoginEmployees();
+// Login del empleado: mismo diseño que el de clientes, pero sin "explorar el
+// menú" ni "crear cuenta" (las cuentas las da de alta administración). Chef
+// Panchita flota encima en una burbuja arrastrable.
+export default function LoginEmployeeScreen({ navigation }) {
+  const { isDark, t, m } = useAuthTheme();
+  const ms = m.ms;
+
+  const { email, setEmail, password, setPassword, loading, error, handleLogin } =
+    LoginEmployees();
   const [showPassword, setShowPassword] = useState(false);
-  const [emailFocused, setEmailFocused] = useState(false);
-  const [passwordFocused, setPasswordFocused] = useState(false);
-  const [toast, setToast] = useState({ visible: false, message: '' });
+  const [helpOpen, setHelpOpen] = useState(false);
 
-  const onPressLogin = async () => {
-    await handleLogin();
-    if (!error) {
-      setToast({ visible: true, message: '¡Bienvenido de nuevo!' });
-    }
-  };
+  const emailIsValid = EMAIL_REGEX.test(email.trim());
+  const canSubmit = email.trim().length > 0 && password.length > 0;
+
+  const header = (
+    <AuthHeader
+      tokens={t}
+      metrics={m}
+      onBack={() => navigation.goBack()}
+      showBack={navigation.canGoBack()}
+    />
+  );
+
+  const footer = (
+    <Text style={[styles.legal, { color: t.textMuted, fontSize: ms(10.5) }]}>
+      © TAQUERÍA EL CORRAL · SYSCOR
+    </Text>
+  );
 
   return (
-    <View style={styles.container}>
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type="success"
-        onHide={() => setToast((t) => ({ ...t, visible: false }))}
+    <>
+      <AuthScreenLayout
+        tokens={t}
+        metrics={m}
+        isDark={isDark}
+        header={header}
+        footer={footer}
+        centerContent
+      >
+        {/* Marca y saludo */}
+        <View style={{ alignItems: 'center', marginBottom: ms(m.isCompact ? 14 : 22) }}>
+          <Image
+            source={
+              isDark
+                ? require('../../../assets/logo-horizontal-blanco.png')
+                : require('../../../assets/logo-horizontal-negro.png')
+            }
+            // El PNG es cuadrado con la marca en su franja central: los
+            // márgenes negativos recortan el espacio transparente sobrante.
+            style={{
+              width: ms(250),
+              height: ms(250),
+              marginVertical: -ms(88),
+            }}
+            resizeMode="contain"
+          />
+
+          <Text
+            style={[
+              styles.title,
+              { color: t.textPrimary, fontSize: ms(27), marginTop: ms(14) },
+            ]}
+          >
+            Bienvenido de vuelta
+          </Text>
+          <Text
+            style={[
+              styles.subtitle,
+              {
+                color: t.textSecondary,
+                fontSize: ms(14),
+                lineHeight: ms(20),
+                marginTop: ms(6),
+              },
+            ]}
+          >
+            Inicia sesión para comenzar tu turno
+          </Text>
+        </View>
+
+        {/* Error devuelto por el backend */}
+        {error ? (
+          <View
+            style={[
+              styles.errorBox,
+              {
+                backgroundColor: t.accentSoft,
+                borderColor: t.danger,
+                borderRadius: ms(12),
+                padding: ms(13),
+                gap: ms(10),
+                marginBottom: ms(16),
+              },
+            ]}
+          >
+            <Icon name="alert-circle-outline" size={ms(18)} color={t.danger} />
+            <View style={styles.flex}>
+              {error.title ? (
+                <Text style={[styles.errorTitle, { color: t.danger, fontSize: ms(13.5) }]}>
+                  {error.title}
+                </Text>
+              ) : null}
+              <Text
+                style={[
+                  styles.errorMessage,
+                  { color: t.textSecondary, fontSize: ms(13), lineHeight: ms(18) },
+                ]}
+              >
+                {error.message || String(error)}
+              </Text>
+            </View>
+          </View>
+        ) : null}
+
+        <AuthField
+          tokens={t}
+          metrics={m}
+          label="CORREO ELECTRÓNICO"
+          icon="mail-outline"
+          placeholder="empleado@elcorral.com"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoComplete="email"
+          textContentType="emailAddress"
+          returnKeyType="next"
+          rightIcon={
+            emailIsValid ? (
+              <Icon name="checkmark-circle-outline" size={ms(20)} color={t.success} />
+            ) : null
+          }
+        />
+
+        <AuthField
+          tokens={t}
+          metrics={m}
+          label="CONTRASEÑA"
+          icon="lock-closed-outline"
+          placeholder="••••••••••"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+          autoCapitalize="none"
+          autoComplete="password"
+          textContentType="password"
+          returnKeyType="go"
+          onSubmitEditing={canSubmit ? handleLogin : undefined}
+          rightIcon={
+            <Icon
+              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+              size={ms(20)}
+              color={t.textMuted}
+            />
+          }
+          onRightIconPress={() => setShowPassword((prev) => !prev)}
+        />
+
+        <TouchableOpacity
+          style={{ alignSelf: 'flex-end', paddingVertical: ms(4), marginBottom: ms(18) }}
+          onPress={() => navigation.navigate('ForgotPassword')}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.forgotText, { color: t.accent, fontSize: ms(13.5) }]}>
+            ¿Olvidaste tu contraseña?
+          </Text>
+        </TouchableOpacity>
+
+        <AuthButton
+          tokens={t}
+          metrics={m}
+          title="Iniciar sesión"
+          onPress={handleLogin}
+          loading={loading}
+          disabled={!canSubmit}
+        />
+      </AuthScreenLayout>
+
+      {/* Chef Panchita: burbuja arrastrable + panel de ayuda */}
+      <PanchitaBubble
+        tokens={t}
+        isDark={isDark}
+        hidden={helpOpen}
+        onPress={() => setHelpOpen(true)}
       />
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-        <View style={styles.centeredColumn}>
-          {/* Tag superior */}
-          <View style={styles.topTag}>
-            <Text style={styles.topTagText}>ACCESO EMPLEADO</Text>
-          </View>
-
-          {/* Encabezado con logo */}
-          <View style={styles.header}>
-            <View style={styles.logoBadge}>
-              <Image
-                source={require('../../../assets/logo png horizontal claro.png')}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-            </View>
-            <View style={styles.headerTextGroup}>
-              <Text style={styles.title}>Bienvenido de vuelta</Text>
-              <Text style={styles.subtitle}>Ingresa tus credenciales para continuar</Text>
-            </View>
-          </View>
-
-          {/* Formulario */}
-          <View style={styles.form}>
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>CORREO</Text>
-              <View style={[styles.inputWrapper, emailFocused && styles.inputWrapperFocused]}>
-                <Icon
-                  name="mail-outline"
-                  size={18}
-                  color={emailFocused ? palette.accent : palette.muted}
-                  style={styles.leftIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="empleado@elcorral.com"
-                  placeholderTextColor={palette.muted}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  onFocus={() => setEmailFocused(true)}
-                  onBlur={() => setEmailFocused(false)}
-                />
-                {email ? (
-                  <Icon name="checkmark-circle" size={18} color={palette.accent} />
-                ) : null}
-              </View>
-            </View>
-
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>CONTRASEÑA</Text>
-              <View style={[styles.inputWrapper, passwordFocused && styles.inputWrapperFocused]}>
-                <Icon
-                  name="lock-closed-outline"
-                  size={18}
-                  color={passwordFocused ? palette.accent : palette.muted}
-                  style={styles.leftIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="••••••••"
-                  placeholderTextColor={palette.muted}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  onFocus={() => setPasswordFocused(true)}
-                  onBlur={() => setPasswordFocused(false)}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword((prev) => !prev)}
-                  hitSlop={10}
-                >
-                  <Icon
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={18}
-                    color={palette.muted}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Mensaje de error */}
-            {error && (
-              <View style={styles.errorContainer}>
-                {error.title ? (
-                  <>
-                    <Text style={styles.errorTitle}>{error.title}</Text>
-                    {error.message ? <Text style={styles.errorMessage}>{error.message}</Text> : null}
-                  </>
-                ) : (
-                  <Text style={styles.errorTitle}>{error}</Text>
-                )}
-              </View>
-            )}
-
-            {/* Botón de inicio de sesión */}
-            <Button
-              title={loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-              onPress={onPressLogin}
-              loading={loading}
-              disabled={!email || !password}
-              style={styles.loginButton}
-              icon={!loading ? <Icon name="arrow-forward" size={17} color={colors.white} /> : null}
-            />
-          </View>
-
-          {/* Pie de página */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>© TAQUERÍA EL CORRAL · SYSCOR</Text>
-          </View>
-        </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+      <PanchitaChatSheet
+        visible={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        tokens={t}
+        metrics={m}
+        isDark={isDark}
+        faq={EMPLOYEE_LOGIN_FAQ}
+        welcome={EMPLOYEE_LOGIN_WELCOME}
+        onStartRecovery={() => navigation.navigate('ForgotPassword')}
+      />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: palette.bg,
-  },
   flex: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
-  },
-  centeredColumn: {
-    width: '100%',
-    maxWidth: 440,
-    alignSelf: 'center',
-  },
-  topTag: {
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  topTagText: {
-    fontFamily: Platform.select({ ios: 'Courier', android: 'monospace', default: 'monospace' }),
-    fontSize: 11,
-    letterSpacing: 1.5,
-    color: palette.muted,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  logoBadge: {
-    backgroundColor: palette.surface,
-    borderWidth: 1,
-    borderColor: palette.line,
-    borderRadius: radius.lg,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logo: {
-    width: 66,
-    height: 46,
-  },
-  headerTextGroup: {
-    flex: 1,
-  },
   title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: palette.ink,
-    letterSpacing: -0.5,
-    marginBottom: 4,
+    ...textStyles.title,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 13,
-    color: palette.muted,
+    ...textStyles.body,
+    textAlign: 'center',
   },
-  form: {
-    width: '100%',
-  },
-  fieldGroup: {
-    marginBottom: spacing.md,
-  },
-  fieldLabel: {
-    fontFamily: Platform.select({ ios: 'Courier', android: 'monospace', default: 'monospace' }),
-    fontSize: 10,
-    letterSpacing: 1,
-    color: palette.muted,
-    marginBottom: spacing.xs + 2,
-  },
-  inputWrapper: {
+  errorBox: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 11,
-    backgroundColor: palette.surface,
     borderWidth: 1,
-    borderColor: palette.line,
-    borderRadius: radius.lg,
-    paddingHorizontal: 15,
-    paddingVertical: 14,
-  },
-  inputWrapperFocused: {
-    borderWidth: 1.5,
-    borderColor: palette.accent,
-  },
-  leftIcon: {
-    marginRight: -2,
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: palette.ink,
-    padding: 0,
-  },
-  errorContainer: {
-    backgroundColor: colors.errorLight,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.error,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: spacing.md,
   },
   errorTitle: {
-    fontWeight: 'bold',
-    color: colors.error,
-    fontSize: 14,
+    ...textStyles.link,
+    marginBottom: 2,
   },
   errorMessage: {
-    color: colors.error,
-    fontSize: 13,
-    marginTop: 4,
+    ...textStyles.body,
   },
-  loginButton: {
-    backgroundColor: palette.accent,
-    borderRadius: radius.lg,
-    paddingVertical: 16,
-    marginTop: spacing.sm,
+  forgotText: {
+    ...textStyles.link,
   },
-  footer: {
-    alignItems: 'center',
-    marginTop: spacing.xl,
-  },
-  footerText: {
-    fontFamily: Platform.select({ ios: 'Courier', android: 'monospace', default: 'monospace' }),
-    fontSize: 10,
-    letterSpacing: 0.5,
-    color: palette.muted,
+  legal: {
+    ...textStyles.kicker,
+    textAlign: 'center',
   },
 });

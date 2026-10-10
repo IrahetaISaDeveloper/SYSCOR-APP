@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native";
 import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { waiterColors } from "./waiterTheme";
 
 export default StyleSheet.create({
   root: {
@@ -11,7 +12,8 @@ export default StyleSheet.create({
     backgroundColor: "rgba(27,22,19,0.45)",
   },
   sheet: {
-    backgroundColor: employeePalette.surface,
+    // Mismo fondo hueso que Mesas y Comandas: las tarjetas blancas resaltan.
+    backgroundColor: waiterColors.background,
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,

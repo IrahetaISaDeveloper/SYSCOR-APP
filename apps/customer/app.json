@@ -1,37 +1,92 @@
 {
   "expo": {
-    "name": "El Corral",
+    "name": "Taquería El Corral",
     "slug": "syscor-app-clientes",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "plugins": [
       [
         "expo-splash-screen",
         {
-          "image": "./assets/logo-el-corral.png",
+          "image": "./assets/logo-horizontal-negro.png",
           "imageWidth": 220,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#F7F5F1",
+          "dark": {
+            "image": "./assets/logo-horizontal-blanco.png",
+            "backgroundColor": "#161826"
+          }
         }
-      ]
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "El Corral usa tu ubicación para calcular qué tan lejos estás del local y llenar tus direcciones de entrega."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "El Corral usa tus fotos para que elijas tu foto de perfil.",
+          "cameraPermission": "El Corral usa la cámara para que te tomes tu foto de perfil."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#A33527",
+          "icon": "./assets/notification-icon.png"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "El Corral usa la cámara para escanear el código QR de tu mesa y para tu foto de perfil.",
+          "recordAudioAndroid": false
+        }
+      ],
+      "./plugins/withMlKitOcr"
     ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.syscor.clientes"
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#F7F5F1"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.syscor.clientes"
+      "softwareKeyboardLayoutMode": "resize",
+      "package": "com.syscor.clientes",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "edbe0044-39bf-4431-ab24-dbbf81eff699"
+      }
+    },
+    "owner": "syscors-team",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/edbe0044-39bf-4431-ab24-dbbf81eff699"
     }
   }
 }

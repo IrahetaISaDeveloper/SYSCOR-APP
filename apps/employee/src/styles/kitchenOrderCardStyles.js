@@ -194,6 +194,22 @@ export default StyleSheet.create({
     paddingHorizontal: 14,
     paddingBottom: 13,
   },
+  waitingBox: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#E3E7EF",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  waitingText: {
+    flex: 1,
+    fontFamily: fonts.sansMedium,
+    fontSize: 12,
+    color: "#3D4A66",
+  },
   button: {
     flex: 1,
     flexDirection: "row",

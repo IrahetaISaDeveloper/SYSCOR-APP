@@ -7,5 +7,4 @@ export { useForm } from './hooks/useForm';
 export { getDisplayName, getFirstName } from './utils/userDisplay';
 
 export { default as AppTabBar } from './navigation/AppTabBar';
-export { default as BootGate } from './navigation/BootGate';
 export { default as UnsupportedRoleScreen } from './screens/UnsupportedRoleScreen';

@@ -1,0 +1,53 @@
+# App de clientes: publica una actualización (EAS Update) cada vez que se sube a master
+# un cambio de esta app o del código compartido. Los teléfonos con el APK del
+# perfil "preview" la descargan solos al abrir la app.
+#
+# Solo llegan cambios de JavaScript (pantallas, lógica, estilos). Cada
+# actualización llega a los APK con la misma "version" de app.json
+# (runtimeVersion: appVersion). Si el cambio toca algo nativo (una librería
+# nativa nueva, permisos de app.json, versión de Expo), primero sube la
+# "version" en app.json (1.0.0 → 1.1.0) y genera un APK nuevo:
+#   cd apps/customer && eas build -p android --profile preview
+#
+# Requiere el secreto EXPO_TOKEN en GitHub (Settings → Secrets → Actions).
+name: EAS Update · App de clientes
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "apps/customer/**"
+      - "packages/shared/**"
+      - "package-lock.json"
+  workflow_dispatch:
+
+concurrency:
+  group: eas-update-customer
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # Monorepo: se instala desde la raíz (npm workspaces).
+      - run: npm ci
+
+      # El mensaje va en una variable (no pegado en el comando) para que
+      # comillas o símbolos en el commit no rompan ni alteren la orden.
+      - name: Publicar actualización
+        working-directory: apps/customer
+        env:
+          MESSAGE: ${{ github.event.head_commit.message || 'Actualización manual' }}
+        run: eas update --channel preview --message "$MESSAGE" --non-interactive

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,285 +6,1095 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
-  SafeAreaView,
-  StatusBar,
   ActivityIndicator,
+  Modal,
+  BackHandler,
+  RefreshControl,
+  useColorScheme,
+  useWindowDimensions,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons as Icon } from '@expo/vector-icons';
-import menuStyles, { colors } from '../styles/CustomerMenu';
+import menuStyles, { getMenuColors } from '../styles/CustomerMenu';
+import { textStyles } from '@syscor/shared/src/styles/typography';
+import { useAuthMetrics } from '@syscor/shared/src/styles/authTheme';
 import useMenu from '../hooks/useMenu';
-import { useAuth } from '@syscor/shared/src/context/AuthContext';
-import { getFirstName } from '@syscor/shared/src/utils/userDisplay';
+import usePromotions from '../hooks/usePromotions';
+import PromotionSheet from '../components/PromotionSheet';
+import { MENU_CATEGORIES } from '../constants/menuCategories';
+import CartContext from '../context/CartContext';
+import { useTabBarVisibility } from '../context/TabBarVisibilityContext';
+import { useFavorites } from '../context/FavoritesContext';
 
-// Categorías de productos estáticas para filtrar en el menú del cliente
-const CATEGORIES = [
-  { id: 'all', label: 'Tacos' },
-  { id: 'tortas', label: 'Tortas' },
-  { id: 'burritos', label: 'Burritos' },
-  { id: 'quesadillas', label: 'Quesadillas' },
-  { id: 'bebidas', label: 'Bebidas' },
+// Cuánto le queda a una promoción: horas si es cuestión de horas, días si
+// falta más. Las promos duran como máximo 3 días.
+const formatTimeLeft = (endsAt) => {
+  if (!endsAt) return null;
+  const remainingMs = endsAt.getTime() - Date.now();
+  if (Number.isNaN(remainingMs) || remainingMs <= 0) return null;
+  const hours = Math.ceil(remainingMs / (60 * 60 * 1000));
+  if (hours < 24) return `Quedan ${hours} h`;
+  const days = Math.ceil(hours / 24);
+  return `Quedan ${days} ${days === 1 ? 'día' : 'días'}`;
+};
+
+// Formas de ordenar la lista. El botón de la derecha del buscador abre este
+// panel; antes era un icono decorativo que no hacía nada.
+const SORT_OPTIONS = [
+  // El backend no expone ventas por platillo al cliente, así que el orden
+  // por defecto es el que trae el menú.
+  { id: 'recommended', label: 'Recomendados', icon: 'star-outline' },
+  { id: 'priceAsc', label: 'Precio: menor a mayor', icon: 'arrow-up-outline' },
+  { id: 'priceDesc', label: 'Precio: mayor a menor', icon: 'arrow-down-outline' },
+  { id: 'nameAsc', label: 'Nombre (A-Z)', icon: 'text-outline' },
 ];
 
-// Lista de promociones destacadas en el banner horizontal
-const PROMOS = [
-  {
-    id: '1',
-    badge: 'TIEMPO LIMITADO',
-    badgeVariant: 'primary',
-    title: '2x1 en tacos\nal pastor',
-    subtitle: 'cada martes de 4 a 8 pm',
-    image: require('../../assets/promo-tacos-pastor.png'),
-  },
-  {
-    id: '2',
-    badge: 'NUEVO',
-    badgeVariant: 'new',
-    title: 'Burrito\nincluyendo...',
-    subtitle: 'Relleno especial de la casa',
-    image: require('../../assets/promo-burrito.png'),
-  },
-];
+// ── PANTALLA ────────────────────────────────────────────────────────────
+const CustomerMenu = ({ navigation }) => {
+  const isDark = useColorScheme() === 'dark';
+  const c = getMenuColors(isDark);
+  const m = useAuthMetrics();
+  const ms = m.ms;
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
 
-// Imágenes locales de respaldo (fallback) cuando un platillo retornado por la API no cuenta con URL de imagen
-const FALLBACK_IMAGES = [
-  require('../../assets/taco-pastor-single.png'),
-  require('../../assets/quesadilla-birria.png'),
-  require('../../assets/torta-milanesa.png'),
-  require('../../assets/agua-jamaica.png'),
-];
+  // Categoría abierta desde las tarjetas. `null` = se ven las tarjetas.
+  const [openCategory, setOpenCategory] = useState(null);
+  const [searchText, setSearchText] = useState('');
+  const [promoIndex, setPromoIndex] = useState(0);
+  // Promoción abierta en la hoja de detalle (null = cerrada).
+  const [openPromo, setOpenPromo] = useState(null);
+  const [sortBy, setSortBy] = useState('recommended');
+  // Proteína elegida dentro de la categoría abierta. 'all' = todas.
+  const [subFilter, setSubFilter] = useState('all');
+  const scrollRef = useRef(null);
+  const [sortOpen, setSortOpen] = useState(false);
 
-// ── COMPONENTES INTERNOS DE LA PANTALLA ────────────────────────────────
+  const { dishes, isLoading, error, needsAuth, refetch: refetchMenu } = useMenu();
+  const { promotions, refetch: refetchPromotions } = usePromotions();
+  const refetch = useCallback(() => {
+    refetchMenu();
+    refetchPromotions();
+  }, [refetchMenu, refetchPromotions]);
 
-// Componente para la tarjeta de promoción en el carrusel
-const PromoCard = ({ item }) => (
-  <TouchableOpacity style={menuStyles.promoCard} activeOpacity={0.88}>
-    <Image source={item.image} style={menuStyles.promoImage} resizeMode="cover" />
-    <View style={menuStyles.promoOverlay}>
-      <View style={[menuStyles.promoBadge, item.badgeVariant === 'new' && menuStyles.promoBadgeNew]}>
-        <Text style={menuStyles.promoBadgeText}>{item.badge}</Text>
-      </View>
-      <Text style={menuStyles.promoTitle}>{item.title}</Text>
-      <Text style={menuStyles.promoSubtitle}>{item.subtitle}</Text>
-    </View>
-  </TouchableOpacity>
-);
+  // Jalar la pantalla hacia abajo recarga el menú y las promociones.
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const onPullRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await Promise.all([refetchMenu({ silent: true }), refetchPromotions()]);
+    setIsRefreshing(false);
+  }, [refetchMenu, refetchPromotions]);
+  // Avisa a la barra inferior para que se esconda al bajar.
+  const { handleScroll, reset: resetTabBar } = useTabBarVisibility();
 
-// Componente para la tarjeta individual de un platillo del menú
-const DishCard = ({ item, index, onPress }) => {
-  // Si el platillo tiene URL de imagen provista por la API la usamos; si no, usamos la imagen local de fallback
-  const imageSource = item.imageUrl
-    ? { uri: item.imageUrl }
-    : FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
+  // Al salir del menú la barra vuelve a verse: si no, la siguiente pestaña
+  // se abriría con la barra escondida.
+  useFocusEffect(
+    useCallback(() => () => resetTabBar?.(), [resetTabBar]),
+  );
+
+  // La tarjeta de promo deja ver un trozo de la siguiente, como en el diseño.
+  const promoWidth = Math.round(width - m.gutter * 2 - ms(46));
+  const promoGap = ms(12);
+
+
+  const query = searchText.trim().toLowerCase();
+  const searching = query.length > 0;
+
+  const visibleDishes = useMemo(() => {
+    if (searching) {
+      return dishes.filter(
+        (d) =>
+          d.name.toLowerCase().includes(query) ||
+          d.description.toLowerCase().includes(query) ||
+          (d.subcategory || '').toLowerCase().includes(query),
+      );
+    }
+    if (!openCategory) return dishes;
+    return dishes.filter((d) => d.category === openCategory);
+  }, [dishes, query, searching, openCategory]);
+
+  // Cuántos platillos hay por categoría, para la etiqueta de cada tarjeta.
+  const countByCategory = useMemo(() => {
+    const acc = {};
+    for (const dish of dishes) {
+      if (dish.category) acc[dish.category] = (acc[dish.category] || 0) + 1;
+    }
+    return acc;
+  }, [dishes]);
+
+  // El orden se aplica sobre el resultado ya filtrado.
+  const sortedDishes = useMemo(() => {
+    const list = [...visibleDishes];
+    if (sortBy === 'priceAsc') return list.sort((a, b) => a.price - b.price);
+    if (sortBy === 'priceDesc') return list.sort((a, b) => b.price - a.price);
+    if (sortBy === 'nameAsc') return list.sort((a, b) => a.name.localeCompare(b.name));
+    return list;
+  }, [visibleDishes, sortBy]);
+
+  // Proteínas (subcategorías) que hay dentro de la categoría abierta, para
+  // los chips de filtro. Sopas y Especiales no suelen tener.
+  const subcategories = useMemo(() => {
+    if (!openCategory) return [];
+    const set = new Set();
+    for (const dish of dishes) {
+      if (dish.category === openCategory && dish.subcategory) set.add(dish.subcategory);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [dishes, openCategory]);
+
+  // Dentro de una categoría los platillos se separan por proteína, cada una
+  // con su título. En la búsqueda se muestran todos juntos.
+  const dishGroups = useMemo(() => {
+    if (searching || !openCategory) return [{ key: 'all', title: null, items: sortedDishes }];
+
+    const filtered =
+      subFilter === 'all' ? sortedDishes : sortedDishes.filter((d) => d.subcategory === subFilter);
+
+    // Sin proteínas no tiene sentido poner un solo título "Otros".
+    if (subcategories.length === 0) return [{ key: 'all', title: null, items: filtered }];
+
+    const groups = new Map();
+    for (const dish of filtered) {
+      const key = dish.subcategory || 'Otros';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(dish);
+    }
+    return [...groups.entries()]
+      // "Otros" siempre al final.
+      .sort(([a], [b]) => (a === 'Otros') - (b === 'Otros') || a.localeCompare(b))
+      .map(([title, items]) => ({ key: title, title, items }));
+  }, [searching, openCategory, subFilter, sortedDishes, subcategories]);
+
+  // Abrir una categoría se comporta como entrar a otra página: arranca
+  // arriba y sin lo de la portada (promos).
+  const openCategoryCard = (id) => {
+    setSubFilter('all');
+    setOpenCategory(id);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  };
+
+  const closeCategory = useCallback(() => {
+    setOpenCategory(null);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, []);
+
+  // El botón "Menú" de la barra inferior siempre lleva a la portada del menú.
+  // (En el menú de invitado no hay pestañas y este evento nunca llega.)
+  useEffect(
+    () =>
+      navigation.addListener('tabPress', () => {
+        setSearchText('');
+        setSubFilter('all');
+        closeCategory();
+      }),
+    [navigation, closeCategory],
+  );
+
+  // El botón "atrás" de Android regresa a las categorías en vez de salir.
+  useFocusEffect(
+    useCallback(() => {
+      if (!openCategory) return undefined;
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        closeCategory();
+        return true;
+      });
+      return () => sub.remove();
+    }, [openCategory, closeCategory]),
+  );
+
+  // El 401/403 del backend significa que /menu/saucers pide sesión, no que
+  // el cliente no tenga internet: conviene decirlo en sus palabras.
+  const errorHint = needsAuth
+    ? 'Inicia sesión para ver los platillos de cada categoría.'
+    : 'Revisa tu conexión e inténtalo de nuevo.';
+
+  const openDish = (item) => {
+    navigation.navigate('ProductDetails', { id: item.id, itemType: item.itemType || 'saucer' });
+  };
+
+  const onPromoScroll = (event) => {
+    setPromoIndex(Math.round(event.nativeEvent.contentOffset.x / (promoWidth + promoGap)));
+  };
 
   return (
-    <TouchableOpacity style={menuStyles.dishCard} activeOpacity={0.85} onPress={() => onPress(item)}>
-      <Image source={imageSource} style={menuStyles.dishImage} resizeMode="cover" />
-      <View style={menuStyles.dishInfo}>
-        <Text style={menuStyles.dishName}>{item.name}</Text>
-        <Text style={menuStyles.dishDescription} numberOfLines={2}>
-          {item.description}
-        </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={menuStyles.dishPrice}>{item.price}</Text>
-          {item.quantity > 0 && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-              <Icon name="flame-outline" size={13} color={colors.primary} />
-              <Text style={menuStyles.dishQty}>{item.quantity} pedidos</Text>
-            </View>
+    <View style={[menuStyles.container, { backgroundColor: c.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+
+      <View style={{ height: insets.top }} />
+
+      {/* ── LOGO ── */}
+      <View style={[menuStyles.header, { paddingBottom: ms(10) }]}>
+        <Image
+          // `logo-el-corral.png` trae el fondo pintado de blanco opaco (aunque
+          // el PNG tenga canal alfa), por eso se veía un recuadro. Estos dos
+          // sí son transparentes de verdad.
+          source={
+            isDark
+              ? require('../../assets/logo-horizontal-blanco.png')
+              : require('../../assets/logo-horizontal-negro.png')
+          }
+          // El PNG es cuadrado con la marca en su franja central; los márgenes
+          // negativos recortan el espacio transparente sobrante.
+          style={{
+            width: ms(250),
+            height: ms(250),
+            marginVertical: -ms(92),
+          }}
+          resizeMode="contain"
+        />
+      </View>
+
+      <ScrollView
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: ms(150) }}
+        keyboardShouldPersistTaps="handled"
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onPullRefresh}
+            tintColor={c.primary}
+            colors={[c.primary]}
+          />
+        }
+      >
+        {/* ── BUSCADOR ── */}
+        <View
+          style={[
+            menuStyles.searchContainer,
+            {
+              backgroundColor: c.surface,
+              borderColor: c.border,
+              marginHorizontal: m.gutter,
+              borderRadius: ms(16),
+              paddingHorizontal: ms(16),
+              minHeight: ms(52),
+              gap: ms(11),
+            },
+          ]}
+        >
+          <Icon name="search" size={ms(19)} color={c.primary} />
+          <TextInput
+            style={[
+              menuStyles.searchInput,
+              textStyles.body,
+              { color: c.textDark, fontSize: ms(14) },
+            ]}
+            placeholder="Busca tacos, burritos, bebidas..."
+            placeholderTextColor={c.textLight}
+            value={searchText}
+            onChangeText={setSearchText}
+            returnKeyType="search"
+          />
+          {searching ? (
+            <TouchableOpacity
+              onPress={() => setSearchText('')}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel="Borrar búsqueda"
+            >
+              <Icon name="close-circle" size={ms(18)} color={c.textLight} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={() => setSortOpen(true)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel="Ordenar el menú"
+            >
+              <Icon
+                name="options-outline"
+                size={ms(19)}
+                // Se tiñe cuando hay un orden distinto del normal, para que se
+                // note que está aplicado.
+                color={sortBy === 'recommended' ? c.textGray : c.primary}
+              />
+            </TouchableOpacity>
           )}
         </View>
+
+        {/* ── PROMOCIONES DE HOY ── (solo en la portada del menú y si hay
+            alguna vigente) */}
+        {!searching && !openCategory && promotions.length > 0 ? (
+          <>
+            <View
+              style={[
+                menuStyles.sectionHeader,
+                {
+                  paddingHorizontal: m.gutter,
+                  marginTop: ms(26),
+                  marginBottom: ms(14),
+                  gap: ms(10),
+                },
+              ]}
+            >
+              <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(19) }]}>
+                Promociones de hoy
+              </Text>
+              <View
+                style={[
+                  menuStyles.sectionBadge,
+                  {
+                    backgroundColor: c.surfaceMuted,
+                    borderColor: c.border,
+                    borderRadius: ms(8),
+                    paddingHorizontal: ms(9),
+                    paddingVertical: ms(5),
+                  },
+                ]}
+              >
+                <Text style={[textStyles.kicker, { color: c.textGray, fontSize: ms(9.5) }]}>
+                  {promotions.length} {promotions.length === 1 ? 'VIGENTE' : 'VIGENTES'}
+                </Text>
+              </View>
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={promoWidth + promoGap}
+              decelerationRate="fast"
+              onScroll={onPromoScroll}
+              scrollEventThrottle={16}
+              contentContainerStyle={{ paddingHorizontal: m.gutter, gap: promoGap }}
+            >
+              {promotions.map((promo) => {
+                const timeLeft = formatTimeLeft(promo.endsAt);
+                return (
+                <TouchableOpacity
+                  key={promo.id}
+                  style={[
+                    menuStyles.promoCard,
+                    {
+                      width: promoWidth,
+                      backgroundColor: c.surface,
+                      borderColor: c.border,
+                      borderRadius: ms(18),
+                    },
+                  ]}
+                  activeOpacity={0.9}
+                  onPress={() => setOpenPromo(promo)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Ver promoción ${promo.name}, ${promo.priceLabel}`}
+                >
+                  <View>
+                    {promo.imageUrl ? (
+                      <Image
+                        source={{ uri: promo.imageUrl }}
+                        style={[menuStyles.promoImage, { height: ms(168) }]}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View
+                        style={[
+                          menuStyles.promoImage,
+                          {
+                            height: ms(168),
+                            backgroundColor: c.imagePlaceholder,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          },
+                        ]}
+                      >
+                        <Icon name="pricetag-outline" size={ms(34)} color={c.textLight} />
+                      </View>
+                    )}
+                    <View
+                      style={[
+                        menuStyles.promoBadge,
+                        {
+                          backgroundColor: c.primary,
+                          borderRadius: ms(10),
+                          paddingHorizontal: ms(12),
+                          paddingVertical: ms(7),
+                          top: ms(14),
+                          left: ms(14),
+                        },
+                      ]}
+                    >
+                      <Text style={[textStyles.link, { color: c.white, fontSize: ms(12.5) }]}>
+                        {promo.discountPercent > 0 ? `-${promo.discountPercent}%` : 'Promo'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View
+                    style={[
+                      menuStyles.promoFooter,
+                      { borderTopColor: c.border, padding: ms(15), gap: ms(7) },
+                    ]}
+                  >
+                    <Text
+                      style={[textStyles.title, { color: c.textDark, fontSize: ms(15.5) }]}
+                      numberOfLines={1}
+                    >
+                      {promo.name}
+                    </Text>
+                    {promo.summary ? (
+                      <Text
+                        style={[textStyles.body, { color: c.textGray, fontSize: ms(12) }]}
+                        numberOfLines={1}
+                      >
+                        {promo.summary}
+                      </Text>
+                    ) : null}
+                    <View style={[menuStyles.promoPriceRow, { gap: ms(9) }]}>
+                      <Text style={[textStyles.num, { color: c.primary, fontSize: ms(19) }]}>
+                        {promo.priceLabel}
+                      </Text>
+                      {promo.originalPriceLabel ? (
+                        <Text
+                          style={[
+                            textStyles.num,
+                            {
+                              color: c.textLight,
+                              fontSize: ms(13),
+                              textDecorationLine: 'line-through',
+                            },
+                          ]}
+                        >
+                          {promo.originalPriceLabel}
+                        </Text>
+                      ) : null}
+                      {timeLeft ? (
+                        <Text
+                          style={[
+                            textStyles.body,
+                            { marginLeft: 'auto', color: c.textGray, fontSize: ms(11.5) },
+                          ]}
+                        >
+                          {timeLeft}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {/* Puntos del carrusel */}
+            <View style={[menuStyles.dotsRow, { gap: ms(4), marginTop: ms(14) }]}>
+              {promotions.map((promo, index) => (
+                <View
+                  key={promo.id}
+                  style={[
+                    menuStyles.dot,
+                    {
+                      width: index === promoIndex ? ms(16) : ms(4),
+                      backgroundColor: index === promoIndex ? c.primary : c.borderStrong,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
+          </>
+        ) : null}
+
+        {/* ── DEL MENÚ ── */}
+        {openCategory && !searching ? (
+          // Encabezado de la "página" de la categoría.
+          <View
+            style={[
+              menuStyles.sectionHeader,
+              { paddingHorizontal: m.gutter, marginTop: ms(22), marginBottom: ms(14), gap: ms(12) },
+            ]}
+          >
+            <TouchableOpacity
+              onPress={closeCategory}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel="Volver a las categorías"
+              style={[
+                menuStyles.backButton,
+                {
+                  backgroundColor: c.surface,
+                  borderColor: c.border,
+                  width: ms(38),
+                  height: ms(38),
+                  borderRadius: ms(19),
+                },
+              ]}
+            >
+              <Icon name="chevron-back" size={ms(20)} color={c.textDark} />
+            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(22) }]}>
+                {openCategory}
+              </Text>
+              {!isLoading ? (
+                <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(12.5) }]}>
+                  {countByCategory[openCategory] || 0}{' '}
+                  {countByCategory[openCategory] === 1 ? 'platillo' : 'platillos'}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        ) : (
+          <View
+            style={[
+              menuStyles.sectionHeader,
+              { paddingHorizontal: m.gutter, marginTop: ms(28), marginBottom: ms(14), gap: ms(10) },
+            ]}
+          >
+            <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(19) }]}>
+              {searching ? 'Resultados' : 'Menú'}
+            </Text>
+          </View>
+        )}
+
+        {isLoading ? (
+          <View style={[menuStyles.centerBox, { paddingVertical: ms(40), gap: ms(12) }]}>
+            <ActivityIndicator size="large" color={c.primary} />
+            <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(13) }]}>
+              Cargando el menú…
+            </Text>
+          </View>
+        ) : null}
+
+
+        {/* Sin búsqueda ni categoría abierta se muestran las categorías como
+            tarjetas; al tocar una se entra a sus platillos. */}
+        {!isLoading && !searching && !openCategory ? (
+          <View style={[menuStyles.dishGrid, { paddingHorizontal: m.gutter, gap: ms(14) }]}>
+            {MENU_CATEGORIES.map((cat) => (
+              <CategoryCard
+                key={cat.id}
+                category={cat}
+                colors={c}
+                ms={ms}
+                cardWidth={(width - m.gutter * 2 - ms(14)) / 2}
+                onPress={() => openCategoryCard(cat.id)}
+              />
+            ))}
+          </View>
+        ) : null}
+
+        {/* Chips de proteína: filtran la categoría abierta. */}
+        {!isLoading && !error && openCategory && !searching && subcategories.length > 1 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: m.gutter, gap: ms(8), marginBottom: ms(6) }}
+          >
+            {['all', ...subcategories].map((sub) => {
+              const active = sub === subFilter;
+              return (
+                <TouchableOpacity
+                  key={sub}
+                  onPress={() => setSubFilter(sub)}
+                  activeOpacity={0.8}
+                  style={[
+                    menuStyles.chip,
+                    {
+                      backgroundColor: active ? c.primary : c.surface,
+                      borderColor: active ? c.primary : c.border,
+                      borderRadius: ms(20),
+                      paddingHorizontal: ms(14),
+                      paddingVertical: ms(8),
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text
+                    style={[
+                      active ? textStyles.link : textStyles.body,
+                      { color: active ? c.white : c.textGray, fontSize: ms(13) },
+                    ]}
+                  >
+                    {sub === 'all' ? 'Todos' : sub}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        ) : null}
+
+        {!isLoading && !error && (searching || openCategory) ? (
+          sortedDishes.length === 0 ? (
+            <View
+              style={[
+                menuStyles.centerBox,
+                { paddingVertical: ms(36), paddingHorizontal: m.gutter, gap: ms(10) },
+              ]}
+            >
+              <Icon name="restaurant-outline" size={ms(34)} color={c.textLight} />
+              <Text
+                style={[
+                  textStyles.body,
+                  { color: c.textGray, fontSize: ms(13.5), textAlign: 'center' },
+                ]}
+              >
+                {searching
+                  ? `No encontramos nada para "${searchText.trim()}".`
+                  : 'No hay platillos en esta categoría todavía.'}
+              </Text>
+            </View>
+          ) : (
+            dishGroups.map((group) => (
+              <View key={group.key}>
+                {group.title ? (
+                  <View
+                    style={[
+                      menuStyles.groupHeader,
+                      {
+                        paddingHorizontal: m.gutter,
+                        marginTop: ms(18),
+                        marginBottom: ms(12),
+                        gap: ms(8),
+                      },
+                    ]}
+                  >
+                    <View
+                      style={{ width: ms(4), height: ms(16), borderRadius: ms(2), backgroundColor: c.primary }}
+                    />
+                    <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(16) }]}>
+                      {group.title}
+                    </Text>
+                    <Text style={[textStyles.num, { color: c.textLight, fontSize: ms(12) }]}>
+                      {group.items.length}
+                    </Text>
+                  </View>
+                ) : null}
+
+                <View
+                  style={[
+                    menuStyles.dishGrid,
+                    { paddingHorizontal: m.gutter, gap: ms(12), marginTop: group.title ? 0 : ms(6) },
+                  ]}
+                >
+                  {group.items.map((dish) => (
+                    <DishCard
+                      key={dish.id}
+                      dish={dish}
+                      colors={c}
+                      ms={ms}
+                      cardWidth={(width - m.gutter * 2 - ms(12)) / 2}
+                      onPress={() => openDish(dish)}
+                    />
+                  ))}
+                </View>
+              </View>
+            ))
+          )
+        ) : null}
+        {/* Aviso de carga fallida. Va al final y en tono menor: las
+            categorías ya se ven, lo que falta son los platillos. */}
+        {!isLoading && error ? (
+          <View
+            style={[
+              menuStyles.errorNotice,
+              {
+                backgroundColor: c.surface,
+                borderColor: c.border,
+                marginHorizontal: m.gutter,
+                marginTop: ms(18),
+                borderRadius: ms(14),
+                padding: ms(14),
+                gap: ms(11),
+              },
+            ]}
+          >
+            <Icon name="cloud-offline-outline" size={ms(20)} color={c.textLight} />
+            <View style={{ flex: 1, gap: ms(3) }}>
+              <Text style={[textStyles.link, { color: c.textDark, fontSize: ms(13.5) }]}>
+                No pudimos cargar los platillos
+              </Text>
+              <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(12), lineHeight: ms(17) }]}>
+                {errorHint}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={refetch}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel="Reintentar"
+            >
+              <Icon name="refresh" size={ms(19)} color={c.primary} />
+            </TouchableOpacity>
+          </View>
+        ) : null}
+      </ScrollView>
+
+      {/* ── PANEL DE ORDEN ── */}
+      <SortSheet
+        visible={sortOpen}
+        onClose={() => setSortOpen(false)}
+        value={sortBy}
+        onChange={(id) => {
+          setSortBy(id);
+          setSortOpen(false);
+        }}
+        colors={c}
+        ms={ms}
+        gutter={m.gutter}
+        bottomInset={insets.bottom}
+      />
+
+      {/* ── DETALLE DE PROMOCIÓN ── */}
+      <PromotionSheet
+        promotion={openPromo}
+        timeLeft={openPromo ? formatTimeLeft(openPromo.endsAt) : null}
+        onClose={() => setOpenPromo(null)}
+        colors={c}
+        ms={ms}
+        bottomInset={insets.bottom}
+      />
+
+      {/* ── PÍLDORA "VER MI BOLSA" ── */}
+      <BagPill
+        colors={c}
+        ms={ms}
+        // Queda justo encima de la barra inferior, sin pegarse a ella.
+        bottom={ms(18)}
+        onPress={() => navigation.navigate('Cart')}
+      />
+    </View>
+  );
+};
+
+// ── COMPONENTES ─────────────────────────────────────────────────────────
+
+// Tarjeta de un platillo: foto arriba, nombre y descripción corta, y abajo el
+// precio con un botón para abrir el detalle y agregarlo.
+const DishCard = ({ dish, colors: c, ms, cardWidth, onPress }) => {
+  // null en el menú de invitado: ahí no se muestra el corazón.
+  const favorites = useFavorites();
+  const favorite = favorites?.isFavorite(dish.itemType || 'saucer', dish.id) ?? false;
+
+  return (
+    <TouchableOpacity
+      style={[
+        menuStyles.dishCard,
+        {
+          width: cardWidth,
+          backgroundColor: c.surface,
+          borderColor: c.border,
+          borderRadius: ms(18),
+        },
+      ]}
+      activeOpacity={0.85}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${dish.name}, ${dish.priceLabel}`}
+    >
+      <View
+        style={[
+          menuStyles.dishImageArea,
+          { height: cardWidth * 0.8, backgroundColor: c.imagePlaceholder },
+        ]}
+      >
+        {dish.imageUrl ? (
+          <Image source={{ uri: dish.imageUrl }} style={menuStyles.dishImage} resizeMode="cover" />
+        ) : (
+          <Icon name="fast-food-outline" size={ms(30)} color={c.textLight} />
+        )}
+
+        {favorites ? (
+          <TouchableOpacity
+            onPress={() =>
+              favorites.toggleFavorite({
+                type: dish.itemType || 'saucer',
+                id: dish.id,
+                name: dish.name,
+                price: dish.price,
+                imageUrl: dish.imageUrl,
+              })
+            }
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[
+              menuStyles.dishFavorite,
+              {
+                backgroundColor: 'rgba(0,0,0,0.45)',
+                width: ms(30),
+                height: ms(30),
+                borderRadius: ms(15),
+                top: ms(8),
+                right: ms(8),
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={favorite ? `Quitar ${dish.name} de favoritos` : `Agregar ${dish.name} a favoritos`}
+          >
+            <Icon name={favorite ? 'heart' : 'heart-outline'} size={ms(16)} color={favorite ? c.primary : '#FFFFFF'} />
+          </TouchableOpacity>
+        ) : null}
+
+        {/* Los tacos se venden por orden de 3, 4 o 5. */}
+        {dish.tacosPerOrder ? (
+          <View
+            style={[
+              menuStyles.dishBadge,
+              {
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                borderRadius: ms(8),
+                paddingHorizontal: ms(8),
+                paddingVertical: ms(4),
+                top: ms(8),
+                left: ms(8),
+              },
+            ]}
+          >
+            <Text style={[textStyles.link, { color: '#FFFFFF', fontSize: ms(10.5) }]}>
+              Orden de {dish.tacosPerOrder}
+            </Text>
+          </View>
+        ) : null}
       </View>
-      {/* Botón "+" para configurar el producto (bebida/salsas/extras) antes de agregarlo al carrito */}
-      <TouchableOpacity style={menuStyles.addButton} onPress={() => onPress(item)} activeOpacity={0.8}>
-        <Icon name="add" size={20} color={colors.white} />
-      </TouchableOpacity>
+
+      <View style={[menuStyles.dishBody, { padding: ms(12), gap: ms(4) }]}>
+        <Text
+          style={[textStyles.title, { color: c.textDark, fontSize: ms(14.5) }]}
+          numberOfLines={1}
+        >
+          {dish.name}
+        </Text>
+        <Text
+          style={[
+            textStyles.body,
+            // Alto fijo de dos líneas para que todas las tarjetas midan igual.
+            { color: c.textGray, fontSize: ms(11.5), lineHeight: ms(15.5), height: ms(31) },
+          ]}
+          numberOfLines={2}
+        >
+          {dish.description}
+        </Text>
+
+        <View style={[menuStyles.dishPriceRow, { marginTop: ms(6) }]}>
+          <Text style={[textStyles.num, { color: c.primary, fontSize: ms(16) }]}>
+            {dish.priceLabel}
+          </Text>
+        </View>
+      </View>
     </TouchableOpacity>
   );
 };
 
-// Componente de esqueleto ("Skeleton") visual mostrado mientras se realiza el fetch de platillos
-const PopularSkeleton = () => (
-  <View style={{ paddingHorizontal: 16 }}>
-    {[1, 2, 3, 4].map((i) => (
-      <View
-        key={i}
-        style={[
-          menuStyles.dishCard,
-          { height: 108, backgroundColor: colors.surface, borderColor: colors.border },
-        ]}
-      >
-        <View style={[menuStyles.dishImage, { backgroundColor: '#E5E5E5' }]} />
-        <View style={{ flex: 1, paddingHorizontal: 12, gap: 8 }}>
-          <View style={{ height: 14, width: '60%', backgroundColor: '#E5E5E5', borderRadius: 6 }} />
-          <View style={{ height: 11, width: '90%', backgroundColor: '#EFEFEF', borderRadius: 6 }} />
-          <View style={{ height: 11, width: '75%', backgroundColor: '#EFEFEF', borderRadius: 6 }} />
-          <View style={{ height: 14, width: '30%', backgroundColor: '#E5E5E5', borderRadius: 6 }} />
-        </View>
-      </View>
-    ))}
-  </View>
-);
-
-// ── PANTALLA PRINCIPAL DEL MENÚ DEL CLIENTE ─────────────────────────────
-const CustomerMenu = ({ navigation }) => {
-  // Estado para controlar la categoría activa seleccionada
-  const [activeCategory, setActiveCategory] = useState('all');
-  // Estado para el texto escrito en la barra de búsqueda
-  const [searchText, setSearchText] = useState('');
-
-  // Hook que consume la API del menú (obtiene los platillos más vendidos)
-  const { popularDishes, isLoading, error, refetch } = useMenu();
-  const { user } = useAuth();
-  const firstName = getFirstName(user);
-
-  // Abre ProductDetails para configurar el platillo (bebida/salsas/extras) antes de agregarlo
-  const handleDishPress = (item) => {
-    navigation.navigate('ProductDetails', { saucerId: item.id, itemType: 'saucer' });
-  };
-
-  // Filtrado reactivo por texto sobre los platillos recibidos de la API
-  const filteredDishes =
-    searchText.trim().length > 0
-      ? popularDishes.filter(
-          (d) =>
-            d.name.toLowerCase().includes(searchText.toLowerCase()) ||
-            d.description.toLowerCase().includes(searchText.toLowerCase())
-        )
-      : popularDishes;
+// Píldora flotante con el resumen del carrito.
+//
+// Se lee el contexto directamente en vez de usar `useCart`: el menú también
+// se muestra sin sesión (GuestMenu), donde no hay CartProvider montado y el
+// hook lanzaría.
+//
+// Se muestra siempre, con el carrito vacío o sin sesión: es parte del
+// diseño de la pantalla. Cuando no hay nada dentro enseña 0 productos.
+const BagPill = ({ colors: c, ms, bottom, onPress }) => {
+  const cart = useContext(CartContext);
+  const itemCount = cart?.itemCount ?? 0;
+  const subtotal = cart?.subtotal ?? 0;
 
   return (
-    <SafeAreaView style={menuStyles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
-
-      {/* ── ENCABEZADO (Menú hamburguesa, Logo El Corral, Buscador) ── */}
-      <View style={menuStyles.header}>
-        <TouchableOpacity>
-          <Icon name="menu" size={26} color={colors.textDark} />
-        </TouchableOpacity>
-
-        <View style={menuStyles.headerLogo}>
-          <Image
-            source={require('../../assets/logo-el-corral.png')}
-            style={menuStyles.headerLogoImage}
-            resizeMode="contain"
-          />
-          <Text style={menuStyles.headerBrandText}>El Corral</Text>
-        </View>
-
-        <View style={menuStyles.headerIcons}>
-          <TouchableOpacity>
-            <Icon name="search-outline" size={24} color={colors.textDark} />
-          </TouchableOpacity>
-        </View>
+    <TouchableOpacity
+      style={[
+        menuStyles.bagPill,
+        {
+          backgroundColor: c.pill,
+          // Muy redondeada, como en el diseño.
+          borderRadius: ms(36),
+          paddingLeft: ms(26),
+          paddingRight: ms(11),
+          paddingVertical: ms(11),
+          gap: ms(20),
+          bottom,
+        },
+      ]}
+      activeOpacity={0.9}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Ver mi bolsa, ${itemCount} productos`}
+    >
+      <View style={{ gap: ms(2) }}>
+        <Text style={[textStyles.title, { color: '#FFFFFF', fontSize: ms(17) }]}>
+          Ver mi bolsa
+        </Text>
+        <Text style={[textStyles.num, { color: 'rgba(255,255,255,0.7)', fontSize: ms(13.5) }]}>
+          Total ${subtotal.toFixed(2)}
+        </Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {firstName ? (
-          <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textDark, paddingHorizontal: 16, paddingTop: 12 }}>
-            Hola, {firstName}
-          </Text>
+      <View
+        style={[
+          menuStyles.bagIconWrap,
+          { backgroundColor: c.primary, width: ms(52), height: ms(52), borderRadius: ms(26) },
+        ]}
+      >
+        <Icon name="bag-handle" size={ms(25)} color="#FFFFFF" />
+        {itemCount > 0 ? (
+          <View
+            style={[
+              menuStyles.bagCountBadge,
+              {
+                backgroundColor: c.primary,
+                borderWidth: ms(2),
+                borderColor: c.pill,
+                minWidth: ms(23),
+                height: ms(23),
+                borderRadius: ms(12),
+                top: -ms(5),
+                right: -ms(5),
+                paddingHorizontal: ms(5),
+              },
+            ]}
+          >
+            <Text style={[textStyles.num, { color: '#FFFFFF', fontSize: ms(11) }]}>
+              {itemCount}
+            </Text>
+          </View>
         ) : null}
+      </View>
+    </TouchableOpacity>
+  );
+};
 
-        {/* ── BARRA DE BÚSQUEDA ── */}
-        <View style={menuStyles.searchContainer}>
-          <Icon name="search-outline" size={18} color={colors.textLight} />
-          <TextInput
-            style={menuStyles.searchInput}
-            placeholder="Busca tacos, burritos..."
-            placeholderTextColor={colors.textLight}
-            value={searchText}
-            onChangeText={setSearchText}
-          />
-          <TouchableOpacity>
-            <Icon name="options-outline" size={20} color={colors.textGray} />
-          </TouchableOpacity>
+// Franjas del degradado de la tarjeta de categoría, de la más alta a la más
+// baja. Cada una oscurece un poco; al apilarse, la parte de abajo queda más
+// oscura y el paso entre una y otra no se nota. Así se evita instalar una
+// librería de degradados.
+const SHADE_STEPS = Array.from({ length: 14 }, (_, i) => `${Math.round(75 - i * 5)}%`);
+
+// Tarjeta de una categoría: la foto ocupa toda la tarjeta y el nombre va
+// encima, sobre un degradado oscuro. Al tocarla se abren sus platillos.
+const CategoryCard = ({ category, colors: c, ms, cardWidth, onPress }) => {
+  const cardHeight = Math.round(cardWidth * 1.1);
+
+  return (
+    <TouchableOpacity
+      style={[
+        menuStyles.categoryCard,
+        {
+          width: cardWidth,
+          height: cardHeight,
+          borderRadius: ms(20),
+          backgroundColor: c.imagePlaceholder,
+        },
+      ]}
+      activeOpacity={0.85}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Ver ${category.label}`}
+    >
+      {/* Medidas en números y no en %: con % Android dejaba la foto a media
+          tarjeta y abajo se veía el fondo claro. */}
+      <Image
+        source={category.image}
+        style={[menuStyles.categoryImage, { width: cardWidth, height: cardHeight }]}
+        resizeMode="cover"
+      />
+
+      {SHADE_STEPS.map((h) => (
+        <View key={h} style={[menuStyles.categoryShade, { height: h }]} />
+      ))}
+
+      {/* Solo el nombre de la categoría, con la flecha al lado */}
+      <View style={[menuStyles.categoryContent, { padding: ms(14) }]}>
+        <View style={[menuStyles.categoryMeta, { gap: ms(8) }]}>
+          <Text
+            style={[textStyles.title, menuStyles.categoryTitle, { flex: 1, fontSize: ms(20) }]}
+            numberOfLines={2}
+          >
+            {category.label}
+          </Text>
+          <View
+            style={[
+              menuStyles.categoryArrow,
+              { backgroundColor: c.primary, width: ms(26), height: ms(26), borderRadius: ms(13) },
+            ]}
+          >
+            <Icon name="arrow-forward" size={ms(14)} color="#FFFFFF" />
+          </View>
         </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
-        {/* ── FILTRO HORIZONTAL DE CATEGORÍAS ── */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={menuStyles.categoriesContainer}
+// Panel para elegir cómo ordenar el menú. Sale desde abajo, como el resto de
+// las hojas de la app.
+const SortSheet = ({ visible, onClose, value, onChange, colors: c, ms, gutter, bottomInset }) => (
+  <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <View style={menuStyles.sheetBackdrop}>
+      <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
+
+      <View
+        style={[
+          menuStyles.sheet,
+          {
+            backgroundColor: c.background,
+            borderTopLeftRadius: ms(22),
+            borderTopRightRadius: ms(22),
+            paddingTop: ms(10),
+            paddingHorizontal: gutter,
+            paddingBottom: Math.max(bottomInset, ms(16)),
+          },
+        ]}
+      >
+        <View
+          style={[
+            menuStyles.sheetHandle,
+            { backgroundColor: c.borderStrong, width: ms(40), marginBottom: ms(16) },
+          ]}
+        />
+
+        <Text
+          style={[
+            textStyles.title,
+            { color: c.textDark, fontSize: ms(17), marginBottom: ms(14) },
+          ]}
         >
-          {CATEGORIES.map((cat) => {
-            const isActive = activeCategory === cat.id;
+          Ordenar por
+        </Text>
+
+        <View style={{ gap: ms(8) }}>
+          {SORT_OPTIONS.map((option) => {
+            const active = option.id === value;
             return (
               <TouchableOpacity
-                key={cat.id}
-                style={[menuStyles.categoryChip, isActive && menuStyles.categoryChipActive]}
-                onPress={() => setActiveCategory(cat.id)}
+                key={option.id}
+                onPress={() => onChange(option.id)}
                 activeOpacity={0.8}
+                style={[
+                  menuStyles.sortRow,
+                  {
+                    backgroundColor: active ? c.surface : 'transparent',
+                    borderColor: active ? c.primary : c.border,
+                    borderRadius: ms(12),
+                    paddingHorizontal: ms(14),
+                    paddingVertical: ms(13),
+                    gap: ms(11),
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
               >
+                <Icon
+                  name={option.icon}
+                  size={ms(18)}
+                  color={active ? c.primary : c.textGray}
+                />
                 <Text
                   style={[
-                    menuStyles.categoryChipText,
-                    isActive && menuStyles.categoryChipTextActive,
+                    active ? textStyles.link : textStyles.body,
+                    { flex: 1, color: active ? c.textDark : c.textGray, fontSize: ms(14) },
                   ]}
                 >
-                  {cat.label}
+                  {option.label}
                 </Text>
+                {active ? (
+                  <Icon name="checkmark-circle" size={ms(19)} color={c.primary} />
+                ) : null}
               </TouchableOpacity>
             );
           })}
-        </ScrollView>
-
-        {/* ── SECCIÓN DE PROMOCIONES DE HOY ── */}
-        <View style={menuStyles.sectionHeader}>
-          <Text style={menuStyles.sectionTitle}>Promociones de Hoy</Text>
-          <TouchableOpacity>
-            <Text style={menuStyles.seeAllText}>Ver todo</Text>
-          </TouchableOpacity>
         </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={menuStyles.promosContainer}
-        >
-          {PROMOS.map((promo) => (
-            <PromoCard key={promo.id} item={promo} />
-          ))}
-        </ScrollView>
-
-        {/* ── SECCIÓN DE PLATILLOS POPULARES ── */}
-        <View style={menuStyles.sectionHeader}>
-          <Text style={menuStyles.sectionTitle}>Platillos populares</Text>
-          {!isLoading && (
-            <TouchableOpacity onPress={refetch}>
-              <Icon name="refresh-outline" size={20} color={colors.primary} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Estado 1: cargando con efecto Skeleton */}
-        {isLoading && <PopularSkeleton />}
-
-        {/* Estado 2: error en la carga */}
-        {!isLoading && error && (
-          <View style={menuStyles.errorContainer}>
-            <Icon name="cloud-offline-outline" size={36} color={colors.textLight} />
-            <Text style={menuStyles.errorText}>{error}</Text>
-            <TouchableOpacity style={menuStyles.retryButton} onPress={refetch}>
-              <Text style={menuStyles.retryText}>Reintentar</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Estado 3: platillos cargados correctamente */}
-        {!isLoading && !error && (
-          <View style={menuStyles.dishesContainer}>
-            {filteredDishes.length === 0 ? (
-              <Text style={menuStyles.emptyText}>No se encontraron platillos.</Text>
-            ) : (
-              filteredDishes.map((dish, index) => (
-                <DishCard key={dish.id} item={dish} index={index} onPress={handleDishPress} />
-              ))
-            )}
-          </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
-  );
-};
+      </View>
+    </View>
+  </Modal>
+);
 
 export default CustomerMenu;

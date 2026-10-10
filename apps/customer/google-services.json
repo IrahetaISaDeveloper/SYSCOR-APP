@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "777342247388",
+    "project_id": "syscorproject",
+    "storage_bucket": "syscorproject.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:777342247388:android:ce64fa72e00f628a2b2f19",
+        "android_client_info": {
+          "package_name": "com.syscor.clientes"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjSAK10dewUu1_xD1HJWiKk8z3qHEmDDY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
