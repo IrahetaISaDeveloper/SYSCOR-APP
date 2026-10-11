@@ -18,6 +18,11 @@ export const EVENTS = {
   KITCHEN_STATUS_CHANGED: 'kitchen:status_changed',
   CASHIER_STATUS_CHANGED: 'cashier:status_changed',
   NOTIFICATION_CREATED: 'notification:created',
+  // Aviso personal para el empleado conectado (su bandeja en la app).
+  EMPLOYEE_NOTIFICATION: 'employee:notification',
+  // A los meseros: cambió una solicitud de la página de la mesa
+  // (pedir la cuenta / llamar al mesero).
+  TABLE_REQUEST_CHANGED: 'table_request:changed',
 
   // Reparto
   DELIVERY_PACKAGE_ASSIGNED: 'delivery:package_assigned',

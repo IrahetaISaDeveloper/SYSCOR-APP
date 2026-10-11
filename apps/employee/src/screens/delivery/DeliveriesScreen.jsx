@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@syscor/shared/src/context/AuthContext";
 import { getFirstName } from "@syscor/shared/src/utils/userDisplay";
 import SymbolIcon from "../../components/commons/SymbolIcon";
+import NotificationBell from "../../components/commons/NotificationBell";
 import DeliveryStatTiles from "../../components/delivery/DeliveryStatTiles";
 import PackageCard from "../../components/delivery/PackageCard";
 import PendingDeliveryRow from "../../components/delivery/PendingDeliveryRow";
@@ -67,6 +68,7 @@ export default function DeliveriesScreen({ navigation }) {
           <View style={[styles.shiftDot, !onShift && styles.shiftDotOff]} />
           <Text style={[styles.shiftText, !onShift && styles.shiftTextOff]}>{onShift ? "En turno" : "Fuera de turno"}</Text>
         </TouchableOpacity>
+        <NotificationBell />
       </View>
 
       <DeliveryStatTiles

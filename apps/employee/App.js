@@ -28,6 +28,7 @@ import WaiterMenuScreen from './src/screens/waiter/WaiterMenuScreen';
 import WaiterProfileScreen from './src/screens/waiter/WaiterProfileScreen';
 import EmployeeTabBar from './src/components/commons/EmployeeTabBar';
 import WaiterTabBar from './src/components/waiter/WaiterTabBar';
+import TableRequestsOverlay from './src/components/waiter/TableRequestsOverlay';
 import { fontAssets } from './src/styles/fonts';
 import { ThemeModeProvider, useTheme } from './src/theme/ThemeContext';
 
@@ -38,6 +39,12 @@ import KitchenProfileScreen from './src/screens/chef/KitchenProfileScreen';
 
 // Reparto
 import DeliveryNavigator from './src/navigation/DeliveryNavigator';
+
+// Avisos personales (mesero y repartidor)
+import { EmployeeNotificationsProvider } from './src/hooks/useEmployeeNotifications';
+import EmployeePushManager from './src/components/commons/EmployeePushManager';
+import NotificationsScreen from './src/screens/NotificationsScreen';
+import { openNotificationTarget } from './src/utils/notificationTargets';
 
 const AuthStack = createNativeStackNavigator();
 const WaiterStack = createNativeStackNavigator();
@@ -85,14 +92,26 @@ function WaiterTabNavigator() {
 function WaiterNavigator() {
   const { p } = useTheme();
   return (
-    <WaiterStack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: p.bg } }}>
-      <WaiterStack.Screen name="WaiterTabs" component={WaiterTabNavigator} />
-      <WaiterStack.Screen
-        name="NewOrder"
-        component={WaiterMenuScreen}
-        options={{ animation: 'slide_from_bottom', gestureEnabled: false }}
-      />
-    </WaiterStack.Navigator>
+    <EmployeeNotificationsProvider>
+      <EmployeePushManager onOpen={openNotificationTarget} />
+      <View style={{ flex: 1 }}>
+        <WaiterStack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: p.bg } }}>
+          <WaiterStack.Screen name="WaiterTabs" component={WaiterTabNavigator} />
+          <WaiterStack.Screen
+            name="NewOrder"
+            component={WaiterMenuScreen}
+            options={{ animation: 'slide_from_bottom', gestureEnabled: false }}
+          />
+          <WaiterStack.Screen
+            name="Notifications"
+            component={NotificationsScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+        </WaiterStack.Navigator>
+        {/* "Mesa 5 pide la cuenta" / "Mesa 3 te llama", encima de todo. */}
+        <TableRequestsOverlay />
+      </View>
+    </EmployeeNotificationsProvider>
   );
 }
 

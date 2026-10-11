@@ -4,24 +4,34 @@ import * as Device from "expo-device";
 import Constants from "expo-constants";
 import apiClient from "@syscor/shared/src/services/apiClient";
 
-// Notificaciones push del repartidor: paquete asignado por Chef Panchita y
-// mensajes del cliente en el chat. Las manda el backend por el servicio de
-// Expo (pushUtils.sendPushToEmployee); aquí solo se registra el teléfono.
+// Notificaciones push de los empleados: paquete asignado por Chef Panchita y
+// mensajes del cliente (repartidor), comanda lista (mesero). Las manda el
+// backend por el servicio de Expo (pushUtils.sendPushToEmployee); aquí solo
+// se registra el teléfono.
 
 // Canal de Android: el backend manda los avisos con channelId "work".
 const ANDROID_CHANNEL = "work";
 
 let registeredToken = null;
 
-// Con la app abierta no se muestra el aviso del sistema: la app ya avisa con
-// su propio diálogo (ver useDelivery), y saldría repetido.
+// Avisos que la app ya muestra por su cuenta cuando está abierta (diálogo de
+// useDelivery, aviso de mesas de TableRequestsOverlay): ahí el aviso del
+// sistema saldría repetido.
+const SHOWN_IN_APP = ["delivery_package", "order_chat", "table_request"];
+// Aunque se muestren en la app, estos suenan: el mesero puede no estar viendo.
+const ALWAYS_SOUND = ["table_request"];
+
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: false,
-    shouldShowList: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async (notification) => {
+    const type = notification?.request?.content?.data?.type;
+    const showBanner = !SHOWN_IN_APP.includes(type);
+    return {
+      shouldShowBanner: showBanner,
+      shouldShowList: true,
+      shouldPlaySound: showBanner || ALWAYS_SOUND.includes(type),
+      shouldSetBadge: false,
+    };
+  },
 });
 
 const projectIdOf = () =>
@@ -32,7 +42,7 @@ const getPushToken = async () => {
 
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL, {
-      name: "Entregas",
+      name: "Avisos del trabajo",
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
     });

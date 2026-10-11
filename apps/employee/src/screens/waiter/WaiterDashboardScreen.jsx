@@ -14,6 +14,7 @@ import WaiterFloorPlan from "../../components/waiterDashboard/WaiterFloorPlan";
 import TableListView from "../../components/waiterDashboard/TableListView";
 import TableActionsSheet from "../../components/waiterDashboard/TableActionsSheet";
 import ChargeTableSheet from "../../components/waiterDashboard/ChargeTableSheet";
+import NotificationBell from "../../components/commons/NotificationBell";
 import { TABLE_STATE, TABLE_STATE_ORDER, FLOORS, getTableStates } from "../../styles/waiterTheme";
 import { useTheme, makeStyles } from "../../theme/ThemeContext";
 
@@ -70,6 +71,20 @@ export default function WaiterDashboardScreen({ navigation, route }) {
   useEffect(() => {
     if (sentAt && sentTableId) markOccupied(sentTableId);
   }, [sentAt, sentTableId, markOccupied]);
+
+  // Desde un aviso ("Comanda lista · Mesa 5"): abre esa mesa en su planta.
+  // Espera a que las mesas carguen; `openAt` permite abrir la misma otra vez.
+  const openAt = route.params?.openAt;
+  const openTableId = route.params?.openTableId;
+  const openedFromNoticeRef = useRef(null);
+  useEffect(() => {
+    if (!openAt || !openTableId || openedFromNoticeRef.current === openAt) return;
+    const table = tables.find((t) => String(t._id) === String(openTableId));
+    if (!table) return;
+    openedFromNoticeRef.current = openAt;
+    setFloor(table.floor || 1);
+    openTable(table);
+  }, [openAt, openTableId, tables, openTable]);
 
   const lastSheetRef = useRef(null);
 
@@ -192,6 +207,8 @@ export default function WaiterDashboardScreen({ navigation, route }) {
               );
             })}
           </View>
+
+          <NotificationBell />
         </View>
 
         {/* ── CONTEO POR ESTADO (todo el local) ── */}
