@@ -1,11 +1,16 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
-import MapView, { Marker, Polyline } from "react-native-maps";
+import Mapbox, { MapView, Camera, ShapeSource, LineLayer, MarkerView } from "@rnmapbox/maps";
 import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { MAPBOX_TOKEN } from "../../config/mapbox";
 import SymbolIcon from "../commons/SymbolIcon";
 import styles from "../../styles/deliveryRouteScreenStyles";
 
-const EDGE_PADDING = { top: 48, right: 40, bottom: 40, left: 40 };
+Mapbox.setAccessToken(MAPBOX_TOKEN);
+
+const EDGE_PADDING = { paddingTop: 48, paddingRight: 40, paddingBottom: 40, paddingLeft: 40 };
+
+const toLngLat = ({ latitude, longitude }) => [longitude, latitude];
 
 function Pin({ icon, background }) {
   return (
@@ -16,14 +21,26 @@ function Pin({ icon, background }) {
 }
 
 export default function DeliveryMap({ origin, destination, coordinates, loading, error, onRetry }) {
-  const mapRef = useRef(null);
-  const [mapReady, setMapReady] = useState(false);
+  const routeShape = useMemo(
+    () =>
+      coordinates?.length
+        ? { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: coordinates.map(toLngLat) } }
+        : null,
+    [coordinates]
+  );
 
-  useEffect(() => {
+  // Encuadra la ruta completa; si aún no hay ruta, origen y destino.
+  const bounds = useMemo(() => {
     const points = coordinates?.length ? coordinates : [origin, destination].filter(Boolean);
-    if (!mapReady || !mapRef.current || points.length < 2) return;
-    mapRef.current.fitToCoordinates(points, { edgePadding: EDGE_PADDING, animated: true });
-  }, [mapReady, coordinates, origin, destination]);
+    if (points.length < 2) return null;
+    const lats = points.map((p) => p.latitude);
+    const lngs = points.map((p) => p.longitude);
+    return {
+      ne: [Math.max(...lngs), Math.max(...lats)],
+      sw: [Math.min(...lngs), Math.min(...lats)],
+      ...EDGE_PADDING,
+    };
+  }, [coordinates, origin, destination]);
 
   const center = destination || origin;
 
@@ -31,26 +48,39 @@ export default function DeliveryMap({ origin, destination, coordinates, loading,
     <View style={styles.mapCard}>
       {center ? (
         <MapView
-          ref={mapRef}
           style={styles.map}
-          initialRegion={{ ...center, latitudeDelta: 0.04, longitudeDelta: 0.04 }}
-          onMapReady={() => setMapReady(true)}
-          toolbarEnabled={false}
-          showsPointsOfInterest={false}
-          showsBuildings={false}
+          styleURL={Mapbox.StyleURL.Street}
+          scaleBarEnabled={false}
+          logoPosition={{ bottom: 6, left: 6 }}
+          attributionPosition={{ bottom: 6, right: 6 }}
         >
-          {coordinates?.length ? (
-            <Polyline coordinates={coordinates} strokeColor={employeePalette.accent} strokeWidth={5} />
+          <Camera
+            defaultSettings={{ centerCoordinate: toLngLat(center), zoomLevel: 13 }}
+            bounds={bounds || undefined}
+            animationDuration={600}
+          />
+          {routeShape ? (
+            <ShapeSource id="delivery-route" shape={routeShape}>
+              <LineLayer
+                id="delivery-route-line"
+                style={{
+                  lineColor: employeePalette.accent,
+                  lineWidth: 5,
+                  lineCap: "round",
+                  lineJoin: "round",
+                }}
+              />
+            </ShapeSource>
           ) : null}
           {origin ? (
-            <Marker coordinate={origin} anchor={{ x: 0.5, y: 0.5 }}>
+            <MarkerView coordinate={toLngLat(origin)} anchor={{ x: 0.5, y: 0.5 }} allowOverlap>
               <Pin icon="two_wheeler" background={employeePalette.ink} />
-            </Marker>
+            </MarkerView>
           ) : null}
           {destination ? (
-            <Marker coordinate={destination} anchor={{ x: 0.5, y: 0.5 }}>
+            <MarkerView coordinate={toLngLat(destination)} anchor={{ x: 0.5, y: 0.5 }} allowOverlap>
               <Pin icon="home_pin" background={employeePalette.accent} />
-            </Marker>
+            </MarkerView>
           ) : null}
         </MapView>
       ) : null}
