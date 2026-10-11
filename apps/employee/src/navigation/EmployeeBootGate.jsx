@@ -20,7 +20,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 // directo en el login.
 //
 // El splash se monta por encima de la pantalla que le sigue, de modo que al
-// deslizarse hacia arriba la deja descubierta sin parpadeos.
+// desvanecerse la deja descubierta sin parpadeos.
 export default function EmployeeBootGate({ children }) {
   const [stage, setStage] = useState('splash');
   const [isFirstLaunch, setIsFirstLaunch] = useState(false);

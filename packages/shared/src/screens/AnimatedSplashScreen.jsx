@@ -1,36 +1,34 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
-  Image,
   Animated,
   Easing,
   StyleSheet,
   useColorScheme,
-  useWindowDimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
 // Duración total que el splash permanece visible antes de comenzar a retirarse.
 const HOLD_MS = 3000;
-// Duración de la animación en la que el splash sube y descubre la pantalla siguiente.
-const SLIDE_UP_MS = 520;
+// Duración del desvanecimiento con el que el splash descubre la pantalla siguiente.
+const FADE_OUT_MS = 450;
 
 // Splash de arranque: muestra el logo de la marca durante HOLD_MS y luego se
-// desliza hacia arriba, como una capa que se retira para descubrir la app.
+// desvanece para descubrir la app que ya está montada debajo.
 //
 // Va dentro de un Modal a pantalla completa para cubrir también las áreas del
 // sistema (barra de estado y de navegación); un View normal queda recortado por
-// el contenedor que lo monta.
+// el contenedor que lo monta. El Modal es transparente para que, al
+// desvanecerse la capa, se vea la app y no el fondo del Modal.
 export default function AnimatedSplashScreen({ onFinish }) {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
-  const { height } = useWindowDimensions();
 
   const [visible, setVisible] = useState(true);
 
   const scale = useRef(new Animated.Value(0.85)).current;
   const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(0)).current;
+  const layerOpacity = useRef(new Animated.Value(1)).current;
 
   const backgroundColor = isDark ? '#161826' : '#F7F5F1';
 
@@ -53,12 +51,11 @@ export default function AnimatedSplashScreen({ onFinish }) {
       ]),
       // Permanece visible hasta completar los 3 segundos de splash
       Animated.delay(HOLD_MS - 500),
-      // La capa completa sube y deja ver la pantalla que hay debajo.
-      // Se desplaza más que el alto de la pantalla para que no quede ni un borde.
-      Animated.timing(translateY, {
-        toValue: -(height + 120),
-        duration: SLIDE_UP_MS,
-        easing: Easing.in(Easing.cubic),
+      // La capa completa se desvanece y deja ver la pantalla que hay debajo.
+      Animated.timing(layerOpacity, {
+        toValue: 0,
+        duration: FADE_OUT_MS,
+        easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
     ]);
@@ -72,12 +69,12 @@ export default function AnimatedSplashScreen({ onFinish }) {
     });
 
     return () => animation.stop();
-  }, [opacity, scale, translateY, height, onFinish]);
+  }, [opacity, scale, layerOpacity, onFinish]);
 
   return (
     <Modal
       visible={visible}
-      transparent={false}
+      transparent
       animationType="none"
       statusBarTranslucent
       navigationBarTranslucent
@@ -86,13 +83,7 @@ export default function AnimatedSplashScreen({ onFinish }) {
     >
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
-      <Animated.View
-        style={[
-          styles.container,
-          { backgroundColor },
-          { transform: [{ translateY }] },
-        ]}
-      >
+      <Animated.View style={[styles.container, { backgroundColor, opacity: layerOpacity }]}>
         <Animated.Image
           source={
             isDark

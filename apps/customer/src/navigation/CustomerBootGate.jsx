@@ -20,7 +20,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 // app abre directo en el login, que ya ofrece crear cuenta y ver el menú.
 //
 // El splash se monta por encima de la pantalla que le sigue, de modo que al
-// deslizarse hacia arriba la deja descubierta sin parpadeos.
+// desvanecerse la deja descubierta sin parpadeos.
 export default function CustomerBootGate({ children }) {
   const [stage, setStage] = useState('splash');
   const [isFirstLaunch, setIsFirstLaunch] = useState(false);
