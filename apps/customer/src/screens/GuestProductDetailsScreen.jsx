@@ -1,29 +1,23 @@
 import React from 'react';
-import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import ProductDetails from './ProductDetails';
+import { setPendingCartItem } from '../utils/guestCart';
 
 // Detalle de producto para quien explora el menú sin cuenta. Muestra lo mismo
-// que la versión con sesión, pero al intentar pedir invita a identificarse:
-// aquí no existe CartProvider, así que no hay carrito al que agregar.
+// que la versión con sesión; al pedir se le preguntan solo nombre y apellidos
+// (GuestCheckout) y el producto queda guardado para meterlo a la bolsa en
+// cuanto se abre su sesión de invitado.
 export default function GuestProductDetailsScreen({ navigation, route }) {
-  const promptSignIn = () => {
-    AppAlert.alert(
-      'Necesitas una cuenta',
-      'Para agregar productos a tu pedido, inicia sesión o crea una cuenta.',
-      [
-        { text: 'Ahora no', style: 'cancel' },
-        { text: 'Crear cuenta', onPress: () => navigation.navigate('RegisterCustomer') },
-        { text: 'Iniciar sesión', onPress: () => navigation.navigate('Login') },
-      ],
-    );
+  const startGuestOrder = (payload) => {
+    if (payload) setPendingCartItem(payload);
+    navigation.navigate('GuestCheckout');
   };
 
   return (
     <ProductDetails
       navigation={navigation}
       route={route}
-      onAddToCart={promptSignIn}
-      onGoToCart={promptSignIn}
+      onAddToCart={startGuestOrder}
+      onGoToCart={() => startGuestOrder(null)}
     />
   );
 }

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
+import { takePendingCartItem } from '../utils/guestCart';
 
 const CartContext = createContext(null);
 
@@ -28,6 +29,13 @@ export const CartProvider = ({ children }) => {
     });
     return cartItemId;
   }, []);
+
+  // Invitado que eligió un producto antes de dar su nombre: entra a la bolsa
+  // en cuanto se abre su sesión (ver GuestCheckoutScreen).
+  useEffect(() => {
+    const pending = takePendingCartItem();
+    if (pending) addItem(pending);
+  }, [addItem]);
 
   const dismissAddedNotice = useCallback(
     (key) => setAddedNotice((prev) => (prev && prev.key === key ? null : prev)),

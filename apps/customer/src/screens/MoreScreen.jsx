@@ -65,19 +65,26 @@ const MoreScreen = ({ navigation }) => {
     .join('');
 
   const confirmLogout = () =>
-    AppAlert.alert('Cerrar sesión', '¿Seguro que quieres salir?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Cerrar sesión',
-        style: 'destructive',
-        // Primero se quita este teléfono de los avisos: después de salir ya
-        // no hay sesión para pedírselo al backend.
-        onPress: async () => {
-          await unregisterFromPush(user?.id || user?._id);
-          logout();
+    AppAlert.alert(
+      'Cerrar sesión',
+      // Un invitado no tiene contraseña: si sale, no puede volver a entrar.
+      user?.isGuest
+        ? 'Pediste sin cuenta: si cierras sesión ya no podrás ver tus pedidos ni chatear con el repartidor.'
+        : '¿Seguro que quieres salir?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Cerrar sesión',
+          style: 'destructive',
+          // Primero se quita este teléfono de los avisos: después de salir ya
+          // no hay sesión para pedírselo al backend.
+          onPress: async () => {
+            await unregisterFromPush(user?.id || user?._id);
+            logout();
+          },
         },
-      },
-    ]);
+      ],
+    );
 
   const open = (url) => {
     setSheet(null);
@@ -141,7 +148,7 @@ const MoreScreen = ({ navigation }) => {
               {fullName}
             </Text>
             <Text style={[textStyles.kicker, { color: c.textGray, fontSize: ms(10.5) }]} numberOfLines={1}>
-              {(user?.email || '').toUpperCase()}
+              {user?.isGuest ? 'CUENTA DE INVITADO' : (user?.email || '').toUpperCase()}
             </Text>
           </View>
           <Icon name="chevron-forward" size={ms(18)} color={c.textGray} />

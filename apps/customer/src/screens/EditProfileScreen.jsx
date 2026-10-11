@@ -398,7 +398,7 @@ const EditProfileScreen = ({ navigation }) => {
 
         {label('CORREO')}
         <View style={[inputStyle, { opacity: 0.7 }]}>
-          <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(15) }]}>{user?.email}</Text>
+          <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(15) }]}>{user?.isGuest ? 'Cuenta de invitado' : user?.email}</Text>
         </View>
         <Text style={[textStyles.body, { color: c.textLight, fontSize: ms(11.5), marginTop: ms(6) }]}>
           El correo es tu usuario para iniciar sesión y no se puede cambiar.

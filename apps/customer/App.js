@@ -15,6 +15,7 @@ import { AuthProvider, useAuth } from '@syscor/shared/src/context/AuthContext';
 import { AppAlertHost } from '@syscor/shared/src/components/commons/AppAlert';
 import { RealtimeProvider } from '@syscor/shared/src/realtime/RealtimeProvider';
 import OrderChatScreen from '@syscor/shared/src/screens/OrderChatScreen';
+import GuestCheckoutScreen from './src/screens/auth/GuestCheckoutScreen';
 import { fontAssets } from '@syscor/shared/src/styles/typography';
 import { getMenuColors } from './src/styles/CustomerMenu';
 import { ROLES } from '@syscor/shared/src/constants/roles';
@@ -79,6 +80,8 @@ function AuthNavigator() {
       <AuthStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       {/* Consulta del menú sin sesión: se puede ver, pero no comprar. */}
       <AuthStack.Screen name="GuestMenu" component={CustomerMenu} />
+      {/* Pedir sin cuenta: solo nombre y apellidos */}
+      <AuthStack.Screen name="GuestCheckout" component={GuestCheckoutScreen} />
       <AuthStack.Screen name="ProductDetails" component={GuestProductDetailsScreen} />
     </AuthStack.Navigator>
   );

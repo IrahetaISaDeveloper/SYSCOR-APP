@@ -52,7 +52,9 @@ const SORT_OPTIONS = [
 ];
 
 // ── PANTALLA ────────────────────────────────────────────────────────────
-const CustomerMenu = ({ navigation }) => {
+const CustomerMenu = ({ navigation, route }) => {
+  // Sin sesión (GuestMenu) la bolsa lleva a pedir sin cuenta.
+  const isGuestMenu = route?.name === 'GuestMenu';
   const isDark = useColorScheme() === 'dark';
   const c = getMenuColors(isDark);
   const m = useAuthMetrics();
@@ -753,7 +755,7 @@ const CustomerMenu = ({ navigation }) => {
         ms={ms}
         // Queda justo encima de la barra inferior, sin pegarse a ella.
         bottom={ms(18)}
-        onPress={() => navigation.navigate('Cart')}
+        onPress={() => navigation.navigate(isGuestMenu ? 'GuestCheckout' : 'Cart')}
       />
     </View>
   );

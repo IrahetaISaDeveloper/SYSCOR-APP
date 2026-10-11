@@ -199,7 +199,7 @@ export default function LoginCustomerScreen({ navigation }) {
           onPress={() => navigation.navigate('GuestMenu')}
         >
           <Text style={[styles.guestText, { color: t.textSecondary, fontSize: ms(13.5) }]}>
-            Explorar el menú sin cuenta
+            Pedir sin crear una cuenta
           </Text>
         </TouchableOpacity>
 
