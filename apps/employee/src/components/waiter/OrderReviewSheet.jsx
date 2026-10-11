@@ -1,14 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  ScrollView,
-  TouchableOpacity,
-  Modal,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useKeyboardHeight from '@syscor/shared/src/hooks/useKeyboardHeight';
 import { Ionicons as Icon } from '@expo/vector-icons';
@@ -16,8 +7,8 @@ import { useAuth } from '@syscor/shared/src/context/AuthContext';
 import { getDisplayName } from '@syscor/shared/src/utils/userDisplay';
 import { textStyles } from '@syscor/shared/src/styles/typography';
 import { useAuthMetrics } from '@syscor/shared/src/styles/authTheme';
-import { waiterColors as c } from '../../styles/waiterTheme';
 import { describeCustomization, formatMoney } from '../../utils/productOptions';
+import { useTheme, makeStyles } from "../../theme/ThemeContext";
 
 const TYPE_LABELS = { saucer: 'PLATILLO', combo: 'COMBO', drink: 'BEBIDA', extra: 'EXTRA' };
 
@@ -51,6 +42,8 @@ export default function OrderReviewSheet({
   submitting,
   onSend,
 }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   const { ms, gutter, height: windowHeight } = useAuthMetrics();
   const insets = useSafeAreaInsets();
   // Sin KeyboardAvoidingView: con edge-to-edge Android no redimensiona la
@@ -453,6 +446,8 @@ export default function OrderReviewSheet({
 }
 
 function Segmented({ options, value, onChange, ms }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   return (
     <View style={[styles.row, styles.segmented, { borderRadius: ms(12), padding: ms(3), gap: ms(3) }]}>
       {options.map((opt) => {
@@ -480,7 +475,7 @@ function Segmented({ options, value, onChange, ms }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ c, p }) => ({
   segmented: {
     backgroundColor: c.surfaceMuted,
   },
@@ -550,4 +545,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: c.primary,
   },
-});
+}));

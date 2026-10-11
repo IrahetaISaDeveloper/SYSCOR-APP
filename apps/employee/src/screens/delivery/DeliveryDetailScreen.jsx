@@ -1,7 +1,6 @@
 import React, { Fragment, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import SymbolIcon from "../../components/commons/SymbolIcon";
 import DeliveryTopBar from "../../components/delivery/DeliveryTopBar";
 import RouteTimeline from "../../components/delivery/RouteTimeline";
@@ -15,13 +14,19 @@ import {
   paymentLabel,
 } from "../../constants/deliveryStatus";
 import useDelivery from "../../hooks/useDelivery";
-import commonStyles from "../../styles/deliveryCommonStyles";
-import styles from "../../styles/deliveryDetailScreenStyles";
+import useDeliveryCommonStyles from "../../styles/deliveryCommonStyles";
+import useDeliveryDetailScreenStyles from "../../styles/deliveryDetailScreenStyles";
+import { useTheme } from "../../theme/ThemeContext";
 
 export default function DeliveryDetailScreen({ navigation, route }) {
-  const { getDeliveryById, start } = useDelivery();
+  const { p } = useTheme();
+  const commonStyles = useDeliveryCommonStyles();
+  const styles = useDeliveryDetailScreenStyles();
+  const { getDeliveryById, start, startRoute, pkg } = useDelivery();
   const delivery = getDeliveryById(route.params?.deliveryId);
   const [submitting, setSubmitting] = useState(false);
+  // ¿Es una parada de mi paquete, o un pedido de la cola?
+  const inMyPackage = Boolean(delivery && pkg?.stops?.some((stop) => String(stop.id) === String(delivery.id)));
 
   if (!delivery) {
     return (
@@ -36,20 +41,34 @@ export default function DeliveryDetailScreen({ navigation, route }) {
 
   const collects = collectsOnDelivery(delivery);
 
+  // Mi paquete todavía en el local: se sale con todas las paradas. Pedido de
+  // la cola sin paquete propio: se toma a mano (respaldo).
   const handleStart = async () => {
     try {
       setSubmitting(true);
-      await start(delivery.id);
-      navigation.replace("DeliveryRoute", { deliveryId: delivery.id });
+      const updated = inMyPackage ? await startRoute() : await start(delivery.id);
+      navigation.replace("DeliveryRoute", { deliveryId: updated?.currentStopId || delivery.id });
     } catch {
     } finally {
       setSubmitting(false);
     }
   };
 
+  const action = (() => {
+    if (delivery.status === "delivered") return null;
+    if (inMyPackage && pkg.status === "assigned") return { label: "Salir a ruta con el paquete", onPress: handleStart };
+    if (inMyPackage) return { label: "Ir a esta parada", onPress: () => navigation.replace("DeliveryRoute", { deliveryId: delivery.id }) };
+    if (!pkg) return { label: "Tomar este pedido", onPress: handleStart };
+    return null;
+  })();
+
+  const subtitle = inMyPackage
+    ? `PARADA ${delivery.sequence || 1} DE ${pkg.stops.length} · ${pkg.code}`
+    : "ESPERANDO REPARTIDOR";
+
   return (
     <SafeAreaView style={commonStyles.screen} edges={["top", "left", "right"]}>
-      <DeliveryTopBar title={delivery.code} monoTitle subtitle="LISTO PARA ENTREGAR" onBack={() => navigation.goBack()} />
+      <DeliveryTopBar title={delivery.code} monoTitle subtitle={subtitle} onBack={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.summary}>
@@ -92,7 +111,7 @@ export default function DeliveryDetailScreen({ navigation, route }) {
           ))}
           {delivery.note ? (
             <View style={styles.noteBox}>
-              <SymbolIcon name="info" size={15} color={employeePalette.warnInk} />
+              <SymbolIcon name="info" size={15} color={p.warnInk} />
               <Text style={styles.noteText}>{delivery.note}</Text>
             </View>
           ) : null}
@@ -102,21 +121,29 @@ export default function DeliveryDetailScreen({ navigation, route }) {
       </ScrollView>
 
       <DeliveryFooter>
-        <TouchableOpacity
-          style={[commonStyles.primaryButton, submitting && { opacity: 0.7 }]}
-          onPress={handleStart}
-          activeOpacity={0.85}
-          disabled={submitting}
-        >
-          {submitting ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <>
-              <SymbolIcon name="navigation" size={17} color="#FFFFFF" />
-              <Text style={commonStyles.primaryButtonLabel}>Iniciar entrega</Text>
-            </>
-          )}
-        </TouchableOpacity>
+        {action ? (
+          <TouchableOpacity
+            style={[commonStyles.primaryButton, submitting && { opacity: 0.7 }]}
+            onPress={action.onPress}
+            activeOpacity={0.85}
+            disabled={submitting}
+          >
+            {submitting ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <SymbolIcon name="navigation" size={17} color="#FFFFFF" />
+                <Text style={commonStyles.primaryButtonLabel}>{action.label}</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        ) : (
+          <Text style={[commonStyles.emptyText, { textAlign: "center" }]}>
+            {delivery.status === "delivered"
+              ? "Esta entrega ya se completó."
+              : "Termina tu paquete; Chef Panchita le asignará este pedido a un repartidor libre."}
+          </Text>
+        )}
       </DeliveryFooter>
     </SafeAreaView>
   );

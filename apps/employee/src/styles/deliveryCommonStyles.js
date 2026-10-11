@@ -1,14 +1,13 @@
-import { StyleSheet } from "react-native";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { makeStyles } from "../theme/ThemeContext";
 import { fonts } from "./fonts";
 
 export const DELIVERY_GREEN = "#2ECC71";
 export const DELIVERY_ORANGE = "#F39C12";
 
-export default StyleSheet.create({
+export default makeStyles(({ p }) => ({
   screen: {
     flex: 1,
-    backgroundColor: employeePalette.bg,
+    backgroundColor: p.bg,
   },
 
   topBar: {
@@ -24,9 +23,9 @@ export default StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -42,18 +41,18 @@ export default StyleSheet.create({
     fontFamily: fonts.sansBold,
     fontSize: 18,
     letterSpacing: -0.36,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   topBarTitleMono: {
     fontFamily: fonts.monoMedium,
     fontSize: 17,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   topBarSubtitle: {
     fontFamily: fonts.mono,
     fontSize: 10,
     letterSpacing: 0.6,
-    color: employeePalette.muted,
+    color: p.muted,
   },
 
   timeline: {
@@ -67,7 +66,7 @@ export default StyleSheet.create({
   timelineLine: {
     flex: 1,
     width: 2,
-    backgroundColor: employeePalette.line,
+    backgroundColor: p.line,
   },
   timelineStops: {
     flex: 1,
@@ -80,15 +79,15 @@ export default StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 9.5,
     letterSpacing: 0.57,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   timelineTitle: {
     fontFamily: fonts.sansBold,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   timelineDetail: {
     fontFamily: fonts.sans,
-    color: employeePalette.muted,
+    color: p.muted,
   },
 
   statsRow: {
@@ -100,9 +99,9 @@ export default StyleSheet.create({
   },
   statTile: {
     flex: 1,
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 16,
     padding: 11,
     gap: 3,
@@ -110,20 +109,20 @@ export default StyleSheet.create({
   statValue: {
     fontFamily: fonts.monoMedium,
     fontSize: 19,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   statLabel: {
     fontFamily: fonts.mono,
     fontSize: 9,
     letterSpacing: 0.45,
-    color: employeePalette.muted,
+    color: p.muted,
   },
 
   sectionLabel: {
     fontFamily: fonts.mono,
     fontSize: 10.5,
     letterSpacing: 0.84,
-    color: employeePalette.muted,
+    color: p.muted,
   },
 
   footer: {
@@ -136,7 +135,7 @@ export default StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 9,
-    backgroundColor: employeePalette.accent,
+    backgroundColor: p.accent,
     borderRadius: 18,
     padding: 16,
   },
@@ -152,9 +151,9 @@ export default StyleSheet.create({
   emptyBox: {
     alignItems: "center",
     gap: 8,
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderStyle: "dashed",
     borderRadius: 18,
     paddingVertical: 22,
@@ -163,7 +162,7 @@ export default StyleSheet.create({
   emptyText: {
     fontFamily: fonts.sans,
     fontSize: 12.5,
-    color: employeePalette.muted,
+    color: p.muted,
     textAlign: "center",
   },
-});
+}));

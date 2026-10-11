@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Modal,
   ActivityIndicator,
-  StyleSheet,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons as Icon } from "@expo/vector-icons";
@@ -15,15 +14,15 @@ import useKeyboardHeight from "@syscor/shared/src/hooks/useKeyboardHeight";
 import { textStyles } from "@syscor/shared/src/styles/typography";
 import { useAuthMetrics } from "@syscor/shared/src/styles/authTheme";
 import { checkPasswordRules, isPasswordValid } from "@syscor/shared/src/utils/passwordRules";
-import { waiterColors as c } from "../../styles/waiterTheme";
-
-const MAROON = "#8E2222";
+import { makeStyles, useTheme } from "../../theme/ThemeContext";
 
 // Lo que el empleado puede cambiar por su cuenta: teléfono y dirección, y su
 // contraseña. Puesto, salario, estado y permisos solo los cambia un
 // administrador desde el panel.
 export default function EditProfileSheet({ visible, onClose, user, saving, onSaveContact, onSavePassword }) {
   const { ms, gutter, height: windowHeight } = useAuthMetrics();
+  const { c, p } = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   // Sin KeyboardAvoidingView: con edge-to-edge Android no redimensiona la
   // ventana. Se mide el teclado y la hoja se apoya encima.
@@ -106,8 +105,8 @@ export default function EditProfileSheet({ visible, onClose, user, saving, onSav
                   accessibilityRole="tab"
                   accessibilityState={{ selected: active }}
                 >
-                  <Icon name={t.icon} size={ms(15)} color={active ? c.white : c.textGray} />
-                  <Text style={[active ? textStyles.link : textStyles.body, { color: active ? c.white : c.textGray, fontSize: ms(12.5) }]}>{t.label}</Text>
+                  <Icon name={t.icon} size={ms(15)} color={active ? c.background : c.textGray} />
+                  <Text style={[active ? textStyles.link : textStyles.body, { color: active ? c.background : c.textGray, fontSize: ms(12.5) }]}>{t.label}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -164,7 +163,7 @@ export default function EditProfileSheet({ visible, onClose, user, saving, onSav
                 <View style={[styles.card, { borderRadius: ms(12), padding: ms(12), gap: ms(6) }]}>
                   {rules.map((rule) => (
                     <View key={rule.id} style={[styles.row, { gap: ms(8) }]}>
-                      <Icon name={rule.met ? "checkmark-circle" : "ellipse-outline"} size={ms(15)} color={rule.met ? "#1E8E4E" : c.textLight} />
+                      <Icon name={rule.met ? "checkmark-circle" : "ellipse-outline"} size={ms(15)} color={rule.met ? c.success : c.textLight} />
                       <Text style={[textStyles.body, { flex: 1, color: rule.met ? c.textGray : c.textLight, fontSize: ms(12.5) }]}>{rule.label}</Text>
                     </View>
                   ))}
@@ -179,8 +178,8 @@ export default function EditProfileSheet({ visible, onClose, user, saving, onSav
                   ms={ms}
                 />
                 <TouchableOpacity onPress={() => setShowPasswords((v) => !v)} style={[styles.row, { gap: ms(6), alignSelf: "flex-start" }]} hitSlop={8}>
-                  <Icon name={showPasswords ? "eye-off-outline" : "eye-outline"} size={ms(16)} color={MAROON} />
-                  <Text style={[textStyles.link, { color: MAROON, fontSize: ms(13) }]}>
+                  <Icon name={showPasswords ? "eye-off-outline" : "eye-outline"} size={ms(16)} color={p.accent} />
+                  <Text style={[textStyles.link, { color: p.accent, fontSize: ms(13) }]}>
                     {showPasswords ? "Ocultar contraseñas" : "Mostrar contraseñas"}
                   </Text>
                 </TouchableOpacity>
@@ -200,7 +199,7 @@ export default function EditProfileSheet({ visible, onClose, user, saving, onSav
                   height: ms(52),
                   borderRadius: ms(14),
                   gap: ms(8),
-                  backgroundColor: "#C9402F",
+                  backgroundColor: c.primary,
                   opacity: (tab === "contact" ? canSaveContact : canSavePassword) ? 1 : 0.45,
                 },
               ]}
@@ -222,6 +221,8 @@ export default function EditProfileSheet({ visible, onClose, user, saving, onSav
 }
 
 function Field({ label, icon, error, ms, multiline, ...input }) {
+  const { c, p } = useTheme();
+  const styles = useStyles();
   return (
     <View style={{ gap: ms(6) }}>
       <Text style={[textStyles.kicker, { color: c.textGray, fontSize: ms(10) }]}>{label}</Text>
@@ -238,7 +239,7 @@ function Field({ label, icon, error, ms, multiline, ...input }) {
           },
         ]}
       >
-        <Icon name={icon} size={ms(17)} color={MAROON} style={multiline ? { marginTop: ms(13) } : null} />
+        <Icon name={icon} size={ms(17)} color={p.accent} style={multiline ? { marginTop: ms(13) } : null} />
         <TextInput
           style={[textStyles.body, { flex: 1, color: c.textDark, fontSize: ms(14.5), paddingVertical: ms(12), minHeight: multiline ? ms(70) : undefined }]}
           placeholderTextColor={c.textLight}
@@ -253,7 +254,7 @@ function Field({ label, icon, error, ms, multiline, ...input }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ c }) => ({
   backdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
@@ -295,4 +296,4 @@ const styles = StyleSheet.create({
     borderTopColor: c.border,
     backgroundColor: c.background,
   },
-});
+}));

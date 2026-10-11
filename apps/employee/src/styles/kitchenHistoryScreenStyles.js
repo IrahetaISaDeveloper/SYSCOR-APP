@@ -1,11 +1,10 @@
-import { StyleSheet } from "react-native";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { makeStyles } from "../theme/ThemeContext";
 import { fonts } from "./fonts";
 
-export default StyleSheet.create({
+export default makeStyles(({ p }) => ({
   container: {
     flex: 1,
-    backgroundColor: employeePalette.bg,
+    backgroundColor: p.bg,
   },
   stats: {
     flexDirection: "row",
@@ -16,9 +15,9 @@ export default StyleSheet.create({
   },
   statTile: {
     flex: 1,
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 16,
     paddingVertical: 11,
     paddingHorizontal: 12,
@@ -28,23 +27,23 @@ export default StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 9,
     letterSpacing: 0.5,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   statValue: {
     fontFamily: fonts.monoMedium,
     fontSize: 20,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   statUnit: {
     fontFamily: fonts.mono,
     fontSize: 11,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   sectionLabel: {
     fontFamily: fonts.mono,
     fontSize: 10,
     letterSpacing: 0.8,
-    color: employeePalette.muted,
+    color: p.muted,
     paddingHorizontal: 18,
     paddingBottom: 8,
   },
@@ -55,9 +54,9 @@ export default StyleSheet.create({
     gap: 9,
   },
   card: {
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 14,
@@ -71,7 +70,7 @@ export default StyleSheet.create({
   displayId: {
     fontFamily: fonts.monoMedium,
     fontSize: 14,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   badge: {
     borderRadius: 999,
@@ -94,7 +93,7 @@ export default StyleSheet.create({
   readyClockText: {
     fontFamily: fonts.monoMedium,
     fontSize: 13,
-    color: employeePalette.okInk,
+    color: p.okInk,
   },
   contextRow: {
     flexDirection: "row",
@@ -105,27 +104,27 @@ export default StyleSheet.create({
     flexShrink: 1,
     fontFamily: fonts.sans,
     fontSize: 11.5,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   itemsText: {
     fontFamily: fonts.sansMedium,
     fontSize: 12.5,
     lineHeight: 17,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   prepRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
     borderTopWidth: 1,
-    borderTopColor: employeePalette.line,
+    borderTopColor: p.line,
     paddingTop: 8,
   },
   prepText: {
     fontFamily: fonts.mono,
     fontSize: 10,
     letterSpacing: 0.4,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   stateBox: {
     flex: 1,
@@ -139,7 +138,7 @@ export default StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: 13,
     lineHeight: 18,
-    color: employeePalette.muted,
+    color: p.muted,
     textAlign: "center",
   },
-});
+}));

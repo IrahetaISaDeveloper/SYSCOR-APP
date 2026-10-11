@@ -1,16 +1,18 @@
 import React from "react";
-import { View, Text, FlatList, RefreshControl, StyleSheet } from "react-native";
+import { View, Text, FlatList, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import SymbolIcon from "../../components/commons/SymbolIcon";
 import { formatClock, formatMoney, isToday } from "../../constants/deliveryStatus";
 import useDelivery from "../../hooks/useDelivery";
 import { fonts } from "../../styles/fonts";
-import commonStyles from "../../styles/deliveryCommonStyles";
+import useDeliveryCommonStyles from "../../styles/deliveryCommonStyles";
+import { useTheme, makeStyles } from "../../theme/ThemeContext";
 
 const METHOD_LABELS = { hand: "En mano", reception: "Recepción" };
 
 function HistoryRow({ item }) {
+  const s = useLocalStyles();
+  const { p } = useTheme();
   const methodKey = item.deliveryMethod || "hand";
   const address = item.dropoff?.address || "Sin dirección";
   const time = isToday(item.deliveredAt)
@@ -22,7 +24,7 @@ function HistoryRow({ item }) {
   return (
     <View style={s.row}>
       <View style={s.iconBox}>
-        <SymbolIcon name="check_circle" size={18} color={employeePalette.muted} />
+        <SymbolIcon name="check_circle" size={18} color={p.muted} />
       </View>
       <View style={s.texts}>
         <View style={s.codeRow}>
@@ -42,6 +44,9 @@ function HistoryRow({ item }) {
 }
 
 export default function DeliveryHistoryScreen() {
+  const s = useLocalStyles();
+  const { p } = useTheme();
+  const commonStyles = useDeliveryCommonStyles();
   const { history, refreshing, onRefresh } = useDelivery();
 
   return (
@@ -60,12 +65,12 @@ export default function DeliveryHistoryScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={employeePalette.accent}
+            tintColor={p.accent}
           />
         }
         ListEmptyComponent={
           <View style={[commonStyles.emptyBox, { marginTop: 40 }]}>
-            <SymbolIcon name="history" size={28} color={employeePalette.muted} />
+            <SymbolIcon name="history" size={28} color={p.muted} />
             <Text style={commonStyles.emptyText}>No tienes entregas registradas aún.</Text>
           </View>
         }
@@ -74,14 +79,14 @@ export default function DeliveryHistoryScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: employeePalette.bg },
+const useLocalStyles = makeStyles(({ p }) => ({
+  screen: { flex: 1, backgroundColor: p.bg },
   header: { paddingTop: 10, paddingHorizontal: 18, paddingBottom: 12 },
   title: {
     fontFamily: fonts.sansBold,
     fontSize: 21,
     letterSpacing: -0.525,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   list: { paddingHorizontal: 18, paddingBottom: 24, flexGrow: 1 },
   sep: { height: 8 },
@@ -89,9 +94,9 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 18,
     paddingVertical: 13,
     paddingHorizontal: 14,
@@ -100,25 +105,25 @@ const s = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: employeePalette.surface2,
+    backgroundColor: p.surface2,
     alignItems: "center",
     justifyContent: "center",
   },
   texts: { flex: 1, minWidth: 0, gap: 3 },
   codeRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  code: { fontFamily: fonts.monoMedium, fontSize: 13.5, color: employeePalette.ink },
+  code: { fontFamily: fonts.monoMedium, fontSize: 13.5, color: p.ink },
   chip: {
     fontFamily: fonts.mono,
     fontSize: 9,
     letterSpacing: 0.54,
-    backgroundColor: employeePalette.surface2,
+    backgroundColor: p.surface2,
     borderRadius: 999,
     paddingVertical: 2,
     paddingHorizontal: 7,
-    color: employeePalette.muted,
+    color: p.muted,
   },
-  address: { fontFamily: fonts.sans, fontSize: 11, color: employeePalette.muted },
+  address: { fontFamily: fonts.sans, fontSize: 11, color: p.muted },
   right: { alignItems: "flex-end", gap: 2 },
-  amount: { fontFamily: fonts.monoMedium, fontSize: 13, color: employeePalette.ink },
-  time: { fontFamily: fonts.mono, fontSize: 10, color: employeePalette.muted },
-});
+  amount: { fontFamily: fonts.monoMedium, fontSize: 13, color: p.ink },
+  time: { fontFamily: fonts.mono, fontSize: 10, color: p.muted },
+}));

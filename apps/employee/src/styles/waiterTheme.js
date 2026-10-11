@@ -64,7 +64,20 @@ export const TABLE_STATE = {
 
 export const TABLE_STATE_ORDER = ['libre', 'ocupada', 'reservada'];
 
-export const getTableState = (status) => TABLE_STATE[status] || TABLE_STATE.libre;
+// En modo oscuro los rellenos pastel se vuelven tonos profundos del mismo
+// color, y la tinta se aclara para seguir leyéndose.
+const TABLE_STATE_DARK = {
+  libre: { ...TABLE_STATE.libre, tint: "rgba(46,157,91,0.2)", fill: "#1D3426", ink: "#8FD6A8" },
+  ocupada: TABLE_STATE.ocupada,
+  reservada: { ...TABLE_STATE.reservada, tint: "rgba(217,143,43,0.2)", fill: "#3A2C16", ink: "#F0C27A" },
+};
+
+export const getTableStates = (isDark = false) => (isDark ? TABLE_STATE_DARK : TABLE_STATE);
+
+export const getTableState = (status, isDark = false) => {
+  const states = getTableStates(isDark);
+  return states[status] || states.libre;
+};
 
 // Plantas del local (tablesModel.TABLE_FLOORS) y zonas (TABLE_ZONES).
 export const FLOORS = [

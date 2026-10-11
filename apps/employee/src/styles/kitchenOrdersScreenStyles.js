@@ -1,11 +1,10 @@
-import { StyleSheet } from "react-native";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { makeStyles } from "../theme/ThemeContext";
 import { fonts } from "./fonts";
 
-export default StyleSheet.create({
+export default makeStyles(({ p }) => ({
   container: {
     flex: 1,
-    backgroundColor: employeePalette.bg,
+    backgroundColor: p.bg,
   },
   filtersScroll: {
     flexGrow: 0,
@@ -19,21 +18,21 @@ export default StyleSheet.create({
     paddingBottom: 10,
   },
   filterChip: {
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 999,
     paddingVertical: 7,
     paddingHorizontal: 12,
   },
   filterChipActive: {
-    backgroundColor: employeePalette.accent,
-    borderColor: employeePalette.accent,
+    backgroundColor: p.accent,
+    borderColor: p.accent,
   },
   filterText: {
     fontFamily: fonts.sans,
     fontSize: 12,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   filterTextActive: {
     fontFamily: fonts.sansBold,
@@ -57,14 +56,14 @@ export default StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: 13,
     lineHeight: 18,
-    color: employeePalette.muted,
+    color: p.muted,
     textAlign: "center",
   },
   retryButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 7,
-    backgroundColor: employeePalette.accent,
+    backgroundColor: p.accent,
     borderRadius: 14,
     paddingVertical: 10,
     paddingHorizontal: 18,
@@ -74,4 +73,4 @@ export default StyleSheet.create({
     fontSize: 13,
     color: "#FFFFFF",
   },
-});
+}));

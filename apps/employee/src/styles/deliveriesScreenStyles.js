@@ -1,9 +1,8 @@
-import { StyleSheet } from "react-native";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { makeStyles } from "../theme/ThemeContext";
 import { fonts } from "./fonts";
 import { DELIVERY_GREEN } from "./deliveryCommonStyles";
 
-export default StyleSheet.create({
+export default makeStyles(({ p }) => ({
   header: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -20,13 +19,13 @@ export default StyleSheet.create({
   eyebrow: {
     fontFamily: fonts.mono,
     fontSize: 10.5,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   title: {
     fontFamily: fonts.sansBold,
     fontSize: 21,
     letterSpacing: -0.525,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   shiftPill: {
     flexDirection: "row",
@@ -38,9 +37,9 @@ export default StyleSheet.create({
     paddingHorizontal: 12,
   },
   shiftPillOff: {
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     paddingVertical: 6,
     paddingHorizontal: 11,
   },
@@ -51,7 +50,7 @@ export default StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   shiftDotOff: {
-    backgroundColor: employeePalette.muted,
+    backgroundColor: p.muted,
   },
   shiftText: {
     fontFamily: fonts.monoMedium,
@@ -59,7 +58,7 @@ export default StyleSheet.create({
     color: "#FFFFFF",
   },
   shiftTextOff: {
-    color: employeePalette.muted,
+    color: p.muted,
   },
 
   content: {
@@ -69,9 +68,9 @@ export default StyleSheet.create({
   },
 
   activeCard: {
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1.5,
-    borderColor: employeePalette.accent,
+    borderColor: p.accent,
     borderRadius: 20,
     overflow: "hidden",
   },
@@ -96,7 +95,7 @@ export default StyleSheet.create({
   code: {
     fontFamily: fonts.monoMedium,
     fontSize: 16,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   badge: {
     borderRadius: 999,
@@ -113,7 +112,7 @@ export default StyleSheet.create({
   activeSubtitle: {
     fontFamily: fonts.sans,
     fontSize: 11.5,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   amountBox: {
     alignItems: "flex-end",
@@ -122,15 +121,15 @@ export default StyleSheet.create({
   amount: {
     fontFamily: fonts.monoMedium,
     fontSize: 15,
-    color: employeePalette.price,
+    color: p.price,
   },
   amountPaid: {
-    color: employeePalette.muted,
+    color: p.muted,
   },
   amountLabel: {
     fontFamily: fonts.mono,
     fontSize: 10,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   activeRoute: {
     flexDirection: "row",
@@ -146,12 +145,12 @@ export default StyleSheet.create({
   routeKm: {
     fontFamily: fonts.monoMedium,
     fontSize: 14,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   routeMin: {
     fontFamily: fonts.mono,
     fontSize: 10,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   activeAction: {
     paddingHorizontal: 14,
@@ -162,7 +161,7 @@ export default StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: employeePalette.accent,
+    backgroundColor: p.accent,
     borderRadius: 14,
     padding: 13,
   },
@@ -172,13 +171,93 @@ export default StyleSheet.create({
     color: "#FFFFFF",
   },
 
+  packageReason: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginHorizontal: 14,
+    marginBottom: 10,
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: p.accentSoft,
+  },
+  packageReasonText: {
+    flex: 1,
+    fontFamily: fonts.sans,
+    fontSize: 11.5,
+    lineHeight: 16,
+    color: p.ink,
+  },
+  packageReasonLabel: {
+    fontFamily: fonts.sansBold,
+    color: p.accent,
+  },
+  stopList: {
+    marginHorizontal: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: p.line,
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  stopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 11,
+    borderBottomWidth: 1,
+    borderBottomColor: p.line,
+    backgroundColor: p.surface,
+  },
+  stopRowCurrent: {
+    backgroundColor: p.warnSurface,
+  },
+  stopNumber: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: p.ink,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stopNumberCurrent: {
+    backgroundColor: p.accent,
+    borderColor: p.accent,
+  },
+  stopNumberDone: {
+    backgroundColor: DELIVERY_GREEN,
+    borderColor: DELIVERY_GREEN,
+  },
+  stopNumberText: {
+    fontFamily: fonts.monoMedium,
+    fontSize: 11.5,
+    color: p.ink,
+  },
+  stopDoneText: {
+    color: p.muted,
+    textDecorationLine: "line-through",
+  },
+  stopAmount: {
+    fontFamily: fonts.monoMedium,
+    fontSize: 12,
+    color: p.price,
+  },
+  queueHint: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    color: p.muted,
+    marginTop: -6,
+  },
+
   pendingRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 18,
     paddingVertical: 13,
     paddingHorizontal: 14,
@@ -187,7 +266,7 @@ export default StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 13,
-    backgroundColor: employeePalette.surface2,
+    backgroundColor: p.surface2,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -204,10 +283,10 @@ export default StyleSheet.create({
   pendingCode: {
     fontFamily: fonts.monoMedium,
     fontSize: 13.5,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   kmChip: {
-    backgroundColor: employeePalette.surface2,
+    backgroundColor: p.surface2,
     borderRadius: 999,
     paddingVertical: 2,
     paddingHorizontal: 7,
@@ -216,12 +295,12 @@ export default StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 9,
     letterSpacing: 0.54,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   pendingSubtitle: {
     fontFamily: fonts.sans,
     fontSize: 11,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   pendingRight: {
     alignItems: "flex-end",
@@ -230,11 +309,11 @@ export default StyleSheet.create({
   pendingAmount: {
     fontFamily: fonts.monoMedium,
     fontSize: 13,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   pendingWait: {
     fontFamily: fonts.sansBold,
     fontSize: 11,
-    color: employeePalette.warnInk,
+    color: p.warnInk,
   },
-});
+}));

@@ -2,14 +2,14 @@ import React, { useMemo, useState } from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import SymbolIcon from "../commons/SymbolIcon";
 import TableSummaryHeader from "./TableSummaryHeader";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import {
   IN_KITCHEN_STATUSES,
   orderCode,
   formatMoney,
   pluralize,
 } from "../../constants/waiterStatus";
-import styles from "../../styles/waiterSheetContentStyles";
+import useWaiterSheetContentStyles from "../../styles/waiterSheetContentStyles";
+import { useTheme } from "../../theme/ThemeContext";
 
 const PAYMENT_METHODS = [
   { key: "cash", label: "Efectivo", icon: "payments" },
@@ -17,6 +17,8 @@ const PAYMENT_METHODS = [
 ];
 
 export default function ChargeTableSheet({ table, busy, onBack, onConfirm }) {
+  const { p } = useTheme();
+  const styles = useWaiterSheetContentStyles();
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const orders = table.activeOrders || [];
 
@@ -37,7 +39,7 @@ export default function ChargeTableSheet({ table, busy, onBack, onConfirm }) {
         <Text style={styles.boxLabel}>DETALLE DE LA CUENTA</Text>
         {orders.map((order) => (
           <View key={order._id} style={styles.boxRow}>
-            <SymbolIcon name="receipt_long" size={16} color={employeePalette.muted} />
+            <SymbolIcon name="receipt_long" size={16} color={p.muted} />
             <Text style={styles.boxRowText} numberOfLines={1}>
               {orderCode(order) || "Comanda"} · {pluralize(order.itemCount || 0, "platillo")}
             </Text>
@@ -53,7 +55,7 @@ export default function ChargeTableSheet({ table, busy, onBack, onConfirm }) {
 
       {inKitchen > 0 && (
         <View style={styles.warnBox}>
-          <SymbolIcon name="warning" size={16} color={employeePalette.warnInk} />
+          <SymbolIcon name="warning" size={16} color={p.warnInk} />
           <Text style={styles.warnText}>
             {inKitchen === 1 ? "Hay 1 comanda que sigue" : `Hay ${inKitchen} comandas que siguen`} en cocina.
             Al cobrar se marcarán como servidas.
@@ -73,13 +75,13 @@ export default function ChargeTableSheet({ table, busy, onBack, onConfirm }) {
               activeOpacity={0.7}
             >
               <View style={styles.actionIconBox}>
-                <SymbolIcon name={method.icon} size={19} color={employeePalette.accent} />
+                <SymbolIcon name={method.icon} size={19} color={p.accent} />
               </View>
               <Text style={[styles.actionLabel, styles.actionTexts]}>{method.label}</Text>
               <SymbolIcon
                 name={selected ? "check_circle" : "chevron_right"}
                 size={selected ? 19 : 17}
-                color={selected ? employeePalette.accent : employeePalette.muted}
+                color={selected ? p.accent : p.muted}
               />
             </TouchableOpacity>
           );

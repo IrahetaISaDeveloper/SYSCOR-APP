@@ -1,18 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Image,
-  ActivityIndicator,
-  BackHandler,
-  RefreshControl,
-  Alert,
-  StyleSheet,
-  useWindowDimensions,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator, BackHandler, RefreshControl, Alert, useWindowDimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, usePreventRemove } from '@react-navigation/native';
@@ -21,12 +8,15 @@ import { textStyles } from '@syscor/shared/src/styles/typography';
 import { useAuthMetrics } from '@syscor/shared/src/styles/authTheme';
 import useWaiterMenu, { normalizeText } from '../../hooks/useWaiterMenu';
 import { MENU_CATEGORIES } from '../../constants/menuCategories';
-import { waiterColors as c, getTableState } from '../../styles/waiterTheme';
+import { getTableState } from '../../styles/waiterTheme';
 import OrderReviewSheet from '../../components/waiter/OrderReviewSheet';
 import ProductCustomizeSheet from '../../components/waiter/ProductCustomizeSheet';
 import { formatMoney } from '../../utils/productOptions';
+import { useTheme, makeStyles } from "../../theme/ThemeContext";
 
-const PILL = '#1C1C1E';
+// Píldora flotante del pedido: casi negra en claro; en oscuro, un café más
+// claro que el fondo para que no desaparezca.
+const PILL = { light: '#1C1C1E', dark: '#3A312B' };
 
 // Menú para tomar la comanda de una mesa. Mismo formato que el menú del
 // cliente (buscador, tarjetas de categoría y rejilla de platillos), pero:
@@ -38,6 +28,8 @@ const PILL = '#1C1C1E';
 //     leérselos al cliente;
 //   - el precio va junto al nombre, como en el menú del cliente.
 export default function WaiterMenuScreen({ navigation, route }) {
+  const { c, isDark } = useTheme();
+  const styles = useStyles();
   const table = route.params?.table || {};
   const { ms, gutter } = useAuthMetrics();
   const insets = useSafeAreaInsets();
@@ -57,7 +49,7 @@ export default function WaiterMenuScreen({ navigation, route }) {
   const menu = useWaiterMenu(table);
   const { products, loading, error, reload, itemCount, quantityOf, changeQuantity } = menu;
 
-  const state = getTableState(table.status);
+  const state = getTableState(table.status, isDark);
   const query = normalizeText(searchText.trim());
   const searching = query.length > 0;
 
@@ -397,6 +389,8 @@ export default function WaiterMenuScreen({ navigation, route }) {
 const SHADE_STEPS = Array.from({ length: 14 }, (_, i) => `${Math.round(75 - i * 5)}%`);
 
 function CategoryCard({ category, count, ms, cardWidth, onPress }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   const cardHeight = Math.round(cardWidth * 0.95);
   return (
     <TouchableOpacity
@@ -429,6 +423,8 @@ function CategoryCard({ category, count, ms, cardWidth, onPress }) {
 // cliente; abajo, en lugar del precio, el control para agregarlo a la orden.
 // Tocar la tarjeta suma uno, o abre la personalización si tiene opciones.
 function ProductCard({ product, quantity, onChange, onCustomize, hasInfo, ms, cardWidth }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   const selected = quantity > 0;
   const custom = product.customizable;
   return (
@@ -513,7 +509,7 @@ function ProductCard({ product, quantity, onChange, onCustomize, hasInfo, ms, ca
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ c, p, isDark }) => ({
   container: {
     flex: 1,
     backgroundColor: c.background,
@@ -588,7 +584,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F4F1EB',
+    backgroundColor: c.surfaceMuted,
   },
   fill: {
     width: '100%',
@@ -636,7 +632,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: PILL,
+    backgroundColor: isDark ? PILL.dark : PILL.light,
     shadowColor: '#000',
     shadowOpacity: 0.25,
     shadowRadius: 12,
@@ -654,6 +650,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: c.primary,
     borderWidth: 2,
-    borderColor: PILL,
+    borderColor: isDark ? PILL.dark : PILL.light,
   },
-});
+}));

@@ -14,8 +14,8 @@ import useKeyboardHeight from '@syscor/shared/src/hooks/useKeyboardHeight';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { textStyles } from '@syscor/shared/src/styles/typography';
 import { useAuthMetrics } from '@syscor/shared/src/styles/authTheme';
-import { waiterColors as c } from '../../styles/waiterTheme';
 import { dishesOf, drinkOptionsOf, describeCustomization, formatMoney, ingredientGroupsOf } from '../../utils/productOptions';
+import { useTheme, makeStyles } from "../../theme/ThemeContext";
 
 const idOf = (item, fallback) => String(item?._id?.$oid || item?._id || fallback);
 
@@ -26,6 +26,8 @@ const idOf = (item, fallback) => String(item?._id?.$oid || item?._id || fallback
 // platillo), con sus precios. Abajo, la cantidad, un comentario y "Agregar"
 // con el total.
 export default function ProductCustomizeSheet({ product, extras, houseDrinks, onClose, onAdd }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   const { ms, gutter, height: windowHeight } = useAuthMetrics();
   const insets = useSafeAreaInsets();
   // Sin KeyboardAvoidingView: con edge-to-edge Android no redimensiona la
@@ -374,6 +376,8 @@ export default function ProductCustomizeSheet({ product, extras, houseDrinks, on
 }
 
 function Block({ title, subtitle, badge, children, ms }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   return (
     <View style={{ gap: ms(10) }}>
       <View style={[styles.row, { gap: ms(8) }]}>
@@ -393,6 +397,8 @@ function Block({ title, subtitle, badge, children, ms }) {
 }
 
 function CheckRow({ label, image, tag, checked, radio, onPress, ms }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -425,6 +431,8 @@ function CheckRow({ label, image, tag, checked, radio, onPress, ms }) {
 }
 
 function Chip({ label, active, onPress, ms }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -445,7 +453,7 @@ function Chip({ label, active, onPress, ms }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ c, p }) => ({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -457,7 +465,7 @@ const styles = StyleSheet.create({
   placeholder: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F4F1EB',
+    backgroundColor: c.surfaceMuted,
   },
   shade: {
     backgroundColor: 'rgba(0,0,0,0.35)',
@@ -516,4 +524,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: c.primary,
   },
-});
+}));

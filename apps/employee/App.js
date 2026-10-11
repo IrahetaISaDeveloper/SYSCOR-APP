@@ -1,7 +1,7 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -27,6 +27,7 @@ import WaiterProfileScreen from './src/screens/waiter/WaiterProfileScreen';
 import EmployeeTabBar from './src/components/commons/EmployeeTabBar';
 import WaiterTabBar from './src/components/waiter/WaiterTabBar';
 import { fontAssets } from './src/styles/fonts';
+import { ThemeModeProvider, useTheme } from './src/theme/ThemeContext';
 
 // Cocina
 import Orders from './src/screens/chef/Orders';
@@ -80,8 +81,9 @@ function WaiterTabNavigator() {
 }
 
 function WaiterNavigator() {
+  const { p } = useTheme();
   return (
-    <WaiterStack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F7F3E9' } }}>
+    <WaiterStack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: p.bg } }}>
       <WaiterStack.Screen name="WaiterTabs" component={WaiterTabNavigator} />
       <WaiterStack.Screen
         name="NewOrder"
@@ -119,10 +121,11 @@ function KitchenTabNavigator() {
 
 function RootNavigator() {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const { p } = useTheme();
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F0EB' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: p.bg }}>
         <ActivityIndicator size="large" color="#EF4444" />
       </View>
     );
@@ -149,14 +152,30 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <EmployeeBootGate>
-          <NavigationContainer>
-            <StatusBar style="dark" />
-            <RootNavigator />
-          </NavigationContainer>
-        </EmployeeBootGate>
-      </AuthProvider>
+      <ThemeModeProvider>
+        <AuthProvider>
+          <EmployeeBootGate>
+            <ThemedNavigation />
+          </EmployeeBootGate>
+        </AuthProvider>
+      </ThemeModeProvider>
     </SafeAreaProvider>
+  );
+}
+
+// El tema de React Navigation pinta el fondo entre pantallas y durante las
+// transiciones; sin esto se ve un destello blanco en modo oscuro.
+function ThemedNavigation() {
+  const { isDark, c, p } = useTheme();
+  const base = isDark ? DarkTheme : DefaultTheme;
+  const navTheme = {
+    ...base,
+    colors: { ...base.colors, primary: c.primary, background: p.bg, card: p.surface, text: p.ink, border: p.line },
+  };
+  return (
+    <NavigationContainer theme={navTheme}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <RootNavigator />
+    </NavigationContainer>
   );
 }

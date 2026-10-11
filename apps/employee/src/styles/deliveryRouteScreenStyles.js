@@ -1,8 +1,8 @@
 import { StyleSheet } from "react-native";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { makeStyles } from "../theme/ThemeContext";
 import { fonts } from "./fonts";
 
-export default StyleSheet.create({
+export default makeStyles(({ p, isDark }) => ({
   content: {
     paddingTop: 6,
     paddingHorizontal: 18,
@@ -11,7 +11,7 @@ export default StyleSheet.create({
   },
 
   navCard: {
-    backgroundColor: employeePalette.ink,
+    backgroundColor: p.inverseBg,
     borderRadius: 22,
     padding: 17,
     gap: 13,
@@ -38,18 +38,18 @@ export default StyleSheet.create({
     fontFamily: fonts.sansBold,
     fontSize: 17,
     letterSpacing: -0.34,
-    color: employeePalette.bg,
+    color: p.inverseText,
   },
   navStreet: {
     fontFamily: fonts.sans,
     fontSize: 12,
-    color: employeePalette.bg,
+    color: p.inverseText,
     opacity: 0.72,
   },
   navDistance: {
     fontFamily: fonts.monoMedium,
     fontSize: 18,
-    color: employeePalette.bg,
+    color: p.inverseText,
   },
   navDivider: {
     height: 1,
@@ -74,7 +74,7 @@ export default StyleSheet.create({
   navMono: {
     fontFamily: fonts.mono,
     fontSize: 12,
-    color: employeePalette.bg,
+    color: p.inverseText,
   },
   navMonoDim: {
     opacity: 0.72,
@@ -84,9 +84,9 @@ export default StyleSheet.create({
   },
 
   progressCard: {
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 20,
     padding: 15,
     gap: 13,
@@ -95,7 +95,7 @@ export default StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 10,
     letterSpacing: 0.8,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   progressTrack: {
     flexDirection: "row",
@@ -123,9 +123,9 @@ export default StyleSheet.create({
   },
 
   destinationCard: {
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1.5,
-    borderColor: employeePalette.accent,
+    borderColor: p.accent,
     borderRadius: 20,
     padding: 15,
     gap: 9,
@@ -139,25 +139,25 @@ export default StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 10,
     letterSpacing: 0.7,
-    color: employeePalette.accent,
+    color: p.accent,
   },
   destinationAddress: {
     fontFamily: fonts.sansBold,
     fontSize: 15,
     letterSpacing: -0.15,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   destinationDetail: {
     fontFamily: fonts.sans,
     fontSize: 12,
     lineHeight: 17.4,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   destinationContact: {
     flexDirection: "row",
     alignItems: "center",
     gap: 9,
-    backgroundColor: employeePalette.surface2,
+    backgroundColor: p.surface2,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 11,
@@ -167,12 +167,12 @@ export default StyleSheet.create({
     flex: 1,
     fontFamily: fonts.sansMedium,
     fontSize: 12.5,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   destinationPhone: {
     fontFamily: fonts.mono,
     fontSize: 11,
-    color: employeePalette.muted,
+    color: p.muted,
   },
 
   actionsRow: {
@@ -185,9 +185,9 @@ export default StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 7,
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 16,
     padding: 13,
   },
@@ -200,8 +200,8 @@ export default StyleSheet.create({
     height: 210,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: employeePalette.line,
-    backgroundColor: employeePalette.surface2,
+    borderColor: p.line,
+    backgroundColor: p.surface2,
     overflow: "hidden",
   },
   map: {
@@ -222,22 +222,22 @@ export default StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     paddingHorizontal: 24,
-    backgroundColor: "rgba(247,243,233,0.86)",
+    backgroundColor: isDark ? "rgba(20,17,15,0.86)" : "rgba(247,243,233,0.86)",
   },
   mapOverlayText: {
     fontFamily: fonts.sans,
     fontSize: 12,
     lineHeight: 17,
     textAlign: "center",
-    color: employeePalette.muted,
+    color: p.muted,
   },
   mapRetry: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 999,
     paddingVertical: 7,
     paddingHorizontal: 13,
@@ -245,13 +245,13 @@ export default StyleSheet.create({
   mapRetryLabel: {
     fontFamily: fonts.sansBold,
     fontSize: 12,
-    color: employeePalette.accent,
+    color: p.accent,
   },
   permissionNote: {
     marginTop: -4,
     fontFamily: fonts.mono,
     fontSize: 10,
     letterSpacing: 0.4,
-    color: employeePalette.warnInk,
+    color: p.warnInk,
   },
-});
+}));

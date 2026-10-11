@@ -1,13 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-  StyleSheet,
-} from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons as Icon } from "@expo/vector-icons";
@@ -22,7 +14,8 @@ import WaiterFloorPlan from "../../components/waiterDashboard/WaiterFloorPlan";
 import TableListView from "../../components/waiterDashboard/TableListView";
 import TableActionsSheet from "../../components/waiterDashboard/TableActionsSheet";
 import ChargeTableSheet from "../../components/waiterDashboard/ChargeTableSheet";
-import { waiterColors as c, TABLE_STATE, TABLE_STATE_ORDER, FLOORS } from "../../styles/waiterTheme";
+import { TABLE_STATE, TABLE_STATE_ORDER, FLOORS, getTableStates } from "../../styles/waiterTheme";
+import { useTheme, makeStyles } from "../../theme/ThemeContext";
 
 // Rojo de las pestañas de planta (el mismo de las mesas ocupadas).
 const ACCENT = TABLE_STATE.ocupada.color;
@@ -40,6 +33,8 @@ const VIEW_MODES = [
 ];
 
 export default function WaiterDashboardScreen({ navigation, route }) {
+  const { c, isDark } = useTheme();
+  const styles = useStyles();
   const { ms, gutter } = useAuthMetrics();
   const { user } = useAuth();
   const firstName = getFirstName(user);
@@ -61,6 +56,8 @@ export default function WaiterDashboardScreen({ navigation, route }) {
     backToActions,
     clientLeft,
     chargeTable,
+    cashierOpen,
+    sendToCashier,
     markOccupied,
     reload,
   } = useWaiterDashboard();
@@ -138,6 +135,8 @@ export default function WaiterDashboardScreen({ navigation, route }) {
         onAddProducts={handleOpenOrder}
         onCharge={openCharge}
         onClientLeft={clientLeft}
+        cashierOpen={cashierOpen}
+        onSendToCashier={sendToCashier}
       />
     );
   };
@@ -198,7 +197,7 @@ export default function WaiterDashboardScreen({ navigation, route }) {
         {/* ── CONTEO POR ESTADO (todo el local) ── */}
         <View style={[styles.row, { gap: ms(7), marginTop: ms(14) }]}>
           {TABLE_STATE_ORDER.map((key) => {
-            const state = TABLE_STATE[key];
+            const state = getTableStates(isDark)[key];
             return (
               <View
                 key={key}
@@ -298,7 +297,7 @@ export default function WaiterDashboardScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ c }) => ({
   container: {
     flex: 1,
     backgroundColor: c.background,
@@ -341,4 +340,4 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: c.error,
   },
-});
+}));

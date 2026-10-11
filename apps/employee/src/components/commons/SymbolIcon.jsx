@@ -1,6 +1,7 @@
 import React from "react";
 import { Text } from "react-native";
 import { fonts } from "../../styles/fonts";
+import { useTheme } from "../../theme/ThemeContext";
 
 const GLYPHS = {
   account_circle: 0xf20b,
@@ -72,7 +73,9 @@ const GLYPHS = {
   where_to_vote: 0xe177,
 };
 
-export default function SymbolIcon({ name, size = 24, color = "#1B1613", style }) {
+// Sin `color`, toma el de la tinta del tema activo.
+export default function SymbolIcon({ name, size = 24, color, style }) {
+  const { p } = useTheme();
   const code = GLYPHS[name];
   if (!code) return null;
 
@@ -86,7 +89,7 @@ export default function SymbolIcon({ name, size = 24, color = "#1B1613", style }
           lineHeight: size,
           width: size,
           height: size,
-          color,
+          color: color || p.ink,
           textAlign: "center",
           includeFontPadding: false,
         },

@@ -3,13 +3,13 @@ import { View, Text, FlatList, ScrollView, TouchableOpacity, ActivityIndicator, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@syscor/shared/src/context/AuthContext';
 import { getFirstName } from '@syscor/shared/src/utils/userDisplay';
-import { employeePalette } from '@syscor/shared/src/styles/employeePalette';
 import useOrders from '../../hooks/useOrders';
 import KitchenHeader from '../../components/kitchen/KitchenHeader';
 import KitchenOrderCard from '../../components/kitchen/KitchenOrderCard';
 import SymbolIcon from '../../components/commons/SymbolIcon';
 import { KITCHEN_FILTERS } from '../../constants/kitchenStatus';
-import styles from '../../styles/kitchenOrdersScreenStyles';
+import useKitchenOrdersScreenStyles from '../../styles/kitchenOrdersScreenStyles';
+import { useTheme } from "../../theme/ThemeContext";
 
 const EMPTY_MESSAGES = {
   all: 'Aún no hay comandas registradas.',
@@ -22,6 +22,8 @@ const EMPTY_MESSAGES = {
 };
 
 export default function Orders() {
+  const { p } = useTheme();
+  const styles = useKitchenOrdersScreenStyles();
   const { user } = useAuth();
   const firstName = getFirstName(user);
 
@@ -46,7 +48,7 @@ export default function Orders() {
     if (isLoading && orders.length === 0) {
       return (
         <View style={styles.stateBox}>
-          <ActivityIndicator size="large" color={employeePalette.accent} />
+          <ActivityIndicator size="large" color={p.accent} />
           <Text style={styles.stateText}>Cargando comandas...</Text>
         </View>
       );
@@ -55,7 +57,7 @@ export default function Orders() {
     if (error && orders.length === 0) {
       return (
         <View style={styles.stateBox}>
-          <SymbolIcon name="cloud_off" size={40} color={employeePalette.muted} />
+          <SymbolIcon name="cloud_off" size={40} color={p.muted} />
           <Text style={styles.stateText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => reload()} activeOpacity={0.85}>
             <SymbolIcon name="refresh" size={16} color="#FFFFFF" />
@@ -75,8 +77,8 @@ export default function Orders() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={employeePalette.accent}
-            colors={[employeePalette.accent]}
+            tintColor={p.accent}
+            colors={[p.accent]}
           />
         }
         renderItem={({ item }) => (
@@ -89,7 +91,7 @@ export default function Orders() {
         )}
         ListEmptyComponent={
           <View style={styles.stateBox}>
-            <SymbolIcon name="task_alt" size={40} color={employeePalette.muted} />
+            <SymbolIcon name="task_alt" size={40} color={p.muted} />
             <Text style={styles.stateText}>{EMPTY_MESSAGES[activeFilter]}</Text>
           </View>
         }

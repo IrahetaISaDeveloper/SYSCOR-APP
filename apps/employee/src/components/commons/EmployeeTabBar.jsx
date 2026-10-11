@@ -2,10 +2,12 @@ import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import SymbolIcon from "./SymbolIcon";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
-import employeeTabBarStyles from "../../styles/employeeTabBarStyles";
+import useEmployeeTabBarStyles from "../../styles/employeeTabBarStyles";
+import { useTheme } from "../../theme/ThemeContext";
 
 export default function EmployeeTabBar({ state, descriptors, navigation }) {
+  const { p } = useTheme();
+  const employeeTabBarStyles = useEmployeeTabBarStyles();
   const insets = useSafeAreaInsets();
 
   return (
@@ -35,7 +37,7 @@ export default function EmployeeTabBar({ state, descriptors, navigation }) {
             <SymbolIcon
               name={options.tabBarIcon}
               size={21}
-              color={focused ? employeePalette.accent : employeePalette.muted}
+              color={focused ? p.accent : p.muted}
             />
             <Text style={[employeeTabBarStyles.label, focused && employeeTabBarStyles.labelActive]}>
               {options.tabBarLabel ?? route.name}

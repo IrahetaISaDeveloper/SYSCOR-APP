@@ -1,9 +1,10 @@
 import React from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import styles from "../../styles/deliveryCommonStyles";
+import useDeliveryCommonStyles from "../../styles/deliveryCommonStyles";
 
 export default function DeliveryFooter({ children, style }) {
+  const styles = useDeliveryCommonStyles();
   const insets = useSafeAreaInsets();
 
   return (

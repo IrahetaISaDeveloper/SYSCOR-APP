@@ -1,5 +1,6 @@
 export const DELIVERY_BADGE = {
-  available: { label: "POR SALIR", color: "#3A3A3A" },
+  available: { label: "EN ESPERA", color: "#3A3A3A" },
+  accepted: { label: "POR SALIR", color: "#8E2222" },
   on_route: { label: "EN RUTA", color: "#F39C12" },
   delivered: { label: "ENTREGADA", color: "#2ECC71" },
 };
@@ -69,3 +70,11 @@ export const platillosLabel = (items) => {
   const count = countItems(items);
   return `${count} ${count === 1 ? "platillo" : "platillos"}`;
 };
+
+// Estado del paquete que armó Chef Panchita
+export const PACKAGE_BADGE = {
+  assigned: { label: "LISTO PARA SALIR", color: "#8E2222" },
+  on_route: { label: "EN RUTA", color: "#F39C12" },
+};
+
+export const stopsLabel = (count) => `${count} ${count === 1 ? "parada" : "paradas"}`;

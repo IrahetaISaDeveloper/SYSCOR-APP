@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons as Icon, MaterialCommunityIcons } from '@expo/vector-icons';
 import { textStyles } from '@syscor/shared/src/styles/typography';
 import { useAuthMetrics } from '@syscor/shared/src/styles/authTheme';
-import { waiterColors as c } from '../../styles/waiterTheme';
+import { useTheme, makeStyles } from "../../theme/ThemeContext";
 
 // Barra inferior del mesero, con el mismo diseño que la de la app de
 // clientes: la pestaña principal (Mesas) va en un botón elevado al centro.
@@ -19,6 +19,8 @@ function TabIcon({ options, size, color }) {
 }
 
 export default function WaiterTabBar({ state, descriptors, navigation }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   const { ms } = useAuthMetrics();
   const insets = useSafeAreaInsets();
 
@@ -95,7 +97,7 @@ export default function WaiterTabBar({ state, descriptors, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ c }) => ({
   bar: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -117,4 +119,4 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
   },
-});
+}));

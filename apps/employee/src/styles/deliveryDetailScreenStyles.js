@@ -1,8 +1,7 @@
-import { StyleSheet } from "react-native";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { makeStyles } from "../theme/ThemeContext";
 import { fonts } from "./fonts";
 
-export default StyleSheet.create({
+export default makeStyles(({ p }) => ({
   content: {
     paddingTop: 6,
     paddingHorizontal: 18,
@@ -14,7 +13,7 @@ export default StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    backgroundColor: employeePalette.surface2,
+    backgroundColor: p.surface2,
     borderRadius: 20,
     padding: 15,
   },
@@ -22,7 +21,7 @@ export default StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 16,
-    backgroundColor: employeePalette.accent,
+    backgroundColor: p.accent,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -35,12 +34,12 @@ export default StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 10,
     letterSpacing: 0.7,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   summaryValue: {
     fontFamily: fonts.sansBold,
     fontSize: 15,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   summaryAmountBox: {
     alignItems: "flex-end",
@@ -49,21 +48,21 @@ export default StyleSheet.create({
   summaryAmount: {
     fontFamily: fonts.monoMedium,
     fontSize: 17,
-    color: employeePalette.price,
+    color: p.price,
   },
   summaryAmountPaid: {
-    color: employeePalette.muted,
+    color: p.muted,
   },
   summaryPayment: {
     fontFamily: fonts.mono,
     fontSize: 9.5,
-    color: employeePalette.muted,
+    color: p.muted,
   },
 
   card: {
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 20,
     padding: 15,
   },
@@ -74,7 +73,7 @@ export default StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 10,
     letterSpacing: 0.8,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   itemRow: {
     flexDirection: "row",
@@ -84,24 +83,24 @@ export default StyleSheet.create({
   itemQty: {
     fontFamily: fonts.monoMedium,
     fontSize: 12.5,
-    color: employeePalette.accent,
+    color: p.accent,
   },
   itemName: {
     flex: 1,
     fontFamily: fonts.sans,
     fontSize: 13,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   divider: {
     height: 1,
-    backgroundColor: employeePalette.line,
+    backgroundColor: p.line,
   },
   noteBox: {
     flexDirection: "row",
     gap: 9,
-    backgroundColor: employeePalette.warnSurface,
+    backgroundColor: p.warnSurface,
     borderWidth: 1,
-    borderColor: employeePalette.warnLine,
+    borderColor: p.warnLine,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 11,
@@ -112,16 +111,16 @@ export default StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: 11.5,
     lineHeight: 16,
-    color: employeePalette.warnText,
+    color: p.warnText,
   },
 
   customerCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: 13,
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 18,
     paddingVertical: 13,
     paddingHorizontal: 14,
@@ -130,7 +129,7 @@ export default StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: employeePalette.surface2,
+    backgroundColor: p.surface2,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -142,19 +141,19 @@ export default StyleSheet.create({
   customerName: {
     fontFamily: fonts.sansBold,
     fontSize: 13.5,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   customerPhone: {
     fontFamily: fonts.mono,
     fontSize: 11,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   callButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: employeePalette.accentSoft,
+    backgroundColor: p.accentSoft,
     alignItems: "center",
     justifyContent: "center",
   },
-});
+}));

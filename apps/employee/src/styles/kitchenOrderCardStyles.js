@@ -1,18 +1,17 @@
-import { StyleSheet } from "react-native";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { makeStyles } from "../theme/ThemeContext";
 import { fonts } from "./fonts";
 
-export default StyleSheet.create({
+export default makeStyles(({ p, isDark }) => ({
   card: {
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 20,
     overflow: "hidden",
   },
   cardLate: {
     borderWidth: 1.5,
-    borderColor: employeePalette.price,
+    borderColor: p.price,
   },
   cardCancelled: {
     opacity: 0.65,
@@ -43,7 +42,7 @@ export default StyleSheet.create({
   displayId: {
     fontFamily: fonts.monoMedium,
     fontSize: 16,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   badge: {
     borderRadius: 999,
@@ -66,7 +65,7 @@ export default StyleSheet.create({
     flexShrink: 1,
     fontFamily: fonts.sans,
     fontSize: 11.5,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   topRight: {
     alignItems: "flex-end",
@@ -80,22 +79,22 @@ export default StyleSheet.create({
   clock: {
     fontFamily: fonts.monoMedium,
     fontSize: 15,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   clockLate: {
-    color: employeePalette.price,
+    color: p.price,
   },
   ago: {
     fontFamily: fonts.mono,
     fontSize: 10,
-    color: employeePalette.muted,
+    color: p.muted,
   },
 
   assigneeRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 7,
-    backgroundColor: employeePalette.surface2,
+    backgroundColor: p.surface2,
     paddingVertical: 7,
     paddingHorizontal: 14,
   },
@@ -103,13 +102,13 @@ export default StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 10,
     letterSpacing: 0.6,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   assigneeName: {
     flexShrink: 1,
     fontFamily: fonts.sansBold,
     fontSize: 11.5,
-    color: employeePalette.ink,
+    color: p.ink,
   },
 
   sectionHeader: {
@@ -124,7 +123,7 @@ export default StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 10,
     letterSpacing: 0.8,
-    color: employeePalette.muted,
+    color: p.muted,
   },
 
   items: {
@@ -134,7 +133,7 @@ export default StyleSheet.create({
   },
   itemBox: {
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 12,
     overflow: "hidden",
   },
@@ -154,21 +153,21 @@ export default StyleSheet.create({
     flex: 1,
     fontFamily: fonts.sansBold,
     fontSize: 13.5,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   notes: {
     flexDirection: "row",
     gap: 7,
-    backgroundColor: employeePalette.warnSurface,
+    backgroundColor: p.warnSurface,
     borderTopWidth: 1,
-    borderTopColor: employeePalette.warnLine,
+    borderTopColor: p.warnLine,
     paddingVertical: 7,
     paddingHorizontal: 11,
   },
   notesStandalone: {
     borderTopWidth: 0,
     borderWidth: 1,
-    borderColor: employeePalette.warnLine,
+    borderColor: p.warnLine,
     borderRadius: 12,
   },
   notesTexts: {
@@ -179,13 +178,13 @@ export default StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 9.5,
     letterSpacing: 0.57,
-    color: employeePalette.warnInk,
+    color: p.warnInk,
   },
   notesText: {
     fontFamily: fonts.sansMedium,
     fontStyle: "italic",
     fontSize: 11.5,
-    color: employeePalette.warnText,
+    color: p.warnText,
   },
 
   actions: {
@@ -199,7 +198,7 @@ export default StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#E3E7EF",
+    backgroundColor: isDark ? "#252B38" : "#E3E7EF",
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -208,7 +207,7 @@ export default StyleSheet.create({
     flex: 1,
     fontFamily: fonts.sansMedium,
     fontSize: 12,
-    color: "#3D4A66",
+    color: isDark ? "#B7C3DE" : "#3D4A66",
   },
   button: {
     flex: 1,
@@ -222,14 +221,14 @@ export default StyleSheet.create({
   },
   buttonOutline: {
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     padding: 11,
   },
   buttonAccent: {
-    backgroundColor: employeePalette.accent,
+    backgroundColor: p.accent,
   },
   buttonInk: {
-    backgroundColor: employeePalette.ink,
+    backgroundColor: p.inverseBg,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -240,9 +239,9 @@ export default StyleSheet.create({
     color: "#FFFFFF",
   },
   buttonLabelMuted: {
-    color: employeePalette.muted,
+    color: p.muted,
   },
   buttonLabelInk: {
-    color: employeePalette.bg,
+    color: p.inverseText,
   },
-});
+}));

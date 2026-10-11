@@ -1,14 +1,16 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import SymbolIcon from "../commons/SymbolIcon";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import { KITCHEN_STATUS, ITEM_TYPE_DOT, ACTIVE_KITCHEN_STATUSES } from "../../constants/kitchenStatus";
-import styles from "../../styles/kitchenOrderCardStyles";
+import useKitchenOrderCardStyles from "../../styles/kitchenOrderCardStyles";
+import { useTheme } from "../../theme/ThemeContext";
 
 function NotesBox({ label, text, standalone = false }) {
+  const { p } = useTheme();
+  const styles = useKitchenOrderCardStyles();
   return (
     <View style={[styles.notes, standalone && styles.notesStandalone]}>
-      <SymbolIcon name="edit" size={14} color={employeePalette.warnInk} />
+      <SymbolIcon name="edit" size={14} color={p.warnInk} />
       <View style={styles.notesTexts}>
         <Text style={styles.notesLabel}>{label}</Text>
         <Text style={styles.notesText}>{text}</Text>
@@ -18,11 +20,13 @@ function NotesBox({ label, text, standalone = false }) {
 }
 
 function ActionButton({ variant, icon, label, onPress, disabled, loading }) {
+  const { p } = useTheme();
+  const styles = useKitchenOrderCardStyles();
   const variantStyle =
     variant === "accent" ? styles.buttonAccent : variant === "ink" ? styles.buttonInk : styles.buttonOutline;
   const labelStyle =
     variant === "outline" ? styles.buttonLabelMuted : variant === "ink" ? styles.buttonLabelInk : null;
-  const iconColor = variant === "ink" ? employeePalette.bg : "#FFFFFF";
+  const iconColor = variant === "ink" ? p.inverseText : "#FFFFFF";
 
   return (
     <TouchableOpacity
@@ -32,7 +36,7 @@ function ActionButton({ variant, icon, label, onPress, disabled, loading }) {
       activeOpacity={0.85}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={variant === "outline" ? employeePalette.muted : iconColor} />
+        <ActivityIndicator size="small" color={variant === "outline" ? p.muted : iconColor} />
       ) : (
         <>
           {icon ? <SymbolIcon name={icon} size={16} color={iconColor} /> : null}
@@ -44,6 +48,8 @@ function ActionButton({ variant, icon, label, onPress, disabled, loading }) {
 }
 
 export default function KitchenOrderCard({ order, updating, onAdvance, onResume }) {
+  const { p, isDark } = useTheme();
+  const styles = useKitchenOrderCardStyles();
   const meta = KITCHEN_STATUS[order.status] || KITCHEN_STATUS.pending;
   const isLate = order.status === "late";
   const isActive = ACTIVE_KITCHEN_STATUSES.includes(order.status);
@@ -99,14 +105,14 @@ export default function KitchenOrderCard({ order, updating, onAdvance, onResume 
             </View>
           </View>
           <View style={styles.contextRow}>
-            <SymbolIcon name={order.context.icon} size={13} color={employeePalette.muted} />
+            <SymbolIcon name={order.context.icon} size={13} color={p.muted} />
             <Text style={styles.contextText} numberOfLines={1}>{order.context.text}</Text>
           </View>
         </View>
 
         <View style={styles.topRight}>
           <View style={styles.clockRow}>
-            <SymbolIcon name="schedule" size={15} color={isLate ? employeePalette.price : employeePalette.ink} />
+            <SymbolIcon name="schedule" size={15} color={isLate ? p.price : p.ink} />
             <Text style={[styles.clock, isLate && styles.clockLate]}>{order.clock}</Text>
           </View>
           <Text style={styles.ago}>{order.agoLabel}</Text>
@@ -114,13 +120,13 @@ export default function KitchenOrderCard({ order, updating, onAdvance, onResume 
       </View>
 
       <View style={styles.assigneeRow}>
-        <SymbolIcon name="account_circle" size={15} color={employeePalette.muted} />
+        <SymbolIcon name="account_circle" size={15} color={p.muted} />
         <Text style={styles.assigneeLabel}>{order.assignee.label}</Text>
         <Text style={styles.assigneeName} numberOfLines={1}>{order.assignee.name}</Text>
       </View>
 
       <View style={styles.sectionHeader}>
-        <SymbolIcon name="restaurant" size={14} color={employeePalette.muted} />
+        <SymbolIcon name="restaurant" size={14} color={p.muted} />
         <Text style={styles.sectionLabel}>QUÉ COCINAR</Text>
       </View>
 
@@ -128,9 +134,9 @@ export default function KitchenOrderCard({ order, updating, onAdvance, onResume 
         {order.items.map((item) => (
           <View key={item.id} style={styles.itemBox}>
             <View style={styles.itemRow}>
-              <View style={[styles.itemDot, { backgroundColor: ITEM_TYPE_DOT[item.itemType] || employeePalette.accent }]} />
+              <View style={[styles.itemDot, { backgroundColor: ITEM_TYPE_DOT[item.itemType] || p.accent }]} />
               <Text style={styles.itemName}>{item.label}</Text>
-              {item.notes ? <SymbolIcon name="error" size={16} color={employeePalette.warnInk} /> : null}
+              {item.notes ? <SymbolIcon name="error" size={16} color={p.warnInk} /> : null}
             </View>
             {item.notes ? <NotesBox label="ESPECIFICACIONES" text={item.notes} /> : null}
           </View>
@@ -141,7 +147,7 @@ export default function KitchenOrderCard({ order, updating, onAdvance, onResume 
       {order.status === "waiting" ? (
         <View style={styles.actions}>
           <View style={styles.waitingBox}>
-            <SymbolIcon name="schedule" size={16} color="#5B6B8C" />
+            <SymbolIcon name="schedule" size={16} color={isDark ? "#B7C3DE" : "#5B6B8C"} />
             <Text style={styles.waitingText}>
               Segundo tiempo: espera a que el mesero lo marche. Aparecerá como pendiente.
             </Text>

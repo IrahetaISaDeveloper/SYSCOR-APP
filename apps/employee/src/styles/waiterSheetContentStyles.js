@@ -1,8 +1,7 @@
-import { StyleSheet } from "react-native";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { makeStyles } from "../theme/ThemeContext";
 import { fonts } from "./fonts";
 
-export default StyleSheet.create({
+export default makeStyles(({ p }) => ({
   summaryRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -12,7 +11,7 @@ export default StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: employeePalette.accent,
+    backgroundColor: p.accent,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -40,12 +39,12 @@ export default StyleSheet.create({
     fontFamily: fonts.sansBold,
     fontSize: 18,
     letterSpacing: -0.36,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   summaryInfo: {
     fontFamily: fonts.sans,
     fontSize: 12,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   summaryTotals: {
     alignItems: "flex-end",
@@ -54,16 +53,16 @@ export default StyleSheet.create({
   totalAmount: {
     fontFamily: fonts.monoMedium,
     fontSize: 16,
-    color: employeePalette.price,
+    color: p.price,
   },
   totalLabel: {
     fontFamily: fonts.mono,
     fontSize: 9.5,
-    color: employeePalette.muted,
+    color: p.muted,
   },
 
   infoBox: {
-    backgroundColor: employeePalette.surface2,
+    backgroundColor: p.surface2,
     borderRadius: 16,
     paddingVertical: 13,
     paddingHorizontal: 14,
@@ -73,7 +72,7 @@ export default StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 10,
     letterSpacing: 0.8,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   boxRow: {
     flexDirection: "row",
@@ -84,7 +83,7 @@ export default StyleSheet.create({
     flex: 1,
     fontFamily: fonts.sans,
     fontSize: 12.5,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   boxRowStatus: {
     fontFamily: fonts.mono,
@@ -93,11 +92,11 @@ export default StyleSheet.create({
   boxRowAmount: {
     fontFamily: fonts.mono,
     fontSize: 12,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   boxDivider: {
     height: 1,
-    backgroundColor: employeePalette.line,
+    backgroundColor: p.line,
     marginVertical: 2,
   },
   boxTotalLabel: {
@@ -105,12 +104,12 @@ export default StyleSheet.create({
     fontFamily: fonts.monoMedium,
     fontSize: 11,
     letterSpacing: 0.5,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   boxTotalAmount: {
     fontFamily: fonts.monoMedium,
     fontSize: 15,
-    color: employeePalette.price,
+    color: p.price,
   },
 
   actions: {
@@ -121,14 +120,14 @@ export default StyleSheet.create({
     alignItems: "center",
     gap: 13,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 13,
   },
   actionRowSelected: {
     borderWidth: 1.5,
-    borderColor: employeePalette.accent,
+    borderColor: p.accent,
     paddingVertical: 11.5,
     paddingHorizontal: 12.5,
   },
@@ -136,12 +135,12 @@ export default StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 13,
-    backgroundColor: employeePalette.accentSoft,
+    backgroundColor: p.accentSoft,
     alignItems: "center",
     justifyContent: "center",
   },
   actionIconBoxWarn: {
-    backgroundColor: employeePalette.warnSoft,
+    backgroundColor: p.warnSoft,
   },
   actionTexts: {
     flex: 1,
@@ -149,15 +148,15 @@ export default StyleSheet.create({
   actionLabel: {
     fontFamily: fonts.sansBold,
     fontSize: 13.5,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   actionLabelWarn: {
-    color: employeePalette.warnInk,
+    color: p.warnInk,
   },
   actionHint: {
     fontFamily: fonts.sans,
     fontSize: 11.5,
-    color: employeePalette.muted,
+    color: p.muted,
     marginTop: 2,
   },
 
@@ -165,9 +164,9 @@ export default StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 11,
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 14,
@@ -176,28 +175,28 @@ export default StyleSheet.create({
     flex: 1,
     fontFamily: fonts.sans,
     fontSize: 13.5,
-    color: employeePalette.ink,
+    color: p.ink,
     padding: 0,
   },
   inputRowLabel: {
     flex: 1,
     fontFamily: fonts.sans,
     fontSize: 13.5,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   inputTag: {
     fontFamily: fonts.mono,
     fontSize: 11,
-    color: employeePalette.muted,
+    color: p.muted,
   },
 
   warnBox: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 9,
-    backgroundColor: employeePalette.warnSurface,
+    backgroundColor: p.warnSurface,
     borderWidth: 1,
-    borderColor: employeePalette.warnLine,
+    borderColor: p.warnLine,
     borderRadius: 14,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -207,7 +206,7 @@ export default StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: 12,
     lineHeight: 16,
-    color: employeePalette.warnText,
+    color: p.warnText,
   },
 
   primaryButton: {
@@ -215,7 +214,7 @@ export default StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 9,
-    backgroundColor: employeePalette.accent,
+    backgroundColor: p.accent,
     borderRadius: 18,
     padding: 16,
   },
@@ -229,16 +228,16 @@ export default StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 9,
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 18,
     padding: 15,
   },
   secondaryButtonLabel: {
     fontFamily: fonts.sansBold,
     fontSize: 14,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   buttonDisabled: {
     opacity: 0.5,
@@ -246,4 +245,4 @@ export default StyleSheet.create({
   buttons: {
     gap: 9,
   },
-});
+}));

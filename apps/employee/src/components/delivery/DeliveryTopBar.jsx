@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import SymbolIcon from "../commons/SymbolIcon";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
-import styles from "../../styles/deliveryCommonStyles";
+import useDeliveryCommonStyles from "../../styles/deliveryCommonStyles";
+import { useTheme } from "../../theme/ThemeContext";
 
 export default function DeliveryTopBar({
   title,
@@ -14,10 +14,12 @@ export default function DeliveryTopBar({
   onRightPress,
   rightLabel,
 }) {
+  const { p } = useTheme();
+  const styles = useDeliveryCommonStyles();
   return (
     <View style={styles.topBar}>
       <TouchableOpacity style={styles.roundButton} onPress={onBack} activeOpacity={0.8} accessibilityLabel="Regresar">
-        <SymbolIcon name="arrow_back" size={19} color={employeePalette.ink} />
+        <SymbolIcon name="arrow_back" size={19} color={p.ink} />
       </TouchableOpacity>
 
       <View style={styles.topBarTexts}>
@@ -38,7 +40,7 @@ export default function DeliveryTopBar({
           activeOpacity={0.8}
           accessibilityLabel={rightLabel}
         >
-          <SymbolIcon name={rightIcon} size={18} color={employeePalette.accent} />
+          <SymbolIcon name={rightIcon} size={18} color={p.accent} />
         </TouchableOpacity>
       ) : (
         <View style={styles.roundSpacer} />

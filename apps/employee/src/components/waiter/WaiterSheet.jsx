@@ -11,11 +11,12 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import waiterSheetStyles from "../../styles/waiterSheetStyles";
+import useWaiterSheetStyles from "../../styles/waiterSheetStyles";
 
 const HIDDEN_OFFSET = 600;
 
 export default function WaiterSheet({ visible, onClose, children }) {
+  const waiterSheetStyles = useWaiterSheetStyles();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const [mounted, setMounted] = useState(visible);

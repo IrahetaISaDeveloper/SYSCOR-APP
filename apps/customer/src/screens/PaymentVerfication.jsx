@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuthMetrics } from '@syscor/shared/src/styles/authTheme';
 import { InputText } from '@syscor/shared/src/components/commons/InputText';
 import { PaymentSuccessModal } from '@syscor/shared/src/components/commons/PaymentSuccessModal';
 import Toast from '@syscor/shared/src/components/commons/Toast';
@@ -21,6 +22,7 @@ import PaymentVerificationModal from '../components/PaymentVerificationModal';
 import { cvvLengthOf } from '../services/cardsApi';
 import DineInForm from '../components/DineInForm';
 import CardScanner from '../components/CardScanner';
+import AddressFormSheet from '../components/AddressFormSheet';
 import { cardNumberInputLength } from '../utils/cardUtils';
 
 // Las tres formas de recibir el pedido.
@@ -93,6 +95,8 @@ export const PaymentScreen = (props) => {
     addresses,
     selectedAddressIndex,
     setSelectedAddressIndex,
+    addNewAddress,
+    savingAddress,
     verification,
     handleVerificationFinished,
     handleVerificationCancel,
@@ -111,6 +115,38 @@ export const PaymentScreen = (props) => {
     handleGoHomePress,
   } = usePayment(props);
   const [scannerOpen, setScannerOpen] = React.useState(false);
+  // Formulario de dirección nueva (null = cerrado)
+  const [newAddress, setNewAddress] = React.useState(null);
+  const { ms: sheetMs } = useAuthMetrics();
+
+  const openNewAddress = () =>
+    setNewAddress({ tag: 'Casa', details: '', isDefault: addresses.length === 0 });
+
+  const saveNewAddress = async (form) => {
+    if (await addNewAddress(form)) setNewAddress(null);
+  };
+
+  const addAddressButton = (
+    <TouchableOpacity
+      onPress={openNewAddress}
+      activeOpacity={0.8}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        height: 46,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        borderColor: colors.borderStrong,
+      }}
+      accessibilityRole="button"
+    >
+      <Icon name="add-circle-outline" size={18} color={colors.primary} />
+      <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>Agregar dirección</Text>
+    </TouchableOpacity>
+  );
 
   return (
     // El SafeAreaView de react-native no hace nada en Android: el encabezado
@@ -233,11 +269,15 @@ export const PaymentScreen = (props) => {
                   </TouchableOpacity>
                 );
               })}
+              {addAddressButton}
             </View>
           ) : (
-            <Text style={{ fontSize: 13, color: colors.textGray, marginBottom: 20 }}>
-              Aún no tienes direcciones. Agrega una en la pestaña "Dirección" o elige pasar a traer.
-            </Text>
+            <View style={{ gap: 10, marginBottom: 20 }}>
+              <Text style={{ fontSize: 13, color: colors.textGray }}>
+                Aún no tienes direcciones. Agrega una para que te llevemos el pedido, o elige pasar a traer.
+              </Text>
+              {addAddressButton}
+            </View>
           )
         ) : deliveryMode === 'dine_in' ? (
           <DineInForm
@@ -566,6 +606,17 @@ export const PaymentScreen = (props) => {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Dirección nueva: se guarda en la libreta y queda elegida para este pedido */}
+      <AddressFormSheet
+        value={newAddress}
+        saving={savingAddress}
+        onClose={() => setNewAddress(null)}
+        onSave={saveNewAddress}
+        colors={colors}
+        ms={sheetMs}
+        bottomInset={insets.bottom}
+      />
 
       {/* Escanear el frente de la tarjeta (se lee en el teléfono) */}
       <CardScanner visible={scannerOpen} onClose={() => setScannerOpen(false)} onResult={applyCardScan} colors={colors} />

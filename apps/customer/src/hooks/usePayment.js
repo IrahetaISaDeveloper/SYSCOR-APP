@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert } from 'react-native';
 import { useAuth } from '@syscor/shared/src/context/AuthContext';
 import { getCards, cvvLengthOf, BRAND_LABELS } from '../services/cardsApi';
-import { getAddresses } from '../services/addressesApi';
+import { getAddresses, addAddress } from '../services/addressesApi';
 import { createCheckout, cancelCheckout, waitForCheckout } from '../services/checkoutApi';
 import { usePanchita } from '../context/PanchitaContext';
 import { getAvailability } from '../services/reservationsApi';
@@ -136,6 +137,32 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
   }, [customerId]);
 
   const selectedAddress = addresses.find((a) => a.index === selectedAddressIndex) || null;
+
+  // Agregar una dirección sin salir del pago: se guarda en la libreta del
+  // cliente y queda elegida para este pedido. Devuelve true si se guardó.
+  const [savingAddress, setSavingAddress] = useState(false);
+  const addNewAddress = async (form) => {
+    if (!customerId || savingAddress) return false;
+    setSavingAddress(true);
+    const tag = form.tag.trim();
+    const details = form.details.trim();
+    const res = await addAddress(customerId, { tag, details, isDefault: form.isDefault });
+    setSavingAddress(false);
+    if (!res.success) {
+      // Alert y no el toast: el toast quedaría detrás de la hoja del formulario.
+      Alert.alert('No se pudo guardar', res.error);
+      return false;
+    }
+    setAddresses(res.addresses);
+    // La libreta vuelve completa: la nueva es la que no estaba antes.
+    const known = new Set(addresses.map((a) => a.index));
+    const added =
+      res.addresses.find((a) => !known.has(a.index)) ||
+      res.addresses.find((a) => a.tag === tag && a.details === details);
+    if (added) setSelectedAddressIndex(added.index);
+    setDeliveryMode('delivery');
+    return true;
+  };
 
   // Al entrar se preselecciona la predeterminada: el cliente solo escribe el CVV.
   useEffect(() => {
@@ -473,6 +500,8 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
     addresses,
     selectedAddressIndex,
     setSelectedAddressIndex,
+    addNewAddress,
+    savingAddress,
     verification,
     handleVerificationFinished,
     handleVerificationCancel,

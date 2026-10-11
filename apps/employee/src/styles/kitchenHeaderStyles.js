@@ -1,8 +1,7 @@
-import { StyleSheet } from "react-native";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { makeStyles } from "../theme/ThemeContext";
 import { fonts } from "./fonts";
 
-export default StyleSheet.create({
+export default makeStyles(({ p }) => ({
   container: {
     flexDirection: "row",
     alignItems: "center",
@@ -20,12 +19,12 @@ export default StyleSheet.create({
     fontFamily: fonts.sansBold,
     fontSize: 19,
     letterSpacing: -0.38,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   eyebrow: {
     fontFamily: fonts.mono,
     fontSize: 10.5,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   accessories: {
     flexDirection: "row",
@@ -36,7 +35,7 @@ export default StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: employeePalette.accent,
+    backgroundColor: p.accent,
     borderRadius: 999,
     paddingVertical: 6,
     paddingHorizontal: 11,
@@ -56,9 +55,9 @@ export default StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -70,9 +69,9 @@ export default StyleSheet.create({
     height: 16,
     borderRadius: 8,
     paddingHorizontal: 3,
-    backgroundColor: employeePalette.price,
+    backgroundColor: p.price,
     borderWidth: 1.5,
-    borderColor: employeePalette.bg,
+    borderColor: p.bg,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -82,4 +81,4 @@ export default StyleSheet.create({
     color: "#FFFFFF",
     includeFontPadding: false,
   },
-});
+}));

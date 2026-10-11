@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, ScrollView, TouchableOpacity, Alert, Linking, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import SymbolIcon from "../../components/commons/SymbolIcon";
 import DeliveryTopBar from "../../components/delivery/DeliveryTopBar";
 import DeliveryFooter from "../../components/delivery/DeliveryFooter";
@@ -12,8 +11,9 @@ import { formatKm, formatClock } from "../../constants/deliveryStatus";
 import useDelivery from "../../hooks/useDelivery";
 import useDeliveryRoute from "../../hooks/useDeliveryRoute";
 import DeliveryMap from "../../components/delivery/DeliveryMap";
-import commonStyles from "../../styles/deliveryCommonStyles";
-import styles from "../../styles/deliveryRouteScreenStyles";
+import useDeliveryCommonStyles from "../../styles/deliveryCommonStyles";
+import useDeliveryRouteScreenStyles from "../../styles/deliveryRouteScreenStyles";
+import { useTheme } from "../../theme/ThemeContext";
 
 const PROBLEM_OPTIONS = [
   "El cliente no responde",
@@ -22,8 +22,12 @@ const PROBLEM_OPTIONS = [
 ];
 
 export default function DeliveryRouteScreen({ navigation, route }) {
-  const { getDeliveryById } = useDelivery();
+  const { p } = useTheme();
+  const commonStyles = useDeliveryCommonStyles();
+  const styles = useDeliveryRouteScreenStyles();
+  const { getDeliveryById, pkg } = useDelivery();
   const delivery = getDeliveryById(route.params?.deliveryId);
+  const totalStops = pkg?.stops?.length || 1;
   const routeInfo = useDeliveryRoute(delivery);
 
   if (!delivery) {
@@ -80,8 +84,8 @@ export default function DeliveryRouteScreen({ navigation, route }) {
       <DeliveryTopBar
         title={delivery.code}
         monoTitle
-        subtitle="EN RUTA"
-        subtitleColor={employeePalette.warnInk}
+        subtitle={totalStops > 1 ? `EN RUTA · PARADA ${delivery.sequence || 1} DE ${totalStops}` : "EN RUTA"}
+        subtitleColor={p.warnInk}
         onBack={() => navigation.goBack()}
         rightIcon="call"
         rightLabel="Llamar al cliente"
@@ -121,7 +125,7 @@ export default function DeliveryRouteScreen({ navigation, route }) {
           onPress={handleOpenMap}
         >
           <View style={styles.destinationHeader}>
-            <SymbolIcon name="home_pin" size={16} color={employeePalette.accent} />
+            <SymbolIcon name="home_pin" size={16} color={p.accent} />
             <Text style={styles.destinationLabel}>DESTINO</Text>
           </View>
           <Text style={styles.destinationAddress}>{delivery.dropoff?.address || "Sin dirección"}</Text>
@@ -129,7 +133,7 @@ export default function DeliveryRouteScreen({ navigation, route }) {
             <Text style={styles.destinationDetail}>{delivery.dropoff.detail}</Text>
           ) : null}
           <View style={styles.destinationContact}>
-            <SymbolIcon name="person" size={15} color={employeePalette.muted} />
+            <SymbolIcon name="person" size={15} color={p.muted} />
             <Text style={styles.destinationName} numberOfLines={1}>{delivery.customer?.name}</Text>
             {delivery.customer?.phone ? (
               <Text style={styles.destinationPhone}>{delivery.customer.phone}</Text>
@@ -143,16 +147,16 @@ export default function DeliveryRouteScreen({ navigation, route }) {
             onPress={() => sendSms(delivery.customer?.phone)}
             activeOpacity={0.8}
           >
-            <SymbolIcon name="chat" size={16} color={employeePalette.muted} />
-            <Text style={[styles.actionLabel, { color: employeePalette.muted }]}>Mensaje</Text>
+            <SymbolIcon name="chat" size={16} color={p.muted} />
+            <Text style={[styles.actionLabel, { color: p.muted }]}>Mensaje</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={handleProblem}
             activeOpacity={0.8}
           >
-            <SymbolIcon name="report" size={16} color={employeePalette.warnInk} />
-            <Text style={[styles.actionLabel, { color: employeePalette.warnInk }]}>Problema</Text>
+            <SymbolIcon name="report" size={16} color={p.warnInk} />
+            <Text style={[styles.actionLabel, { color: p.warnInk }]}>Problema</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

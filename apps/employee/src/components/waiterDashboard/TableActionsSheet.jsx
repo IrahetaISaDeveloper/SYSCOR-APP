@@ -1,19 +1,19 @@
 import React, { useMemo } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons as Icon } from "@expo/vector-icons";
 import { textStyles } from "@syscor/shared/src/styles/typography";
 import { useAuthMetrics } from "@syscor/shared/src/styles/authTheme";
 import OrderCard from "../waiter/OrderCard";
 import { formatElapsed, formatMoney, minutesSince, pluralize } from "../../constants/waiterStatus";
-import { waiterColors as c } from "../../styles/waiterTheme";
+import { useTheme, makeStyles } from "../../theme/ThemeContext";
 
 // Hoja de una mesa: todo lo de la cuenta abierta en un solo lugar.
 //   - Arriba: cliente, personas, cuánto lleva abierta y el total.
 //   - "Agregar productos" abre el menú (cada envío es una ronda nueva).
 //   - Sus comandas, por ronda, con lo que lleva cada una y sus acciones
 //     (marchar, yo la llevo, marcar servida).
-//   - Cobrar la cuenta y liberar la mesa cuando el cliente se retira
-//     (pasa directo a Disponible).
+//   - Cobrar la cuenta (o, con la caja abierta, enviarla a caja) y liberar
+//     la mesa cuando el cliente se retira (pasa directo a Disponible).
 export default function TableActionsSheet({
   table,
   busy,
@@ -22,7 +22,11 @@ export default function TableActionsSheet({
   onAddProducts,
   onCharge,
   onClientLeft,
+  cashierOpen = false,
+  onSendToCashier,
 }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   const { ms } = useAuthMetrics();
   const orders = table.activeOrders || [];
   const total = useMemo(() => orders.reduce((sum, o) => sum + (o.total || 0), 0), [orders]);
@@ -86,15 +90,32 @@ export default function TableActionsSheet({
 
       {/* ── CUENTA Y SALIDA ── */}
       <View style={{ gap: ms(8) }}>
-        <BigButton
-          outline
-          icon="cash-outline"
-          label="Cobrar la cuenta"
-          color={c.textDark}
-          onPress={onCharge}
-          disabled={busy || orders.length === 0}
-          ms={ms}
-        />
+        {cashierOpen ? (
+          <>
+            <BigButton
+              outline
+              icon="storefront-outline"
+              label={table.billRequestedAt ? "Cuenta enviada a caja · reenviar" : "Enviar a caja"}
+              color={c.textDark}
+              onPress={onSendToCashier}
+              disabled={busy || orders.length === 0}
+              ms={ms}
+            />
+            <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(12), textAlign: "center" }]}>
+              La caja está abierta: el cliente paga en caja y la mesa se libera al cobrar.
+            </Text>
+          </>
+        ) : (
+          <BigButton
+            outline
+            icon="cash-outline"
+            label="Cobrar la cuenta"
+            color={c.textDark}
+            onPress={onCharge}
+            disabled={busy || orders.length === 0}
+            ms={ms}
+          />
+        )}
         <TouchableOpacity
           onPress={onClientLeft}
           disabled={busy}
@@ -110,6 +131,8 @@ export default function TableActionsSheet({
 }
 
 function Header({ table, info, amount, amountLabel, ms }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   return (
     <View style={[styles.row, { gap: ms(12) }]}>
       <View style={[styles.tableBadge, { width: ms(52), height: ms(52), borderRadius: ms(14) }]}>
@@ -133,6 +156,8 @@ function Header({ table, info, amount, amountLabel, ms }) {
 }
 
 function BigButton({ icon, label, color, outline, onPress, disabled, ms }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -159,7 +184,7 @@ function BigButton({ icon, label, color, outline, onPress, disabled, ms }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ c }) => ({
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -175,4 +200,4 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: c.border,
   },
-});
+}));

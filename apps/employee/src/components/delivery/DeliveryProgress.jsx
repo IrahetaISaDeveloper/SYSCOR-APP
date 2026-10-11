@@ -1,9 +1,9 @@
 import React, { Fragment } from "react";
 import { View, Text } from "react-native";
 import SymbolIcon from "../commons/SymbolIcon";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import { DELIVERY_GREEN, DELIVERY_ORANGE } from "../../styles/deliveryCommonStyles";
-import styles from "../../styles/deliveryRouteScreenStyles";
+import useDeliveryRouteScreenStyles from "../../styles/deliveryRouteScreenStyles";
+import { useTheme } from "../../theme/ThemeContext";
 
 const STEPS = [
   { key: "pickup", label: "RECOGIDA", icon: "storefront" },
@@ -12,12 +12,14 @@ const STEPS = [
 ];
 
 export default function DeliveryProgress({ stage = "on_route" }) {
+  const { p } = useTheme();
+  const styles = useDeliveryRouteScreenStyles();
   const current = Math.max(0, STEPS.findIndex((s) => s.key === stage));
 
   const stepStyle = (index) => {
     if (index < current) return { bg: DELIVERY_GREEN, color: "#FFFFFF", icon: "check" };
     if (index === current) return { bg: DELIVERY_ORANGE, color: "#FFFFFF", icon: STEPS[index].icon };
-    return { bg: employeePalette.surface2, color: employeePalette.muted, icon: STEPS[index].icon };
+    return { bg: p.surface2, color: p.muted, icon: STEPS[index].icon };
   };
 
   return (
@@ -33,7 +35,7 @@ export default function DeliveryProgress({ stage = "on_route" }) {
                 <View
                   style={[
                     styles.progressBar,
-                    { backgroundColor: index <= current ? DELIVERY_GREEN : employeePalette.line },
+                    { backgroundColor: index <= current ? DELIVERY_GREEN : p.line },
                   ]}
                 />
               ) : null}
@@ -49,7 +51,7 @@ export default function DeliveryProgress({ stage = "on_route" }) {
         {STEPS.map((step, index) => (
           <Text
             key={step.key}
-            style={[styles.progressLabel, { color: index === current ? employeePalette.warnInk : employeePalette.muted }]}
+            style={[styles.progressLabel, { color: index === current ? p.warnInk : p.muted }]}
           >
             {step.label}
           </Text>

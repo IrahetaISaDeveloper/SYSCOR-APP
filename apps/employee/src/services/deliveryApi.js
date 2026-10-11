@@ -45,3 +45,26 @@ export const confirmDelivery = async (id, { deliveryMethod, driverNote, proof } 
   });
   return data;
 };
+
+// Paquete que Chef Panchita le asignó al repartidor (null si no tiene)
+export const fetchMyPackage = async () => {
+  const { data } = await apiClient.get(`${BASE}/package`);
+  return data ?? null;
+};
+
+// Salir del local con el paquete asignado
+export const startPackage = async () => {
+  const { data } = await apiClient.patch(`${BASE}/package/start`);
+  return data;
+};
+
+// Interruptor "En turno": solo a quien está en turno le asigna paquetes Panchita
+export const fetchAvailability = async () => {
+  const { data } = await apiClient.get(`${BASE}/availability`);
+  return Boolean(data?.onShift);
+};
+
+export const updateAvailability = async (onShift) => {
+  const { data } = await apiClient.patch(`${BASE}/availability`, { onShift });
+  return data;
+};

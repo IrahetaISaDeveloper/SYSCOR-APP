@@ -5,6 +5,8 @@ import {
   fetchWaiterDashboard,
   updateTableStatus,
   checkoutTable,
+  fetchCashierStatus,
+  requestTableBill,
 } from "../services/waiterDashboardApi";
 
 const POLL_INTERVAL_MS = 15000;
@@ -20,14 +22,22 @@ export default function useWaiterDashboard() {
   const [selectedTableId, setSelectedTableId] = useState(null);
   const [activeSheet, setActiveSheet] = useState(null);
   const [busy, setBusy] = useState(false);
+  // Con un turno de caja abierto, "Cobrar la cuenta" pasa a "Enviar a caja"
+  const [cashierOpen, setCashierOpen] = useState(false);
 
   const firstLoadRef = useRef(true);
 
   const loadDashboard = useCallback(async ({ silent = false } = {}) => {
     try {
       if (!silent) setLoading(true);
-      const data = await fetchWaiterDashboard();
+      const [data, cashier] = await Promise.all([
+        fetchWaiterDashboard(),
+        // Si la consulta de caja falla, se asume cerrada: el servidor igual
+        // rechaza el cobro si estuviera abierta.
+        fetchCashierStatus().catch(() => false),
+      ]);
       setTables(data);
+      setCashierOpen(cashier);
       setError(null);
     } catch (err) {
       console.error("useWaiterDashboard.loadDashboard:", err);
@@ -140,13 +150,41 @@ export default function useWaiterDashboard() {
         );
       } catch (err) {
         console.error("useWaiterDashboard.chargeTable:", err);
-        Alert.alert("Error", errorMessage(err, "No se pudo cobrar la cuenta. Intenta de nuevo."));
+        // La caja abrió turno mientras tanto: la cuenta se manda a caja
+        if (err?.response?.data?.code === "CASHIER_OPEN") {
+          setCashierOpen(true);
+          setActiveSheet("actions");
+        }
+        Alert.alert(
+          err?.response?.data?.title || "Error",
+          errorMessage(err, "No se pudo cobrar la cuenta. Intenta de nuevo.")
+        );
       } finally {
         setBusy(false);
       }
     },
     [selectedTable, loadDashboard, changeTableStatus]
   );
+
+  // "Enviar a caja": la caja resalta la cuenta de esta mesa para cobrarla
+  const sendToCashier = useCallback(async () => {
+    if (!selectedTable) return;
+    setBusy(true);
+    try {
+      const response = await requestTableBill(selectedTable._id);
+      const total = Number(response?.data?.total || 0);
+      await loadDashboard({ silent: true });
+      Alert.alert(
+        "Cuenta enviada a caja",
+        `Mesa ${selectedTable.number} · $${total.toFixed(2)}. El cliente paga en caja; la mesa se libera al cobrar.`
+      );
+    } catch (err) {
+      console.error("useWaiterDashboard.sendToCashier:", err);
+      Alert.alert("Error", errorMessage(err, "No se pudo enviar la cuenta a caja."));
+    } finally {
+      setBusy(false);
+    }
+  }, [selectedTable, loadDashboard]);
 
   // Recarga sin indicador (después de servir, marchar o "yo la llevo").
   const reload = useCallback(() => loadDashboard({ silent: true }), [loadDashboard]);
@@ -171,5 +209,7 @@ export default function useWaiterDashboard() {
 
     clientLeft,
     chargeTable,
+    cashierOpen,
+    sendToCashier,
   };
 }

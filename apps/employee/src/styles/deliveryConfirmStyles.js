@@ -1,8 +1,7 @@
-import { StyleSheet } from "react-native";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { makeStyles } from "../theme/ThemeContext";
 import { fonts } from "./fonts";
 
-export default StyleSheet.create({
+export default makeStyles(({ p }) => ({
   content: {
     paddingTop: 6,
     paddingHorizontal: 18,
@@ -11,7 +10,7 @@ export default StyleSheet.create({
   },
 
   collectCard: {
-    backgroundColor: employeePalette.surface2,
+    backgroundColor: p.surface2,
     borderRadius: 20,
     padding: 16,
     gap: 10,
@@ -24,20 +23,20 @@ export default StyleSheet.create({
   collectTitle: {
     fontFamily: fonts.sansBold,
     fontSize: 15,
-    color: employeePalette.ink,
+    color: p.ink,
   },
   collectAmount: {
     fontFamily: fonts.monoMedium,
     fontSize: 26,
     letterSpacing: -0.52,
-    color: employeePalette.price,
+    color: p.price,
   },
   collectAmountPaid: {
-    color: employeePalette.muted,
+    color: p.muted,
   },
   collectDivider: {
     height: 1,
-    backgroundColor: employeePalette.line,
+    backgroundColor: p.line,
   },
   collectDetails: {
     flexDirection: "row",
@@ -48,14 +47,14 @@ export default StyleSheet.create({
     flex: 1,
     fontFamily: fonts.sans,
     fontSize: 12.5,
-    color: employeePalette.muted,
+    color: p.muted,
   },
 
   sectionLabel: {
     fontFamily: fonts.mono,
     fontSize: 10.5,
     letterSpacing: 0.84,
-    color: employeePalette.muted,
+    color: p.muted,
   },
 
   methodGrid: {
@@ -67,23 +66,23 @@ export default StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 9,
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 14,
     padding: 12,
   },
   methodOptionSelected: {
     borderWidth: 1.5,
-    borderColor: employeePalette.accent,
+    borderColor: p.accent,
   },
   methodLabel: {
     fontFamily: fonts.sansBold,
     fontSize: 12.5,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   methodLabelSelected: {
-    color: employeePalette.ink,
+    color: p.ink,
   },
 
   proofSection: {
@@ -93,9 +92,9 @@ export default StyleSheet.create({
     height: 132,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderStyle: "dashed",
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
@@ -103,7 +102,7 @@ export default StyleSheet.create({
   },
   proofSlotFilled: {
     borderStyle: "solid",
-    borderColor: employeePalette.accent,
+    borderColor: p.accent,
   },
   proofImage: {
     position: "absolute",
@@ -114,29 +113,29 @@ export default StyleSheet.create({
   proofPlaceholderText: {
     fontFamily: fonts.sans,
     fontSize: 12,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   cameraButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 14,
     padding: 12,
   },
   cameraLabel: {
     fontFamily: fonts.sansBold,
     fontSize: 12.5,
-    color: employeePalette.ink,
+    color: p.ink,
   },
 
   noteCard: {
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 13,
@@ -151,17 +150,17 @@ export default StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 10,
     letterSpacing: 0.7,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   noteHint: {
     fontFamily: fonts.sans,
     fontSize: 12.5,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   noteInput: {
     fontFamily: fonts.sans,
     fontSize: 13,
-    color: employeePalette.ink,
+    color: p.ink,
     minHeight: 48,
     paddingTop: 4,
     paddingBottom: 4,
@@ -172,7 +171,7 @@ export default StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 10,
     letterSpacing: 0.5,
-    color: employeePalette.muted,
+    color: p.muted,
     textAlign: "center",
   },
-});
+}));

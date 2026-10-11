@@ -1,13 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-  StyleSheet,
-} from "react-native";
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons as Icon } from "@expo/vector-icons";
@@ -18,7 +10,7 @@ import { useAuthMetrics } from "@syscor/shared/src/styles/authTheme";
 import useWaiterOrders, { ORDER_FILTERS, ORDER_SCOPES } from "../../hooks/useWaiterOrders";
 import useWaiterOrderHistory, { HISTORY_RANGES } from "../../hooks/useWaiterOrderHistory";
 import OrderCard from "../../components/waiter/OrderCard";
-import { waiterColors as c } from "../../styles/waiterTheme";
+import { useTheme, makeStyles } from "../../theme/ThemeContext";
 
 const shiftLabel = (date = new Date()) => {
   const hour = date.getHours();
@@ -41,6 +33,8 @@ export default function WaiterOrdersScreen() {
 
 // Activas / Historial, arriba de la pantalla.
 function ModeSwitch({ mode, setMode }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   const { ms } = useAuthMetrics();
   const options = [
     { key: "active", label: "Activas", icon: "receipt-outline" },
@@ -76,6 +70,8 @@ function ModeSwitch({ mode, setMode }) {
 
 // Comandas ya cerradas (servidas o canceladas), sin acciones.
 function HistoryView({ mode, setMode }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   const { ms, gutter } = useAuthMetrics();
   const { myId, orders, stats, loading, refreshing, error, onRefresh, range, setRange } = useWaiterOrderHistory();
 
@@ -166,6 +162,8 @@ function HistoryView({ mode, setMode }) {
 }
 
 function ActiveView({ mode, setMode }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   const { ms, gutter } = useAuthMetrics();
   const { user } = useAuth();
   const firstName = getFirstName(user);
@@ -302,7 +300,7 @@ function ActiveView({ mode, setMode }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ c }) => ({
   container: {
     flex: 1,
     backgroundColor: c.background,
@@ -332,4 +330,4 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: c.error,
   },
-});
+}));

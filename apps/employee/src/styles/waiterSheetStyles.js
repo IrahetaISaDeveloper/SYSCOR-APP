@@ -1,23 +1,22 @@
 import { StyleSheet } from "react-native";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
-import { waiterColors } from "./waiterTheme";
+import { makeStyles } from "../theme/ThemeContext";
 
-export default StyleSheet.create({
+export default makeStyles(({ c, p, isDark }) => ({
   root: {
     flex: 1,
     justifyContent: "flex-end",
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(27,22,19,0.45)",
+    backgroundColor: isDark ? "rgba(0,0,0,0.6)" : "rgba(27,22,19,0.45)",
   },
   sheet: {
     // Mismo fondo hueso que Mesas y Comandas: las tarjetas blancas resaltan.
-    backgroundColor: waiterColors.background,
+    backgroundColor: c.background,
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: employeePalette.line,
+    borderColor: p.line,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingTop: 10,
@@ -32,7 +31,7 @@ export default StyleSheet.create({
     width: 44,
     height: 4,
     borderRadius: 2,
-    backgroundColor: employeePalette.line,
+    backgroundColor: p.line,
     marginBottom: 16,
   },
   scroll: {
@@ -42,4 +41,4 @@ export default StyleSheet.create({
     paddingHorizontal: 20,
     gap: 16,
   },
-});
+}));

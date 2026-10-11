@@ -1,77 +1,23 @@
 import React from "react";
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from '@syscor/shared/src/context/AuthContext';
-import useKitchenProfile from "../../hooks/useKitchenProfile";
-import ProfileHeader from '@syscor/shared/src/components/commons/ProfileHeader';
-import InfoSection from '@syscor/shared/src/components/commons/InfoSection';
-import InfoRow from '@syscor/shared/src/components/commons/InfoRow';
-import kitchenProfileScreenStyles from "../../styles/kitchenProfileScreenStyles";
-import { getScheduleText, getShiftText } from "../../utils/workSchedule";
+import EmployeeProfileView from "../../components/profile/EmployeeProfileView";
+import useEmployeeProfile from "../../hooks/useEmployeeProfile";
+import useKitchenHistory from "../../hooks/useKitchenHistory";
+import { getShiftText } from "../../utils/workSchedule";
 
+// Perfil de cocina: con los pedidos que terminó hoy y su tiempo promedio.
 export default function KitchenProfileScreen({ navigation }) {
-  const { logout } = useAuth();
-  const { user, fullName, typeLabel, statusLabel, refreshing, onRefresh } = useKitchenProfile();
-
-  const personalInfo = user?.personalInfo || {};
-  const workInfo = user?.workInfo || {};
+  const profile = useEmployeeProfile();
+  const { stats } = useKitchenHistory();
 
   return (
-    <SafeAreaView style={kitchenProfileScreenStyles.container} edges={['top', 'left', 'right']}>
-      <View style={kitchenProfileScreenStyles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={kitchenProfileScreenStyles.backText}>‹ Volver</Text>
-        </TouchableOpacity>
-        <Text style={kitchenProfileScreenStyles.title}>Mi perfil</Text>
-        <View style={{ width: 50 }} />
-      </View>
-
-      <ScrollView
-        contentContainerStyle={kitchenProfileScreenStyles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#C62828" />}
-      >
-        <ProfileHeader
-          image={personalInfo.image}
-          fullName={fullName}
-          typeLabel={typeLabel}
-          email={user?.email}
-        />
-
-        <InfoSection title="Información personal">
-          <InfoRow label="Nombre completo" value={fullName} />
-          <InfoRow label="Correo" value={user?.email} />
-          <InfoRow label="Teléfono" value={personalInfo.phone} />
-          <InfoRow label="DUI / NIT" value={personalInfo.duiNit} />
-          <InfoRow label="Dirección" value={personalInfo.address} />
-        </InfoSection>
-
-        <InfoSection title="Información laboral">
-          <InfoRow label="Puesto" value={typeLabel} />
-          <InfoRow label="Estado" value={statusLabel} />
-          <InfoRow label="Turno" value={getShiftText(workInfo)} />
-          <InfoRow label="Horario" value={getScheduleText(workInfo)} />
-          <InfoRow label="Seguro médico" value={workInfo.workInsurance ? "Sí" : "No"} />
-        </InfoSection>
-
-        <InfoSection title="Información salarial">
-          <InfoRow label="Salario base" value={workInfo.salary != null ? `$${Number(workInfo.salary).toFixed(2)}` : "—"} />
-          <InfoRow label="AFP" value={workInfo.AFP != null ? `$${Number(workInfo.AFP).toFixed(2)}` : "—"} />
-          <InfoRow label="Renta" value={workInfo.rent != null ? `$${Number(workInfo.rent).toFixed(2)}` : "—"} />
-          <InfoRow label="Pago adicional" value={workInfo.additionalPay != null ? `$${Number(workInfo.additionalPay).toFixed(2)}` : "—"} />
-        </InfoSection>
-
-        {user?.permissions?.length > 0 && (
-          <InfoSection title="Permisos">
-            {user.permissions.map((perm) => (
-              <InfoRow key={perm} label={perm} value="Habilitado" />
-            ))}
-          </InfoSection>
-        )}
-
-        <TouchableOpacity onPress={logout} style={kitchenProfileScreenStyles.logoutButton}>
-          <Text style={kitchenProfileScreenStyles.logoutText}>Cerrar sesión</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+    <EmployeeProfileView
+      profile={profile}
+      onBack={() => navigation.navigate("Dashboard")}
+      statTiles={[
+        { value: stats.total, label: "Pedidos hoy" },
+        { value: stats.averagePrep != null ? `${stats.averagePrep} min` : null, label: "Prep. promedio" },
+        { value: getShiftText(profile.user?.workInfo || {}), label: "Turno" },
+      ]}
+    />
   );
 }

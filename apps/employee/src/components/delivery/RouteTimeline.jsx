@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
-import styles, { DELIVERY_GREEN } from "../../styles/deliveryCommonStyles";
+import useDeliveryCommonStyles, { DELIVERY_GREEN } from "../../styles/deliveryCommonStyles";
+import { useTheme } from "../../theme/ThemeContext";
 
 const SIZES = {
   sm: { marker: 9, lineMargin: 3, gap: 12, title: 12.5, detail: 11, railGap: 11 },
@@ -9,6 +9,8 @@ const SIZES = {
 };
 
 export default function RouteTimeline({ pickup, dropoff, pickupLabel, dropoffLabel, size = "md", showPickupDetail = true }) {
+  const { p } = useTheme();
+  const styles = useDeliveryCommonStyles();
   const s = SIZES[size];
 
   const renderStop = (label, title, detail) => (
@@ -24,7 +26,7 @@ export default function RouteTimeline({ pickup, dropoff, pickupLabel, dropoffLab
   return (
     <View style={[styles.timeline, { gap: s.railGap }]}>
       <View style={styles.timelineRail}>
-        <View style={{ width: s.marker, height: s.marker, borderRadius: s.marker / 2, backgroundColor: employeePalette.accent }} />
+        <View style={{ width: s.marker, height: s.marker, borderRadius: s.marker / 2, backgroundColor: p.accent }} />
         <View style={[styles.timelineLine, { marginVertical: s.lineMargin }]} />
         <View style={{ width: s.marker, height: s.marker, borderRadius: 2, backgroundColor: DELIVERY_GREEN }} />
       </View>

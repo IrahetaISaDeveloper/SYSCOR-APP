@@ -74,6 +74,18 @@ export const updateOrderStatus = async (orderId, status) => {
   return data;
 };
 
+// ¿La caja tiene un turno abierto? Si sí, las cuentas se cobran en caja.
+export const fetchCashierStatus = async () => {
+  const { data } = await apiClient.get(`/cashier/public-status`);
+  return Boolean(data?.cashier?.open);
+};
+
+// "Enviar a caja": con la caja abierta, el mesero no cobra; avisa a caja
+export const requestTableBill = async (tableId) => {
+  const { data } = await apiClient.post(`/orders/table/${tableId}/request-bill`);
+  return data;
+};
+
 // Cobra la cuenta abierta de una mesa ('cash' o 'card')
 export const checkoutTable = async (tableId, paymentMethod) => {
   const { data } = await apiClient.post(`/orders/table/${tableId}/checkout`, { paymentMethod });

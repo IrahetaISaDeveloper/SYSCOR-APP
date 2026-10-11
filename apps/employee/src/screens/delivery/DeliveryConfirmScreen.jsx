@@ -2,16 +2,19 @@ import React, { useState } from "react";
 import { View, Text, TextInput, ScrollView, TouchableOpacity, Alert, Image, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import SymbolIcon from "../../components/commons/SymbolIcon";
 import DeliveryTopBar from "../../components/delivery/DeliveryTopBar";
 import DeliveryFooter from "../../components/delivery/DeliveryFooter";
 import { COLLECT_DETAIL, HANDOFF_METHODS, collectsOnDelivery, formatMoney } from "../../constants/deliveryStatus";
 import useDelivery from "../../hooks/useDelivery";
-import commonStyles from "../../styles/deliveryCommonStyles";
-import styles from "../../styles/deliveryConfirmStyles";
+import useDeliveryCommonStyles from "../../styles/deliveryCommonStyles";
+import useDeliveryConfirmStyles from "../../styles/deliveryConfirmStyles";
+import { useTheme } from "../../theme/ThemeContext";
 
 export default function DeliveryConfirmScreen({ navigation, route }) {
+  const { p } = useTheme();
+  const commonStyles = useDeliveryCommonStyles();
+  const styles = useDeliveryConfirmStyles();
   const { getDeliveryById, confirm } = useDelivery();
   const delivery = getDeliveryById(route.params?.deliveryId);
 
@@ -59,12 +62,23 @@ export default function DeliveryConfirmScreen({ navigation, route }) {
   const submit = async () => {
     try {
       setSubmitting(true);
-      await confirm(delivery.id, {
+      const result = await confirm(delivery.id, {
         deliveryMethod: selectedMethod,
         driverNote: driverNote.trim() || undefined,
         proof,
       });
-      Alert.alert("Entrega confirmada", `La entrega ${delivery.code} quedó marcada como entregada.`, [
+      // Si al paquete le quedan paradas, se sigue directo con la siguiente
+      const nextPkg = result?.package;
+      const next = nextPkg?.stops?.find((stop) => String(stop.id) === String(nextPkg.currentStopId));
+      if (next) {
+        Alert.alert(
+          "Entrega confirmada",
+          `${delivery.code} quedó entregada. Siguiente parada: ${next.code} · ${next.dropoff?.address || ""}`,
+          [{ text: "Ir a la siguiente", onPress: () => navigation.replace("DeliveryRoute", { deliveryId: next.id }) }]
+        );
+        return;
+      }
+      Alert.alert("Entrega confirmada", `La entrega ${delivery.code} quedó marcada como entregada. ¡Paquete completo!`, [
         { text: "Aceptar", onPress: () => navigation.popToTop() },
       ]);
     } catch {
@@ -107,7 +121,7 @@ export default function DeliveryConfirmScreen({ navigation, route }) {
           </View>
           <View style={styles.collectDivider} />
           <View style={styles.collectDetails}>
-            <SymbolIcon name="payments" size={16} color={employeePalette.muted} />
+            <SymbolIcon name="payments" size={16} color={p.muted} />
             <Text style={styles.collectDetailText}>
               {collects ? COLLECT_DETAIL[delivery.paymentMethod] : "Pagado en línea · no cobrar"}
             </Text>
@@ -126,7 +140,7 @@ export default function DeliveryConfirmScreen({ navigation, route }) {
                   onPress={() => setSelectedMethod(m.key)}
                   activeOpacity={0.8}
                 >
-                  <SymbolIcon name={m.icon} size={17} color={active ? employeePalette.accent : employeePalette.muted} />
+                  <SymbolIcon name={m.icon} size={17} color={active ? p.accent : p.muted} />
                   <Text style={[styles.methodLabel, active && styles.methodLabelSelected]}>{m.label}</Text>
                 </TouchableOpacity>
               );
@@ -145,26 +159,26 @@ export default function DeliveryConfirmScreen({ navigation, route }) {
               <Image source={{ uri: proof.uri }} style={styles.proofImage} />
             ) : (
               <>
-                <SymbolIcon name="photo_camera" size={22} color={employeePalette.muted} />
+                <SymbolIcon name="photo_camera" size={22} color={p.muted} />
                 <Text style={styles.proofPlaceholderText}>Foto de la entrega (opcional)</Text>
               </>
             )}
           </TouchableOpacity>
           <TouchableOpacity style={styles.cameraButton} onPress={handlePhoto} activeOpacity={0.8}>
-            <SymbolIcon name="photo_camera" size={17} color={employeePalette.accent} />
+            <SymbolIcon name="photo_camera" size={17} color={p.accent} />
             <Text style={styles.cameraLabel}>{proof ? "Cambiar foto" : "Tomar foto"}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.noteCard}>
           <View style={styles.noteHeader}>
-            <SymbolIcon name="edit_note" size={15} color={employeePalette.muted} />
+            <SymbolIcon name="edit_note" size={15} color={p.muted} />
             <Text style={styles.noteHeaderLabel}>NOTA PARA EL LOCAL</Text>
           </View>
           <TextInput
             style={styles.noteInput}
             placeholder="Opcional · algo que deba saber la sucursal"
-            placeholderTextColor={employeePalette.muted}
+            placeholderTextColor={p.muted}
             value={driverNote}
             onChangeText={setDriverNote}
             maxLength={300}

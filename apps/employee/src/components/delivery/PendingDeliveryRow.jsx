@@ -1,17 +1,19 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import SymbolIcon from "../commons/SymbolIcon";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
 import { collectsOnDelivery, formatKm, formatMoney, waitingLabel } from "../../constants/deliveryStatus";
-import styles from "../../styles/deliveriesScreenStyles";
+import useDeliveriesScreenStyles from "../../styles/deliveriesScreenStyles";
+import { useTheme } from "../../theme/ThemeContext";
 
 export default function PendingDeliveryRow({ delivery, onPress }) {
+  const { p } = useTheme();
+  const styles = useDeliveriesScreenStyles();
   const collects = collectsOnDelivery(delivery);
 
   return (
     <TouchableOpacity style={styles.pendingRow} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.pendingIcon}>
-        <SymbolIcon name="two_wheeler" size={19} color={employeePalette.muted} />
+        <SymbolIcon name="two_wheeler" size={19} color={p.muted} />
       </View>
 
       <View style={styles.pendingTexts}>

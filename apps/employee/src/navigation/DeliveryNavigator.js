@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import EmployeeTabBar from "../components/commons/EmployeeTabBar";
 import { DeliveryProvider } from "../hooks/useDelivery";
+import { useTheme } from "../theme/ThemeContext";
 
 import DeliveriesScreen from "../screens/delivery/DeliveriesScreen";
 import DeliveryDetailScreen from "../screens/delivery/DeliveryDetailScreen";
@@ -15,11 +16,12 @@ const Tab = createBottomTabNavigator();
 const DeliveriesStack = createNativeStackNavigator();
 
 function DeliveriesStackNavigator() {
+  const { p } = useTheme();
   return (
     <DeliveriesStack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: "#F7F3E9" },
+        contentStyle: { backgroundColor: p.bg },
       }}
     >
       <DeliveriesStack.Screen name="DeliveriesList" component={DeliveriesScreen} />

@@ -1,8 +1,9 @@
 import React from "react";
 import { View, Text } from "react-native";
-import styles from "../../styles/waiterSheetContentStyles";
+import useWaiterSheetContentStyles from "../../styles/waiterSheetContentStyles";
 
 export default function TableSummaryHeader({ tableNumber, title, info, amount, amountLabel }) {
+  const styles = useWaiterSheetContentStyles();
   return (
     <View style={styles.summaryRow}>
       <View style={styles.tableAvatar}>

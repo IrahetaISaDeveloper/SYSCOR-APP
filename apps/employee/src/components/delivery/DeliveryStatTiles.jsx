@@ -1,8 +1,9 @@
 import React from "react";
 import { View, Text } from "react-native";
-import styles from "../../styles/deliveryCommonStyles";
+import useDeliveryCommonStyles from "../../styles/deliveryCommonStyles";
 
 export default function DeliveryStatTiles({ tiles }) {
+  const styles = useDeliveryCommonStyles();
   return (
     <View style={styles.statsRow}>
       {tiles.map((tile) => (

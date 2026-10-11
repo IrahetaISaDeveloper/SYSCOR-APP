@@ -36,9 +36,10 @@ const errorOf = (err, fallback) => ({
   message: err?.response?.data?.message || fallback,
 });
 
-// Perfil del mesero: sus datos (de /auth/me), lo que lleva hoy y lo único
-// que puede cambiar por su cuenta (teléfono, dirección y contraseña).
-export default function useWaiterProfile() {
+// Perfil de cualquier empleado: sus datos (de /auth/me) y lo único que puede
+// cambiar por su cuenta (foto, teléfono, dirección y contraseña). Con
+// `withOrderStats` además cuenta las comandas que tomó hoy (solo meseros).
+export default function useEmployeeProfile({ withOrderStats = false } = {}) {
   const { user, updateUser } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [todayOrders, setTodayOrders] = useState(null);
@@ -48,14 +49,14 @@ export default function useWaiterProfile() {
 
   // Comandas que tomó hoy (sin las canceladas).
   const loadStats = useCallback(async () => {
-    if (!myId) return;
+    if (!myId || !withOrderStats) return;
     try {
       const orders = await fetchMyOrdersSince(myId, startOfToday());
       setTodayOrders(orders.filter((o) => o.status !== "cancelled"));
     } catch (err) {
-      console.error("useWaiterProfile.loadStats:", err);
+      console.error("useEmployeeProfile.loadStats:", err);
     }
-  }, [myId]);
+  }, [myId, withOrderStats]);
 
   useFocusEffect(
     useCallback(() => {
@@ -69,7 +70,7 @@ export default function useWaiterProfile() {
       const [freshData] = await Promise.all([refreshMyProfile(), loadStats()]);
       updateUser(freshData);
     } catch (err) {
-      console.error("useWaiterProfile.onRefresh:", err);
+      console.error("useEmployeeProfile.onRefresh:", err);
       Alert.alert("Error", "No se pudo actualizar tu perfil.");
     } finally {
       setRefreshing(false);

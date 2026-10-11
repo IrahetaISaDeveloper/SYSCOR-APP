@@ -1,15 +1,17 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons as Icon } from "@expo/vector-icons";
 import { textStyles } from "@syscor/shared/src/styles/typography";
 import { useAuthMetrics } from "@syscor/shared/src/styles/authTheme";
 import { formatElapsed, minutesSince, orderCode, orderStageLabel } from "../../constants/waiterStatus";
-import { waiterColors as c, FLOORS } from "../../styles/waiterTheme";
+import { FLOORS } from "../../styles/waiterTheme";
+import { useTheme, makeStyles } from "../../theme/ThemeContext";
 
 // Más de estos productos y la tarjeta se recorta con "Ver más".
 const VISIBLE_ITEMS = 3;
 
-// Estado de la comanda: etiqueta, color del punto y fondo de la píldora.
+// Estado de la comanda: etiqueta, color del punto y fondo de la píldora (en
+// modo oscuro el fondo es el color del punto, translúcido).
 const ORDER_STATE = {
   waiting: { label: "EN ESPERA", dot: "#5B6B8C", bg: "#E3E7EF" },
   pending: { label: "EN COCINA", dot: "#D98F2B", bg: "#FBEBD3" },
@@ -48,6 +50,7 @@ const floorLabel = (floor) => FLOORS.find((f) => f.floor === floor)?.label || "P
 // Línea punteada: en Android un borde punteado de un solo lado no se pinta,
 // así que se recorta un recuadro punteado completo a 1 px de alto.
 function DashedLine() {
+  const styles = useStyles();
   return (
     <View style={styles.dashClip}>
       <View style={styles.dash} />
@@ -61,6 +64,8 @@ function DashedLine() {
 // hoja de la mesa no hace falta).
 // `history` es para el historial: muestra la hora en que se tomó, no "hace X".
 export default function OrderCard({ order, myId, actions, showTable = true, history = false }) {
+  const { c, isDark } = useTheme();
+  const styles = useStyles();
   const { ms } = useAuthMetrics();
   const [expanded, setExpanded] = useState(false);
 
@@ -112,7 +117,7 @@ export default function OrderCard({ order, myId, actions, showTable = true, hist
             </Text>
           ) : null}
         </View>
-        <View style={[styles.row, { backgroundColor: state.bg, borderRadius: ms(12), paddingHorizontal: ms(9), paddingVertical: ms(4), gap: ms(5) }]}>
+        <View style={[styles.row, { backgroundColor: isDark ? `${state.dot}33` : state.bg, borderRadius: ms(12), paddingHorizontal: ms(9), paddingVertical: ms(4), gap: ms(5) }]}>
           <View style={{ width: ms(6), height: ms(6), borderRadius: ms(3), backgroundColor: state.dot }} />
           <Text style={[textStyles.kicker, { color: c.textDark, fontSize: ms(9.5) }]}>{state.label}</Text>
         </View>
@@ -226,6 +231,8 @@ export default function OrderCard({ order, myId, actions, showTable = true, hist
 }
 
 function ActionButton({ icon, label, color, outline, onPress, busy, disabled, ms, style }) {
+  const { c } = useTheme();
+  const styles = useStyles();
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -260,7 +267,7 @@ function ActionButton({ icon, label, color, outline, onPress, busy, disabled, ms
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ c, p, isDark }) => ({
   card: {
     backgroundColor: c.surface,
     borderWidth: 1,
@@ -291,9 +298,9 @@ const styles = StyleSheet.create({
     backgroundColor: c.surfaceMuted,
   },
   claimed: {
-    backgroundColor: "#EEF2EA",
+    backgroundColor: isDark ? "rgba(76,195,138,0.14)" : "#EEF2EA",
   },
   button: {
     justifyContent: "center",
   },
-});
+}));

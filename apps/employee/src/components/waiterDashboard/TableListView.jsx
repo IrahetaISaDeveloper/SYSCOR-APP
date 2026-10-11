@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { textStyles } from '@syscor/shared/src/styles/typography';
 import { useAuthMetrics } from '@syscor/shared/src/styles/authTheme';
-import { waiterColors as c, getTableState, ZONE_LABELS } from '../../styles/waiterTheme';
+import { getTableState, ZONE_LABELS } from '../../styles/waiterTheme';
 import { formatElapsed, formatMoney, minutesSince, pluralize } from '../../constants/waiterStatus';
+import { useTheme, makeStyles } from "../../theme/ThemeContext";
 
 // Detalle de una mesa en una línea: quién está, cuánto lleva y su cuenta.
 const describe = (table) => {
@@ -28,12 +29,14 @@ const describe = (table) => {
 };
 
 export default function TableListView({ tables, onTablePress }) {
+  const { c, isDark } = useTheme();
+  const styles = useStyles();
   const { ms } = useAuthMetrics();
 
   return (
     <View style={{ gap: ms(10) }}>
       {tables.map((table) => {
-        const state = getTableState(table.status);
+        const state = getTableState(table.status, isDark);
         const orders = table.activeOrders || [];
         const total = orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
         const readyCount = orders.filter((o) => o.status === 'ready').length;
@@ -147,7 +150,7 @@ export default function TableListView({ tables, onTablePress }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ c }) => ({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -167,4 +170,4 @@ const styles = StyleSheet.create({
   pill: {
     alignSelf: 'flex-start',
   },
-});
+}));

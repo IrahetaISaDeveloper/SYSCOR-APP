@@ -1,13 +1,12 @@
-import { StyleSheet } from "react-native";
-import { employeePalette } from "@syscor/shared/src/styles/employeePalette";
+import { makeStyles } from "../theme/ThemeContext";
 import { fonts } from "./fonts";
 
-export default StyleSheet.create({
+export default makeStyles(({ p }) => ({
   container: {
     flexDirection: "row",
-    backgroundColor: employeePalette.surface,
+    backgroundColor: p.surface,
     borderTopWidth: 1,
-    borderTopColor: employeePalette.line,
+    borderTopColor: p.line,
     paddingTop: 9,
     paddingHorizontal: 8,
   },
@@ -19,10 +18,10 @@ export default StyleSheet.create({
   label: {
     fontFamily: fonts.sansMedium,
     fontSize: 10,
-    color: employeePalette.muted,
+    color: p.muted,
   },
   labelActive: {
     fontFamily: fonts.sansBold,
-    color: employeePalette.accent,
+    color: p.accent,
   },
-});
+}));

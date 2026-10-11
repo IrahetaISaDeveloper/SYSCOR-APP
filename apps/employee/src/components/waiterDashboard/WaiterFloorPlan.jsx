@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { textStyles, FONT } from '@syscor/shared/src/styles/typography';
 import { useAuthMetrics } from '@syscor/shared/src/styles/authTheme';
-import { waiterColors as c, getTableState, TABLE_STATE, TABLE_STATE_ORDER } from '../../styles/waiterTheme';
+import { getTableState, getTableStates, TABLE_STATE_ORDER } from '../../styles/waiterTheme';
+import { useTheme, makeStyles } from "../../theme/ThemeContext";
 
 // Croquis del comedor de una planta, a partir de los planos del local (el
 // mismo que ve el cliente al reservar):
@@ -56,6 +57,7 @@ const DOT_GAP = 16;
 // Fondo punteado del plano. Solo depende del tamaño, así que no se vuelve a
 // dibujar cuando cambian las mesas.
 const DotGrid = memo(function DotGrid({ width, height }) {
+  const styles = useStyles();
   if (!width || !height) return null;
   const dots = [];
   for (let y = DOT_GAP / 2; y < height; y += DOT_GAP) {
@@ -69,6 +71,8 @@ const DotGrid = memo(function DotGrid({ width, height }) {
 const hasReadyOrder = (table) => (table.activeOrders || []).some((o) => o.status === 'ready');
 
 export default function WaiterFloorPlan({ floor, tables, onTablePress }) {
+  const { c, isDark } = useTheme();
+  const styles = useStyles();
   const { ms } = useAuthMetrics();
   const plan = PLANS[floor] || PLANS[1];
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -117,7 +121,7 @@ export default function WaiterFloorPlan({ floor, tables, onTablePress }) {
 
         {/* ── MESAS ── */}
         {placed.map((table) => {
-          const state = getTableState(table.status);
+          const state = getTableState(table.status, isDark);
           const ready = table.status === 'ocupada' && hasReadyOrder(table);
           return (
             <TouchableOpacity
@@ -157,7 +161,7 @@ export default function WaiterFloorPlan({ floor, tables, onTablePress }) {
       {/* ── LEYENDA ── */}
       <View style={[styles.legend, { columnGap: ms(12), rowGap: ms(6) }]}>
         {TABLE_STATE_ORDER.map((key) => {
-          const state = TABLE_STATE[key];
+          const state = getTableStates(isDark)[key];
           return (
             <View key={key} style={[styles.row, { gap: ms(5) }]}>
               <View
@@ -184,7 +188,7 @@ export default function WaiterFloorPlan({ floor, tables, onTablePress }) {
           </Text>
           <View style={[styles.wrap, { gap: ms(8) }]}>
             {unplaced.map((table) => {
-              const state = getTableState(table.status);
+              const state = getTableState(table.status, isDark);
               return (
                 <TouchableOpacity
                   key={table._id}
@@ -214,7 +218,7 @@ export default function WaiterFloorPlan({ floor, tables, onTablePress }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ c, p, isDark }) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -227,7 +231,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderWidth: 2,
     borderColor: c.textDark,
-    backgroundColor: '#F0E7D7',
+    backgroundColor: isDark ? '#1C1815' : '#F0E7D7',
     overflow: 'hidden',
   },
   dot: {
@@ -235,20 +239,20 @@ const styles = StyleSheet.create({
     width: 2,
     height: 2,
     borderRadius: 1,
-    backgroundColor: 'rgba(120,100,70,0.22)',
+    backgroundColor: isDark ? 'rgba(220,200,170,0.12)' : 'rgba(120,100,70,0.22)',
   },
   zone: {
     position: 'absolute',
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: '#B9AE9C',
-    backgroundColor: '#E6DCC9',
+    borderColor: isDark ? '#4A4038' : '#B9AE9C',
+    backgroundColor: isDark ? '#26201C' : '#E6DCC9',
     alignItems: 'center',
     justifyContent: 'center',
   },
   zoneGreen: {
-    backgroundColor: '#E1E8D6',
-    borderColor: '#B7C2A6',
+    backgroundColor: isDark ? '#1E261A' : '#E1E8D6',
+    borderColor: isDark ? '#3E4A34' : '#B7C2A6',
   },
   zoneLabel: {
     flexDirection: 'row',
@@ -282,4 +286,4 @@ const styles = StyleSheet.create({
   chip: {
     borderWidth: 1.5,
   },
-});
+}));
