@@ -121,7 +121,13 @@ const AddressesScreen = () => {
 
   const saveAddress = async (form) => {
     setSaving(true);
-    const payload = { tag: form.tag.trim(), details: form.details.trim(), isDefault: form.isDefault };
+    const payload = {
+      tag: form.tag.trim(),
+      details: form.details.trim(),
+      isDefault: form.isDefault,
+      latitude: form.latitude,
+      longitude: form.longitude,
+    };
     const res =
       form.index == null
         ? await addressesApi.addAddress(customerId, payload)

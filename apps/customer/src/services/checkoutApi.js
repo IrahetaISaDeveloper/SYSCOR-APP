@@ -58,13 +58,15 @@ const toCheckoutItem = (item) => ({
 // `requestId`: identificador del intento de pago. Si la respuesta no llega y
 // se reintenta con el mismo, el servidor devuelve ese cobro en vez de crear
 // otro (así un reintento nunca cobra ni crea el pedido dos veces).
-export const createCheckout = ({ items, fulfillment, deliveryAddress, dineIn, addToOrder, paymentMethod, card, saveCard, useCredit, requestId }) =>
+// `deliveryLocation`: { latitude, longitude } del punto marcado en el mapa (opcional).
+export const createCheckout = ({ items, fulfillment, deliveryAddress, deliveryLocation, dineIn, addToOrder, paymentMethod, card, saveCard, useCredit, requestId }) =>
   call(() =>
     apiClient.post('/payments/checkout', {
       items: items.map(toCheckoutItem),
       fulfillment,
       isDelivery: fulfillment === 'delivery',
       deliveryAddress,
+      deliveryLocation,
       dineIn,
       addToOrder,
       paymentMethod,

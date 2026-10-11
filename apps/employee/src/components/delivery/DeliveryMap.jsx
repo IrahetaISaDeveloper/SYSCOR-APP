@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import Mapbox, { MapView, Camera, ShapeSource, LineLayer, MarkerView } from "@rnmapbox/maps";
-import { MAPBOX_TOKEN, hasMapboxToken } from "../../config/mapbox";
+import { MAPBOX_TOKEN, hasMapboxToken } from "@syscor/shared/src/config/mapbox";
 import SymbolIcon from "../commons/SymbolIcon";
 import useDeliveryRouteScreenStyles from "../../styles/deliveryRouteScreenStyles";
 import { useTheme } from "../../theme/ThemeContext";

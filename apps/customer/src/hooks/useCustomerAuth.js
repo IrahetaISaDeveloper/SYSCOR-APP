@@ -23,6 +23,9 @@ const toAddressPayload = (address) => {
     tag: address.alias || ADDRESS_TAGS[address.tipo] || 'Casa',
     details: [street, address.colonia, address.municipio, address.departamento].filter(Boolean).join(', '),
     isDefault: true,
+    // Punto marcado en el mapa (opcional).
+    latitude: address.latitude ?? null,
+    longitude: address.longitude ?? null,
   };
 };
 

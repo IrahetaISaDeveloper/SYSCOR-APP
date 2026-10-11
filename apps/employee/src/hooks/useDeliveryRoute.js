@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as Location from "expo-location";
 import { fetchRoute, formatMeters } from "../services/mapboxDirections";
-import { hasMapboxToken } from "../config/mapbox";
+import { hasMapboxToken } from "@syscor/shared/src/config/mapbox";
 
 const isCoord = (value) => value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value));
 

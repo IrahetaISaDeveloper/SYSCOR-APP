@@ -1,4 +1,4 @@
-import { MAPBOX_TOKEN } from "../config/mapbox";
+import { MAPBOX_TOKEN } from "@syscor/shared/src/config/mapbox";
 
 const BASE_URL = "https://api.mapbox.com/directions/v5/mapbox/driving-traffic";
 const TIMEOUT_MS = 12000;

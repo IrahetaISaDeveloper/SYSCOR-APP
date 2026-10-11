@@ -8,6 +8,7 @@ import { createCheckout, cancelCheckout, waitForCheckout } from '../services/che
 import { usePanchita } from '../context/PanchitaContext';
 import { getAvailability } from '../services/reservationsApi';
 import { getReservationDays, slotDate } from '../utils/reservationSlots';
+import { toPoint } from '../utils/geocode';
 import {
   detectCardBrand,
   sanitizeDigits,
@@ -147,7 +148,13 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
     setSavingAddress(true);
     const tag = form.tag.trim();
     const details = form.details.trim();
-    const res = await addAddress(customerId, { tag, details, isDefault: form.isDefault });
+    const res = await addAddress(customerId, {
+      tag,
+      details,
+      isDefault: form.isDefault,
+      latitude: form.latitude,
+      longitude: form.longitude,
+    });
     setSavingAddress(false);
     if (!res.success) {
       // Alert y no el toast: el toast quedaría detrás de la hoja del formulario.
@@ -334,6 +341,8 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
       requestId,
       fulfillment: deliveryMode,
       deliveryAddress: deliveryMode === 'delivery' ? selectedAddress.details : undefined,
+      // Punto marcado en el mapa: el repartidor va directo ahí.
+      deliveryLocation: deliveryMode === 'delivery' ? toPoint(selectedAddress) || undefined : undefined,
       dineIn:
         deliveryMode === 'dine_in'
           ? { reservedFor, partySize, alias: tableAlias.trim() || undefined }

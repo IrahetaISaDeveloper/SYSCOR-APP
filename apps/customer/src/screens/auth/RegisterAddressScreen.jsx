@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAuthTheme } from '@syscor/shared/src/styles/authTheme';
 import { textStyles } from '@syscor/shared/src/styles/typography';
@@ -15,6 +15,7 @@ import {
   TIPOS_DIRECCION,
 } from '../../constants/elSalvador';
 import { useCustomerAuth } from '../../hooks/useCustomerAuth';
+import LocationPickerModal from '../../components/LocationPickerModal';
 
 export default function RegisterAddressScreen({ navigation, route }) {
   const { isDark, t, m } = useAuthTheme();
@@ -32,8 +33,21 @@ export default function RegisterAddressScreen({ navigation, route }) {
   const [calle, setCalle] = useState('');
   const [numero, setNumero] = useState('');
   const [alias, setAlias] = useState('');
+  // Punto marcado en el mapa (opcional): { latitude, longitude } o null.
+  const [location, setLocation] = useState(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const municipios = getMunicipios(departamento);
+
+  // Guarda el punto y llena lo que siga vacío con lo que el mapa sabe de él.
+  const onPickLocation = ({ latitude, longitude, place }) => {
+    setPickerOpen(false);
+    setLocation({ latitude, longitude });
+    if (!place) return;
+    if (!calle.trim() && place.street) setCalle(place.street);
+    if (!colonia.trim() && place.district) setColonia(place.district);
+    if (!numero.trim() && place.streetNumber) setNumero(place.streetNumber);
+  };
 
   // Al cambiar de departamento, el municipio anterior deja de ser válido.
   const onChangeDepartamento = (value) => {
@@ -50,6 +64,8 @@ export default function RegisterAddressScreen({ navigation, route }) {
       calle: calle.trim(),
       numero: numero.trim(),
       alias: alias.trim() || null,
+      latitude: location?.latitude ?? null,
+      longitude: location?.longitude ?? null,
     };
 
     if (!validateAddress(address)) return;
@@ -142,6 +158,47 @@ export default function RegisterAddressScreen({ navigation, route }) {
           </View>
         </View>
       ) : null}
+
+      <Text style={[styles.label, { color: t.textMuted, fontSize: ms(11), marginBottom: ms(7) }]}>
+        UBICACIÓN EN EL MAPA (OPCIONAL)
+      </Text>
+      <TouchableOpacity
+        onPress={() => setPickerOpen(true)}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={location ? 'Mover el pin en el mapa' : 'Marcar la dirección en el mapa'}
+        style={[
+          styles.mapCard,
+          {
+            backgroundColor: location ? t.surface : t.accentSoft,
+            borderColor: location ? t.border : t.accent,
+            borderStyle: location ? 'solid' : 'dashed',
+            borderRadius: ms(12),
+            paddingHorizontal: ms(14),
+            minHeight: ms(56),
+            gap: ms(10),
+            marginBottom: ms(18),
+          },
+        ]}
+      >
+        <Icon name={location ? 'checkmark-circle' : 'map-outline'} size={ms(20)} color={t.accent} />
+        <View style={styles.errorTexts}>
+          <Text style={[styles.mapTitle, { color: t.textPrimary, fontSize: ms(14) }]}>
+            {location ? 'Ubicación marcada' : 'Marcar en el mapa'}
+          </Text>
+          <Text style={[styles.subtitle, { color: t.textSecondary, fontSize: ms(12) }]}>
+            {location ? 'Toca para mover el pin' : 'Llenamos la calle por ti y el repartidor llega directo'}
+          </Text>
+        </View>
+        <Icon name="chevron-forward" size={ms(16)} color={t.textMuted} />
+      </TouchableOpacity>
+
+      <LocationPickerModal
+        visible={pickerOpen}
+        initial={location}
+        onClose={() => setPickerOpen(false)}
+        onConfirm={onPickLocation}
+      />
 
       <AuthSelect
         tokens={t}
@@ -245,5 +302,16 @@ const styles = StyleSheet.create({
   },
   errorMessage: {
     ...textStyles.body,
+  },
+  label: {
+    ...textStyles.kicker,
+  },
+  mapCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  mapTitle: {
+    ...textStyles.link,
   },
 });
