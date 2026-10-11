@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   Image,
   Switch,
-  Alert,
   Linking,
   useColorScheme,
 } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -65,7 +65,7 @@ const MoreScreen = ({ navigation }) => {
     .join('');
 
   const confirmLogout = () =>
-    Alert.alert('Cerrar sesión', '¿Seguro que quieres salir?', [
+    AppAlert.alert('Cerrar sesión', '¿Seguro que quieres salir?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Cerrar sesión',
@@ -81,7 +81,7 @@ const MoreScreen = ({ navigation }) => {
 
   const open = (url) => {
     setSheet(null);
-    Linking.openURL(url).catch(() => Alert.alert('No se pudo abrir', 'Inténtalo de nuevo más tarde.'));
+    Linking.openURL(url).catch(() => AppAlert.alert('No se pudo abrir', 'Inténtalo de nuevo más tarde.'));
   };
 
   const card = [

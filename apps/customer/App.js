@@ -12,6 +12,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 
 import { AuthProvider, useAuth } from '@syscor/shared/src/context/AuthContext';
+import { AppAlertHost } from '@syscor/shared/src/components/commons/AppAlert';
+import { RealtimeProvider } from '@syscor/shared/src/realtime/RealtimeProvider';
+import OrderChatScreen from '@syscor/shared/src/screens/OrderChatScreen';
 import { fontAssets } from '@syscor/shared/src/styles/typography';
 import { getMenuColors } from './src/styles/CustomerMenu';
 import { ROLES } from '@syscor/shared/src/constants/roles';
@@ -135,6 +138,8 @@ function CustomerRootNavigator() {
           <CustomerStack.Screen name="SavedCards" component={SavedCardsScreen} />
           <CustomerStack.Screen name="Wallet" component={WalletScreen} />
           <CustomerStack.Screen name="Panchita" component={PanchitaScreen} />
+          {/* Chat directo con el repartidor del pedido */}
+          <CustomerStack.Screen name="OrderChat" component={OrderChatScreen} />
           <CustomerStack.Screen name="PaymentVerification" component={PaymentScreenWrapper} />
           <CustomerStack.Screen name="TableReservation" component={TableReservationScreen} />
           <CustomerStack.Screen name="TableCheckIn" component={TableCheckInScreen} />
@@ -210,12 +215,17 @@ export default function App() {
       {/* Va arriba de todo: el tema elegido en "Más" aplica también al login. */}
       <PreferencesProvider>
         <AuthProvider>
-          <CustomerBootGate>
-            <NavigationContainer ref={navigationRef} theme={navigationTheme}>
-              <StatusBar style="auto" />
-              <RootNavigator />
-            </NavigationContainer>
-          </CustomerBootGate>
+          {/* Tiempo real (Socket.IO): una sola conexión mientras haya sesión. */}
+          <RealtimeProvider>
+            <CustomerBootGate>
+              <NavigationContainer ref={navigationRef} theme={navigationTheme}>
+                <StatusBar style="auto" />
+                <RootNavigator />
+              </NavigationContainer>
+            </CustomerBootGate>
+            {/* Dibuja las alertas de AppAlert.alert con el diseño de la app. */}
+            <AppAlertHost />
+          </RealtimeProvider>
         </AuthProvider>
       </PreferencesProvider>
     </SafeAreaProvider>

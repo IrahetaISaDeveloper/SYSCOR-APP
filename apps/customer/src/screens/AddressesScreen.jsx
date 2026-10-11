@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Linking,
-  Alert,
   useColorScheme,
 } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -115,7 +115,7 @@ const AddressesScreen = () => {
       setAddresses(res.addresses);
       return true;
     }
-    Alert.alert('No se pudo guardar', res.error);
+    AppAlert.alert('No se pudo guardar', res.error);
     return false;
   };
 
@@ -137,7 +137,7 @@ const AddressesScreen = () => {
 
   const removeAddress = (address) => {
     setOptionsFor(null);
-    Alert.alert('Eliminar dirección', `¿Quieres eliminar "${address.tag}"?`, [
+    AppAlert.alert('Eliminar dirección', `¿Quieres eliminar "${address.tag}"?`, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Eliminar',
@@ -308,7 +308,7 @@ const AddressesScreen = () => {
 
 const BranchCard = ({ route, schedule, onLocate, colors: c, bandColor, ms }) => {
   const openUrl = (url) =>
-    Linking.openURL(url).catch(() => Alert.alert('No se pudo abrir', 'Inténtalo de nuevo más tarde.'));
+    Linking.openURL(url).catch(() => AppAlert.alert('No se pudo abrir', 'Inténtalo de nuevo más tarde.'));
 
   return (
     <View

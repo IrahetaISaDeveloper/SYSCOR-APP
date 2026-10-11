@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, useColorScheme } from 'react-native';
+import { View, Text, TouchableOpacity, useColorScheme } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { textStyles } from '@syscor/shared/src/styles/typography';
@@ -35,7 +36,7 @@ export default function AddToOrderBanner() {
 
   // Ya no quiere agregar nada: el pedido vuelve a la cola sin esperar.
   const stop = () =>
-    Alert.alert('¿Dejar de agregar productos?', `Tu pedido ${addMode.code} vuelve a la cola tal como estaba.`, [
+    AppAlert.alert('¿Dejar de agregar productos?', `Tu pedido ${addMode.code} vuelve a la cola tal como estaba.`, [
       { text: 'Seguir agregando', style: 'cancel' },
       {
         text: 'Dejar de agregar',

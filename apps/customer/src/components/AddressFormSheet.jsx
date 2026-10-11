@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { textStyles } from '@syscor/shared/src/styles/typography';
@@ -34,7 +35,7 @@ const AddressFormSheet = ({ value, saving, onClose, onSave, colors: c, ms, botto
     try {
       const perm = await Location.requestForegroundPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('Sin permiso', 'Activa la ubicación para llenar la dirección automáticamente.');
+        AppAlert.alert('Sin permiso', 'Activa la ubicación para llenar la dirección automáticamente.');
         return;
       }
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
@@ -47,7 +48,7 @@ const AddressFormSheet = ({ value, saving, onClose, onSave, colors: c, ms, botto
         set({ details: text });
       }
     } catch {
-      Alert.alert('No se pudo ubicar', 'Escribe la dirección a mano o inténtalo de nuevo.');
+      AppAlert.alert('No se pudo ubicar', 'Escribe la dirección a mano o inténtalo de nuevo.');
     } finally {
       setLocating(false);
     }

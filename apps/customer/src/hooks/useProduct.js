@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import { getComboById, getDrinkById, getSaucerById, getActiveExtras, getDrinksList } from '../services/api';
 import { extrasForProduct } from '../utils/extraTargets';
 import { removableOf } from '../utils/ingredients';
@@ -283,7 +283,7 @@ export const useProduct = ({ route, onAddToCart, navigation, productIdProp, item
     if (onAddToCart) {
       onAddToCart(payload);
     } else {
-      Alert.alert('Éxito', `${productData.name} agregado al carrito.`);
+      AppAlert.alert('Éxito', `${productData.name} agregado al carrito.`);
       navigation?.goBack();
     }
   };

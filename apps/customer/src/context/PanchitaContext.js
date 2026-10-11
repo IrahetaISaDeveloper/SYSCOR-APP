@@ -1,18 +1,20 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getOverview } from '../services/panchitaApi';
 import { usePreferences } from './PreferencesContext';
+import { useLiveRefresh } from '@syscor/shared/src/realtime/RealtimeProvider';
+import { EVENTS } from '@syscor/shared/src/realtime/events';
 
 // Seguimiento de Chef Panchita para toda la app de clientes.
 //
-// Mientras la app está abierta, pregunta cada 45 s por los pedidos en curso
-// (con su estimación), el saldo a favor y los avisos. Los avisos nuevos se
+// Mientras la app está abierta, se actualiza en cuanto el servidor avisa que
+// cambió un pedido (y cada 45 s, por la estimación de tráfico y clima): pedidos
+// en curso, saldo a favor y avisos. Los avisos nuevos se
 // encolan y se muestran de a uno (ver PanchitaAlertBanner); cada aviso tiene
 // una `key` estable y las que ya se vieron se guardan en el teléfono para no
 // repetirlas.
 //
-// Todavía no hay notificaciones push: con la app cerrada no llegan avisos.
+// Con la app cerrada los avisos llegan como notificación push.
 const PanchitaContext = createContext(null);
 
 const POLL_MS = 45 * 1000;
@@ -25,7 +27,6 @@ export const PanchitaProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [queue, setQueue] = useState([]);
   const seenRef = useRef(null);
-  const appStateRef = useRef(AppState.currentState);
 
   const loadSeen = async () => {
     if (seenRef.current) return seenRef.current;
@@ -67,19 +68,15 @@ export const PanchitaProvider = ({ children }) => {
 
   useEffect(() => {
     refresh();
-    const timer = setInterval(() => {
-      if (appStateRef.current === 'active') refresh();
-    }, POLL_MS);
-    const sub = AppState.addEventListener('change', (state) => {
-      // Al volver a la app se actualiza de inmediato.
-      if (appStateRef.current !== 'active' && state === 'active') refresh();
-      appStateRef.current = state;
-    });
-    return () => {
-      clearInterval(timer);
-      sub.remove();
-    };
   }, [refresh]);
+
+  // Tiempo real: en cuanto cambia un pedido del cliente (o le escribe el
+  // repartidor) se actualiza el seguimiento. Sin conexión, cada POLL_MS.
+  useLiveRefresh(
+    [EVENTS.ORDER_CHANGED, EVENTS.DELIVERY_ON_ROUTE, EVENTS.DELIVERY_DELIVERED, EVENTS.ORDER_CHAT_MESSAGE],
+    refresh,
+    { offlineMs: POLL_MS, safetyMs: POLL_MS },
+  );
 
   const dismissAlert = useCallback(
     (key) => {

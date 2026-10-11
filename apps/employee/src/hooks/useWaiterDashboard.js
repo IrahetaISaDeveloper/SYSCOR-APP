@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { Alert } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { AppAlert } from "@syscor/shared/src/components/commons/AppAlert";
+import { useFocusEffect, useIsFocused } from "@react-navigation/native";
+import { useLiveRefresh } from "@syscor/shared/src/realtime/RealtimeProvider";
+import { EVENTS, ORDER_EVENTS, TABLE_EVENTS } from "@syscor/shared/src/realtime/events";
 import {
   fetchWaiterDashboard,
   updateTableStatus,
@@ -26,6 +28,7 @@ export default function useWaiterDashboard() {
   const [cashierOpen, setCashierOpen] = useState(false);
 
   const firstLoadRef = useRef(true);
+  const isFocused = useIsFocused();
 
   const loadDashboard = useCallback(async ({ silent = false } = {}) => {
     try {
@@ -51,10 +54,15 @@ export default function useWaiterDashboard() {
     useCallback(() => {
       loadDashboard({ silent: !firstLoadRef.current });
       firstLoadRef.current = false;
-      const interval = setInterval(() => loadDashboard({ silent: true }), POLL_INTERVAL_MS);
-      return () => clearInterval(interval);
     }, [loadDashboard])
   );
+
+  // Tiempo real: el servidor avisa de mesas, comandas y turno de caja y se recarga al instante. Sin
+  // conexión, se vuelve a preguntar cada POLL_INTERVAL_MS como antes.
+  useLiveRefresh([...TABLE_EVENTS, ...ORDER_EVENTS, EVENTS.CASHIER_STATUS_CHANGED], () => loadDashboard({ silent: true }), {
+    enabled: isFocused,
+    offlineMs: POLL_INTERVAL_MS,
+  });
 
   // La comanda se mandó desde el menú y el servidor ya ocupó la mesa: se
   // pinta ocupada al instante, sin esperar la recarga.
@@ -100,7 +108,7 @@ export default function useWaiterDashboard() {
         await loadDashboard({ silent: true });
       } catch (err) {
         console.error("useWaiterDashboard.changeTableStatus:", err);
-        Alert.alert("Error", errorMessage(err, fallbackMessage));
+        AppAlert.alert("Error", errorMessage(err, fallbackMessage));
       } finally {
         setBusy(false);
       }
@@ -116,7 +124,7 @@ export default function useWaiterDashboard() {
       ? `La Mesa ${selectedTable.number} tiene comandas sin cobrar. Si la liberas se cancelarán las que sigan en cocina.`
       : `La Mesa ${selectedTable.number} quedará disponible.`;
 
-    Alert.alert("Cliente se retiró", message, [
+    AppAlert.alert("Cliente se retiró", message, [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Liberar mesa",
@@ -137,7 +145,7 @@ export default function useWaiterDashboard() {
         setActiveSheet("actions");
         await loadDashboard({ silent: true });
 
-        Alert.alert(
+        AppAlert.alert(
           "Cuenta cobrada",
           `Mesa ${tableNumber} · $${total.toFixed(2)} ${paymentMethod === "card" ? "con tarjeta" : "en efectivo"}.`,
           [
@@ -155,7 +163,7 @@ export default function useWaiterDashboard() {
           setCashierOpen(true);
           setActiveSheet("actions");
         }
-        Alert.alert(
+        AppAlert.alert(
           err?.response?.data?.title || "Error",
           errorMessage(err, "No se pudo cobrar la cuenta. Intenta de nuevo.")
         );
@@ -174,13 +182,13 @@ export default function useWaiterDashboard() {
       const response = await requestTableBill(selectedTable._id);
       const total = Number(response?.data?.total || 0);
       await loadDashboard({ silent: true });
-      Alert.alert(
+      AppAlert.alert(
         "Cuenta enviada a caja",
         `Mesa ${selectedTable.number} · $${total.toFixed(2)}. El cliente paga en caja; la mesa se libera al cobrar.`
       );
     } catch (err) {
       console.error("useWaiterDashboard.sendToCashier:", err);
-      Alert.alert("Error", errorMessage(err, "No se pudo enviar la cuenta a caja."));
+      AppAlert.alert("Error", errorMessage(err, "No se pudo enviar la cuenta a caja."));
     } finally {
       setBusy(false);
     }

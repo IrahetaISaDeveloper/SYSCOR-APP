@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
   useColorScheme,
 } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -187,11 +187,11 @@ const SavedCardsScreen = ({ navigation }) => {
     const res = await setDefaultCard(customerId, card.index);
     setBusyIndex(null);
     if (res.success) setCards(res.cards);
-    else Alert.alert('No se pudo cambiar', res.error);
+    else AppAlert.alert('No se pudo cambiar', res.error);
   };
 
   const confirmDelete = (card) =>
-    Alert.alert(
+    AppAlert.alert(
       'Eliminar tarjeta',
       `¿Eliminar la ${BRAND_LABELS[card.brand] || 'tarjeta'} terminada en ${card.lastFour}?`,
       [
@@ -204,7 +204,7 @@ const SavedCardsScreen = ({ navigation }) => {
             const res = await deleteCard(customerId, card.index);
             setBusyIndex(null);
             if (res.success) setCards(res.cards);
-            else Alert.alert('No se pudo eliminar', res.error);
+            else AppAlert.alert('No se pudo eliminar', res.error);
           },
         },
       ],

@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { Alert } from "react-native";
+import { AppAlert } from "@syscor/shared/src/components/commons/AppAlert";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from '@syscor/shared/src/context/AuthContext';
 import {
@@ -71,7 +71,7 @@ export default function useEmployeeProfile({ withOrderStats = false } = {}) {
       updateUser(freshData);
     } catch (err) {
       console.error("useEmployeeProfile.onRefresh:", err);
-      Alert.alert("Error", "No se pudo actualizar tu perfil.");
+      AppAlert.alert("Error", "No se pudo actualizar tu perfil.");
     } finally {
       setRefreshing(false);
     }
@@ -97,7 +97,7 @@ export default function useEmployeeProfile({ withOrderStats = false } = {}) {
         return true;
       } catch (err) {
         const { title, message } = errorOf(err, "Revisa los datos e inténtalo de nuevo.");
-        Alert.alert(title, message);
+        AppAlert.alert(title, message);
         return false;
       } finally {
         setSaving(false);
@@ -118,7 +118,7 @@ export default function useEmployeeProfile({ withOrderStats = false } = {}) {
         return true;
       } catch (err) {
         const { title, message } = errorOf(err, "No se pudo subir la foto. Intenta con otra o revisa tu conexión.");
-        Alert.alert(title, message);
+        AppAlert.alert(title, message);
         return false;
       } finally {
         setUploadingPhoto(false);
@@ -134,7 +134,7 @@ export default function useEmployeeProfile({ withOrderStats = false } = {}) {
       return true;
     } catch (err) {
       const { title, message } = errorOf(err, "No se pudo cambiar la contraseña.");
-      Alert.alert(title, message);
+      AppAlert.alert(title, message);
       return false;
     } finally {
       setSaving(false);

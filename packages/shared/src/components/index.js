@@ -20,3 +20,4 @@ export { ORDER_STATUS_META } from './commons/StatusBadge';
 export { default as StatusPicker } from './commons/StatusPicker';
 export { default as Toast } from './commons/Toast';
 export { default as DigitInput } from './auth/DigitInput';
+export { default as AppAlert, AppAlertHost } from './commons/AppAlert';

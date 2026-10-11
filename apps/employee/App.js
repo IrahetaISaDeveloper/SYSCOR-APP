@@ -8,6 +8,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 
 import { AuthProvider, useAuth } from '@syscor/shared/src/context/AuthContext';
+import { AppAlertHost } from '@syscor/shared/src/components/commons/AppAlert';
+import { RealtimeProvider } from '@syscor/shared/src/realtime/RealtimeProvider';
 import { ROLES, EMPLOYEE_TYPES } from '@syscor/shared/src/constants/roles';
 import { fontAssets as authFontAssets } from '@syscor/shared/src/styles/typography';
 import EmployeeBootGate from './src/navigation/EmployeeBootGate';
@@ -154,9 +156,14 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeModeProvider>
         <AuthProvider>
-          <EmployeeBootGate>
-            <ThemedNavigation />
-          </EmployeeBootGate>
+          {/* Tiempo real (Socket.IO): una sola conexión mientras haya sesión. */}
+          <RealtimeProvider>
+            <EmployeeBootGate>
+              <ThemedNavigation />
+            </EmployeeBootGate>
+            {/* Dibuja las alertas de AppAlert.alert con el diseño de la app. */}
+            <AppAlertHost />
+          </RealtimeProvider>
         </AuthProvider>
       </ThemeModeProvider>
     </SafeAreaProvider>

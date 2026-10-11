@@ -1,12 +1,14 @@
-import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert, Linking, Platform } from "react-native";
+import React, { useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Linking, Platform } from "react-native";
+import { AppAlert } from "@syscor/shared/src/components/commons/AppAlert";
+import { useIsFocused } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SymbolIcon from "../../components/commons/SymbolIcon";
 import DeliveryTopBar from "../../components/delivery/DeliveryTopBar";
 import DeliveryFooter from "../../components/delivery/DeliveryFooter";
 import NavigationCard from "../../components/delivery/NavigationCard";
 import DeliveryProgress from "../../components/delivery/DeliveryProgress";
-import { callPhone, sendSms } from "../../utils/deliveryContact";
+import { callPhone } from "../../utils/deliveryContact";
 import { formatKm, formatClock } from "../../constants/deliveryStatus";
 import useDelivery from "../../hooks/useDelivery";
 import useDeliveryRoute from "../../hooks/useDeliveryRoute";
@@ -22,6 +24,7 @@ const PROBLEM_OPTIONS = [
 ];
 
 export default function DeliveryRouteScreen({ navigation, route }) {
+  const isFocused = useIsFocused();
   const { p } = useTheme();
   const commonStyles = useDeliveryCommonStyles();
   const styles = useDeliveryRouteScreenStyles();
@@ -29,6 +32,8 @@ export default function DeliveryRouteScreen({ navigation, route }) {
   const delivery = getDeliveryById(route.params?.deliveryId);
   const totalStops = pkg?.stops?.length || 1;
   const routeInfo = useDeliveryRoute(delivery);
+  const unread = delivery?.chat?.unread || 0;
+  const [touchingMap, setTouchingMap] = useState(false);
 
   if (!delivery) {
     return (
@@ -56,10 +61,10 @@ export default function DeliveryRouteScreen({ navigation, route }) {
     : null;
 
   const handleProblem = () => {
-    Alert.alert("Reportar un problema", "Se avisará a la sucursal.", [
+    AppAlert.alert("Reportar un problema", "Se avisará a la sucursal.", [
       ...PROBLEM_OPTIONS.map((reason) => ({
         text: reason,
-        onPress: () => Alert.alert("Reporte enviado", `"${reason}" se notificó a la sucursal.`),
+        onPress: () => AppAlert.alert("Reporte enviado", `"${reason}" se notificó a la sucursal.`),
       })),
       { text: "Cancelar", style: "cancel" },
     ]);
@@ -92,7 +97,11 @@ export default function DeliveryRouteScreen({ navigation, route }) {
         onRightPress={() => callPhone(delivery.customer?.phone)}
       />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={!touchingMap}
+      >
         <TouchableOpacity activeOpacity={0.9} onPress={handleOpenMap}>
           <NavigationCard
             navigation={nav}
@@ -102,14 +111,17 @@ export default function DeliveryRouteScreen({ navigation, route }) {
           />
         </TouchableOpacity>
 
-        <DeliveryMap
-          origin={routeInfo.origin}
-          destination={routeInfo.destination}
-          coordinates={routeInfo.route?.coordinates}
-          loading={routeInfo.loading}
-          error={routeInfo.error}
-          onRetry={routeInfo.destination ? routeInfo.recalculate : null}
-        />
+        {isFocused ? (
+          <DeliveryMap
+            origin={routeInfo.origin}
+            destination={routeInfo.destination}
+            coordinates={routeInfo.route?.coordinates}
+            loading={routeInfo.loading}
+            error={routeInfo.error}
+            onRetry={routeInfo.destination ? routeInfo.recalculate : null}
+            onTouchingChange={setTouchingMap}
+          />
+        ) : null}
 
         {routeInfo.permissionDenied ? (
           <Text style={styles.permissionNote}>
@@ -144,11 +156,14 @@ export default function DeliveryRouteScreen({ navigation, route }) {
         <View style={styles.actionsRow}>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => sendSms(delivery.customer?.phone)}
+            onPress={() => navigation.navigate("OrderChat", { orderId: delivery.id })}
             activeOpacity={0.8}
+            accessibilityLabel={unread ? `Chat con el cliente, ${unread} mensajes nuevos` : "Chat con el cliente"}
           >
-            <SymbolIcon name="chat" size={16} color={p.muted} />
-            <Text style={[styles.actionLabel, { color: p.muted }]}>Mensaje</Text>
+            <SymbolIcon name="chat" size={16} color={unread ? p.accent : p.muted} />
+            <Text style={[styles.actionLabel, { color: unread ? p.accent : p.muted }]}>
+              {unread ? `Chat (${unread})` : "Chat"}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}

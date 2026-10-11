@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Alert, Image, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, ScrollView, TouchableOpacity, Image, ActivityIndicator } from "react-native";
+import { AppAlert } from "@syscor/shared/src/components/commons/AppAlert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import SymbolIcon from "../../components/commons/SymbolIcon";
@@ -39,7 +40,7 @@ export default function DeliveryConfirmScreen({ navigation, route }) {
   const takePhoto = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert("Sin permiso", "Permite el acceso a la cámara para tomar la foto de la entrega.");
+      AppAlert.alert("Sin permiso", "Permite el acceso a la cámara para tomar la foto de la entrega.");
       return;
     }
     const result = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.6 });
@@ -52,7 +53,7 @@ export default function DeliveryConfirmScreen({ navigation, route }) {
       takePhoto();
       return;
     }
-    Alert.alert("Foto de la entrega", "¿Qué deseas hacer con la foto?", [
+    AppAlert.alert("Foto de la entrega", "¿Qué deseas hacer con la foto?", [
       { text: "Tomar otra", onPress: takePhoto },
       { text: "Quitar", style: "destructive", onPress: () => setProof(null) },
       { text: "Cancelar", style: "cancel" },
@@ -71,14 +72,14 @@ export default function DeliveryConfirmScreen({ navigation, route }) {
       const nextPkg = result?.package;
       const next = nextPkg?.stops?.find((stop) => String(stop.id) === String(nextPkg.currentStopId));
       if (next) {
-        Alert.alert(
+        AppAlert.alert(
           "Entrega confirmada",
           `${delivery.code} quedó entregada. Siguiente parada: ${next.code} · ${next.dropoff?.address || ""}`,
-          [{ text: "Ir a la siguiente", onPress: () => navigation.replace("DeliveryRoute", { deliveryId: next.id }) }]
+          [{ text: "Ir a la siguiente", onPress: () => navigation.popTo("DeliveryRoute", { deliveryId: next.id }) }]
         );
         return;
       }
-      Alert.alert("Entrega confirmada", `La entrega ${delivery.code} quedó marcada como entregada. ¡Paquete completo!`, [
+      AppAlert.alert("Entrega confirmada", `La entrega ${delivery.code} quedó marcada como entregada. ¡Paquete completo!`, [
         { text: "Aceptar", onPress: () => navigation.popToTop() },
       ]);
     } catch {
@@ -93,7 +94,7 @@ export default function DeliveryConfirmScreen({ navigation, route }) {
       return;
     }
     const how = delivery.paymentMethod === "card_on_delivery" ? "con el POS" : "en efectivo";
-    Alert.alert("Confirmar cobro", `¿Cobraste ${formatMoney(delivery.amountToCollect)} ${how}?`, [
+    AppAlert.alert("Confirmar cobro", `¿Cobraste ${formatMoney(delivery.amountToCollect)} ${how}?`, [
       { text: "Aún no", style: "cancel" },
       { text: "Sí, cobré", onPress: submit },
     ]);

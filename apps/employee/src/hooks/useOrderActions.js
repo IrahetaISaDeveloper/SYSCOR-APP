@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Alert } from "react-native";
+import { AppAlert } from "@syscor/shared/src/components/commons/AppAlert";
 import { claimOrder, fireOrder, updateOrderStatus } from "../services/waiterDashboardApi";
 
 const errorOf = (err, fallback) => ({
@@ -26,7 +26,7 @@ export default function useOrderActions(onDone) {
       } catch (err) {
         console.error("useOrderActions:", err);
         const { title, message } = errorOf(err, fallback);
-        Alert.alert(title, message);
+        AppAlert.alert(title, message);
         await onDone?.();
       } finally {
         setBusyId(null);
@@ -52,7 +52,7 @@ export default function useOrderActions(onDone) {
 
   const cancel = useCallback(
     (order) =>
-      Alert.alert("Cancelar este tiempo", "La comanda en espera se cancela y no se cobra.", [
+      AppAlert.alert("Cancelar este tiempo", "La comanda en espera se cancela y no se cobra.", [
         { text: "No", style: "cancel" },
         {
           text: "Cancelar comanda",

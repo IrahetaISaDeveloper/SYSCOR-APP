@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, TextInput, ScrollView, ActivityIndicator 
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { textStyles } from '@syscor/shared/src/styles/typography';
 import { sendDriverMessage } from '../services/panchitaApi';
+import { navigate } from '../navigation/navigationRef';
 
 const FACTOR_ICONS = {
   kitchen: 'restaurant-outline',
@@ -26,7 +27,8 @@ const formatTime = (iso) => {
 };
 
 // Seguimiento de un pedido en curso: cuándo llega, por qué (cocina, tráfico,
-// clima) y, si es a domicilio, mensajes de un toque para el repartidor.
+// clima) y, si es a domicilio, mensajes de un toque para el repartidor y
+// acceso al chat con él (OrderChat).
 const OrderTrackingCard = ({ order, colors: c, ms, onSent }) => {
   const eta = order.eta;
   const risk = RISK[eta?.risk] || RISK.low;
@@ -47,7 +49,7 @@ const OrderTrackingCard = ({ order, colors: c, ms, onSent }) => {
       setError(res.error);
       return;
     }
-    setSent((list) => [...list, { text: res.data.text, createdAt: new Date().toISOString() }]);
+    setSent((list) => [...list, { from: 'customer', text: res.data.text, createdAt: new Date().toISOString() }]);
     setCustom('');
     setWriting(false);
     onSent?.();
@@ -112,13 +114,30 @@ const OrderTrackingCard = ({ order, colors: c, ms, onSent }) => {
       {/* Repartidor */}
       {order.isDelivery ? (
         <View style={{ gap: ms(8), borderTopWidth: 1, borderTopColor: c.border, paddingTop: ms(12) }}>
-          <Text style={[textStyles.kicker, { color: c.textGray, fontSize: ms(10) }]}>MENSAJE AL REPARTIDOR</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={[textStyles.kicker, { color: c.textGray, fontSize: ms(10) }]}>CHAT CON EL REPARTIDOR</Text>
+            <TouchableOpacity
+              onPress={() => navigate('OrderChat', { orderId: order.id })}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: ms(4) }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+            >
+              <Text style={[textStyles.link, { color: c.primary, fontSize: ms(12.5) }]}>
+                {order.chat?.unread ? `Abrir chat (${order.chat.unread})` : 'Abrir chat'}
+              </Text>
+              <Icon name="chevron-forward" size={ms(14)} color={c.primary} />
+            </TouchableOpacity>
+          </View>
 
           {sent.length > 0 ? (
             <View style={{ gap: ms(4) }}>
               {sent.slice(-3).map((m, i) => (
                 <View key={`${m.createdAt}-${i}`} style={{ flexDirection: 'row', gap: ms(6), alignItems: 'center' }}>
-                  <Icon name="checkmark-done" size={ms(14)} color="#1FC47A" />
+                  {m.from === 'driver' ? (
+                    <Icon name="bicycle" size={ms(14)} color={c.primary} />
+                  ) : (
+                    <Icon name="checkmark-done" size={ms(14)} color="#1FC47A" />
+                  )}
                   <Text style={[textStyles.body, { flex: 1, color: c.textDark, fontSize: ms(12.5) }]}>{m.text}</Text>
                 </View>
               ))}

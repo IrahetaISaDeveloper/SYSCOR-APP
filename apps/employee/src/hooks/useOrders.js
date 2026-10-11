@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
+import { useLiveRefresh } from '@syscor/shared/src/realtime/RealtimeProvider';
+import { EVENTS, ORDER_EVENTS } from '@syscor/shared/src/realtime/events';
 import {
   fetchCartOrders,
   fetchKitchenOrders,
@@ -36,6 +38,7 @@ const useOrders = () => {
   const [seenPendingIds, setSeenPendingIds] = useState(null);
 
   const firstLoadRef = useRef(true);
+  const isFocused = useIsFocused();
 
   const loadOrders = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setIsLoading(true);
@@ -65,10 +68,15 @@ const useOrders = () => {
     useCallback(() => {
       loadOrders({ silent: !firstLoadRef.current });
       firstLoadRef.current = false;
-      const interval = setInterval(() => loadOrders({ silent: true }), POLL_INTERVAL_MS);
-      return () => clearInterval(interval);
     }, [loadOrders])
   );
+
+  // Tiempo real: el servidor avisa de comandas nuevas o que cambian de estado y se recarga al instante. Sin
+  // conexión, se vuelve a preguntar cada POLL_INTERVAL_MS como antes.
+  useLiveRefresh([...ORDER_EVENTS, EVENTS.KITCHEN_STATUS_CHANGED], () => loadOrders({ silent: true }), {
+    enabled: isFocused,
+    offlineMs: POLL_INTERVAL_MS,
+  });
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -89,7 +97,7 @@ const useOrders = () => {
         }
       } catch (err) {
         console.error('[useOrders] Error actualizando comanda:', err);
-        Alert.alert('Error', 'No se pudo actualizar la comanda. Intenta de nuevo.');
+        AppAlert.alert('Error', 'No se pudo actualizar la comanda. Intenta de nuevo.');
       } finally {
         setUpdatingId(null);
         loadOrders({ silent: true });

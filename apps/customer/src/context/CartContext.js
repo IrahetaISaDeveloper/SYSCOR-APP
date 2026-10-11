@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Alert } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 
 const CartContext = createContext(null);
 
@@ -98,7 +98,7 @@ export const CartProvider = ({ children }) => {
     const expire = () => {
       if (payingAddRef.current) return;
       endAddMode();
-      Alert.alert(
+      AppAlert.alert(
         'Se acabó el tiempo para agregar',
         `Quitamos lo que habías agregado al pedido ${addMode.code}, que ya volvió a la cola. Si deseas algo más, por favor realiza otro pedido.`,
       );

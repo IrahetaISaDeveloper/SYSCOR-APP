@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator, BackHandler, RefreshControl, Alert, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator, BackHandler, RefreshControl, useWindowDimensions } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, usePreventRemove } from '@react-navigation/native';
@@ -102,7 +103,7 @@ export default function WaiterMenuScreen({ navigation, route }) {
 
   // Salir con productos sin enviar pide confirmación.
   usePreventRemove(itemCount > 0 && !sent, ({ data }) => {
-    Alert.alert('Descartar orden', 'Los productos elegidos no se enviarán a cocina.', [
+    AppAlert.alert('Descartar orden', 'Los productos elegidos no se enviarán a cocina.', [
       { text: 'Seguir tomando', style: 'cancel' },
       { text: 'Descartar', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
     ]);
@@ -116,7 +117,7 @@ export default function WaiterMenuScreen({ navigation, route }) {
     const message = result.waiting
       ? `El 1er tiempo de la mesa ${table.number} ya está en cocina. El 2º queda en espera: márchalo desde la mesa o desde Comandas cuando terminen.`
       : `La orden de la mesa ${table.number} ya está en cocina.`;
-    Alert.alert('Comanda enviada', message, [
+    AppAlert.alert('Comanda enviada', message, [
       {
         text: 'Listo',
         // Regresa a Mesas avisando qué mesa quedó ocupada (ver WaiterDashboardScreen).

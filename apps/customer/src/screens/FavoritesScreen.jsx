@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
-  Alert,
   useColorScheme,
 } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -66,7 +66,7 @@ const FavoritesScreen = ({ navigation }) => {
   };
 
   const confirmRemoveCombination = (combination) =>
-    Alert.alert('Borrar combinación', `¿Quieres borrar "${combination.name}"?`, [
+    AppAlert.alert('Borrar combinación', `¿Quieres borrar "${combination.name}"?`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Borrar', style: 'destructive', onPress: () => removeCombination(combination.id) },
     ]);

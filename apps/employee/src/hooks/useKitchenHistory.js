@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
+import { useLiveRefresh } from '@syscor/shared/src/realtime/RealtimeProvider';
+import { ORDER_EVENTS } from '@syscor/shared/src/realtime/events';
 import { fetchCartOrders, fetchKitchenFinishedOrders } from '../services/kitchenOrdersApi';
 import { mapApiOrder, mapCart } from '../utils/kitchenOrderMapper';
 
@@ -18,6 +20,7 @@ export default function useKitchenHistory() {
   const [error, setError] = useState(null);
 
   const firstLoadRef = useRef(true);
+  const isFocused = useIsFocused();
 
   const loadHistory = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setIsLoading(true);
@@ -50,10 +53,15 @@ export default function useKitchenHistory() {
     useCallback(() => {
       loadHistory({ silent: !firstLoadRef.current });
       firstLoadRef.current = false;
-      const interval = setInterval(() => loadHistory({ silent: true }), POLL_INTERVAL_MS);
-      return () => clearInterval(interval);
     }, [loadHistory])
   );
+
+  // Tiempo real: el servidor avisa de comandas que se terminan o entregan y se recarga al instante. Sin
+  // conexión, se vuelve a preguntar cada POLL_INTERVAL_MS como antes.
+  useLiveRefresh(ORDER_EVENTS, () => loadHistory({ silent: true }), {
+    enabled: isFocused,
+    offlineMs: POLL_INTERVAL_MS,
+  });
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

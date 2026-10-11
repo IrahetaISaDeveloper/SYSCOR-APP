@@ -2,7 +2,7 @@
   "expo": {
     "name": "SYSCOR - Staff",
     "slug": "syscor-app-empleados",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -30,7 +30,14 @@
           "locationWhenInUsePermission": "El Corral Staff usa tu ubicación para trazar la ruta hasta el domicilio del cliente."
         }
       ],
-      "@rnmapbox/maps"
+      "@rnmapbox/maps",
+      [
+        "expo-notifications",
+        {
+          "color": "#A33527",
+          "icon": "./assets/notification-icon.png"
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": true,

@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { Alert, AppState } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { useLiveRefresh } from "@syscor/shared/src/realtime/RealtimeProvider";
+import { EVENTS } from "@syscor/shared/src/realtime/events";
+import { AppAlert } from "@syscor/shared/src/components/commons/AppAlert";
 import {
   fetchDeliveryQueue,
   fetchMyPackage,
@@ -14,8 +17,7 @@ import { isToday } from "../constants/deliveryStatus";
 
 const DeliveryContext = createContext(null);
 
-// Chef Panchita asigna los paquetes en el servidor; la app revisa cada tanto
-// si le llegó uno nuevo (mientras está abierta y en primer plano).
+// Respaldo sin tiempo real: cada cuánto se pregunta si llegó un paquete nuevo.
 const POLL_MS = 15000;
 
 const sameId = (a, b) => a != null && b != null && String(a) === String(b);
@@ -29,7 +31,17 @@ const packageKey = (pkg) => (pkg ? `${pkg.id || pkg.code}:${pkg.stops.length}` :
 const currentStopOf = (pkg) =>
   pkg?.stops?.find((stop) => sameId(stop.id, pkg.currentStopId)) || null;
 
+// Último mensaje del cliente en cada parada, para avisar de los nuevos.
+const customerMessageKeys = (pkg) =>
+  Object.fromEntries(
+    (pkg?.stops || []).map((stop) => {
+      const last = stop.chat?.lastMessage;
+      return [String(stop.id), last?.from === "customer" ? last.id : null];
+    })
+  );
+
 export function DeliveryProvider({ children }) {
+  const navigation = useNavigation();
   // Paquete asignado por Panchita: { id, code, status, reason, stops, currentStopId }
   const [pkg, setPkg] = useState(null);
   const [queue, setQueue] = useState([]);
@@ -41,6 +53,8 @@ export function DeliveryProvider({ children }) {
   const [error, setError] = useState(null);
   // Para avisar una sola vez cuando llega un paquete nuevo
   const knownPackageRef = useRef(undefined);
+  // Mensajes del cliente ya vistos en el aviso (por parada)
+  const knownMessagesRef = useRef(undefined);
 
   const applyPackage = useCallback((next) => {
     const known = knownPackageRef.current;
@@ -48,14 +62,38 @@ export function DeliveryProvider({ children }) {
     // undefined = primera carga: no se avisa de lo que ya estaba asignado
     if (known !== undefined && next && next.status === "assigned" && nextKey !== known) {
       const added = known && known.split(":")[0] === String(next.id || next.code);
-      Alert.alert(
+      AppAlert.alert(
         added ? "Panchita sumó un pedido a tu paquete" : "Chef Panchita te asignó un paquete",
         `${next.code}: ${next.stops.length} ${next.stops.length === 1 ? "entrega" : "entregas"}. Pasa por el mostrador a recogerlo.`
       );
     }
     knownPackageRef.current = nextKey;
+
+    // Mensaje nuevo del cliente en el chat. Con la app abierta se avisa aquí;
+    // con la app cerrada le llega la notificación push (ver PushManager).
+    const messages = customerMessageKeys(next);
+    const knownMessages = knownMessagesRef.current;
+    if (knownMessages !== undefined) {
+      const stop = (next?.stops || []).find(
+        (s) => messages[String(s.id)] && messages[String(s.id)] !== knownMessages[String(s.id)] && s.chat?.unread > 0
+      );
+      // Si ya está leyendo ese chat, no hace falta avisarle.
+      const current = navigation.getCurrentRoute?.();
+      const viewing = current?.name === "OrderChat" && sameId(current.params?.orderId, stop?.id);
+      if (stop && !viewing) {
+        AppAlert.alert(`Mensaje de ${stop.customer?.name || "el cliente"}`, stop.chat.lastMessage.text, [
+          { text: "Después", style: "cancel" },
+          {
+            text: "Responder",
+            onPress: () => navigation.navigate("Deliveries", { screen: "OrderChat", params: { orderId: stop.id } }),
+          },
+        ]);
+      }
+    }
+    knownMessagesRef.current = messages;
+
     setPkg(next);
-  }, []);
+  }, [navigation]);
 
   const load = useCallback(
     async (silent = false) => {
@@ -101,7 +139,7 @@ export function DeliveryProvider({ children }) {
       applyPackage(updated);
       return updated;
     } catch (err) {
-      Alert.alert("No se pudo salir a ruta", apiMessage(err, "No se pudo iniciar el paquete."));
+      AppAlert.alert("No se pudo salir a ruta", apiMessage(err, "No se pudo iniciar el paquete."));
       await load(true);
       throw err;
     }
@@ -116,7 +154,7 @@ export function DeliveryProvider({ children }) {
         setQueue((prev) => prev.filter((d) => !sameId(d.id, deliveryId)));
         return updated;
       } catch (err) {
-        Alert.alert("No se pudo iniciar", apiMessage(err, "No se pudo iniciar la entrega."));
+        AppAlert.alert("No se pudo iniciar", apiMessage(err, "No se pudo iniciar la entrega."));
         await load(true);
         throw err;
       }
@@ -136,7 +174,7 @@ export function DeliveryProvider({ children }) {
         await Promise.all([load(true), loadHistory()]);
         return result;
       } catch (err) {
-        Alert.alert("No se pudo confirmar", apiMessage(err, "No se pudo confirmar la entrega."));
+        AppAlert.alert("No se pudo confirmar", apiMessage(err, "No se pudo confirmar la entrega."));
         throw err;
       }
     },
@@ -147,7 +185,7 @@ export function DeliveryProvider({ children }) {
     const next = !onShift;
     if (!next && pkg?.status === "assigned") {
       const proceed = await new Promise((resolve) => {
-        Alert.alert(
+        AppAlert.alert(
           "Salir de turno",
           "Todavía no sales con tu paquete. Si sales de turno, Panchita se lo asignará a otro repartidor.",
           [
@@ -166,7 +204,7 @@ export function DeliveryProvider({ children }) {
       await load(true);
     } catch (err) {
       setOnShift(!next);
-      Alert.alert("No se pudo cambiar tu turno", apiMessage(err, "Intenta de nuevo."));
+      AppAlert.alert("No se pudo cambiar tu turno", apiMessage(err, "Intenta de nuevo."));
     } finally {
       setShiftSaving(false);
     }
@@ -205,30 +243,27 @@ export function DeliveryProvider({ children }) {
     loadHistory();
   }, [load, loadHistory]);
 
-  // Revisión periódica mientras la app está en primer plano
-  useEffect(() => {
-    let timer = null;
-    const startPolling = () => {
-      if (!timer) timer = setInterval(() => load(true), POLL_MS);
-    };
-    const stopPolling = () => {
-      clearInterval(timer);
-      timer = null;
-    };
-    startPolling();
-    const sub = AppState.addEventListener("change", (state) => {
-      if (state === "active") {
-        load(true);
-        startPolling();
-      } else {
-        stopPolling();
-      }
-    });
-    return () => {
-      stopPolling();
-      sub.remove();
-    };
-  }, [load]);
+  // Tiempo real: paquete asignado, cola de reparto, mensajes del cliente y
+  // cambios de pedidos a domicilio llegan al instante. Sin conexión se vuelve
+  // a preguntar cada POLL_MS como antes.
+  useLiveRefresh(
+    [
+      EVENTS.DELIVERY_PACKAGE_ASSIGNED,
+      EVENTS.DELIVERY_QUEUE_CHANGED,
+      EVENTS.DELIVERY_QUEUED,
+      EVENTS.DELIVERY_STARTED,
+      EVENTS.ORDER_CHAT_MESSAGE,
+      EVENTS.ORDER_DRIVER_MESSAGE,
+      EVENTS.ORDER_UPDATED,
+      EVENTS.ORDER_DELETED,
+    ],
+    () => load(true),
+    {
+      offlineMs: POLL_MS,
+      // De los cambios de pedidos solo importan los de domicilio.
+      filter: (event, payload) => event !== EVENTS.ORDER_UPDATED || !!payload?.order?.isDelivery,
+    }
+  );
 
   const value = {
     pkg,

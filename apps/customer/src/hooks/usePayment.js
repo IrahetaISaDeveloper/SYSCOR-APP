@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import { useAuth } from '@syscor/shared/src/context/AuthContext';
 import { getCards, cvvLengthOf, BRAND_LABELS } from '../services/cardsApi';
 import { getAddresses, addAddress } from '../services/addressesApi';
@@ -150,7 +151,7 @@ export const usePayment = ({ cartItems = [], rawItems = [], subtotal = 0, total 
     setSavingAddress(false);
     if (!res.success) {
       // Alert y no el toast: el toast quedaría detrás de la hoja del formulario.
-      Alert.alert('No se pudo guardar', res.error);
+      AppAlert.alert('No se pudo guardar', res.error);
       return false;
     }
     setAddresses(res.addresses);

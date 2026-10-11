@@ -6,16 +6,17 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
+import { AppAlert } from "@syscor/shared/src/components/commons/AppAlert";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useIsFocused } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons as Icon } from "@expo/vector-icons";
 import { useAuth } from "@syscor/shared/src/context/AuthContext";
+import { unregisterFromPush } from "../../services/pushApi";
 import { textStyles } from "@syscor/shared/src/styles/typography";
 import { useAuthMetrics } from "@syscor/shared/src/styles/authTheme";
 import EditProfileSheet from "./EditProfileSheet";
@@ -80,9 +81,17 @@ export default function EmployeeProfileView({ profile, statTiles, onBack }) {
   const hero = isDark ? HERO.dark : HERO.light;
 
   const handleLogout = () => {
-    Alert.alert("Cerrar sesión", "¿Seguro que quieres salir?", [
+    AppAlert.alert("Cerrar sesión", "¿Seguro que quieres salir?", [
       { text: "Cancelar", style: "cancel" },
-      { text: "Cerrar sesión", style: "destructive", onPress: logout },
+      {
+        text: "Cerrar sesión",
+        style: "destructive",
+        // Primero se quita el teléfono de los avisos: sin sesión ya no se puede.
+        onPress: async () => {
+          await unregisterFromPush();
+          logout();
+        },
+      },
     ]);
   };
 
@@ -93,7 +102,7 @@ export default function EmployeeProfileView({ profile, statTiles, onBack }) {
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert(
+      AppAlert.alert(
         "Sin permiso",
         fromCamera
           ? "Permite el acceso a la cámara para tomarte la foto."
@@ -110,7 +119,7 @@ export default function EmployeeProfileView({ profile, statTiles, onBack }) {
 
   const choosePhoto = () => {
     if (uploadingPhoto) return;
-    Alert.alert(personalInfo.image ? "Cambiar foto" : "Agregar foto", "¿De dónde la tomas?", [
+    AppAlert.alert(personalInfo.image ? "Cambiar foto" : "Agregar foto", "¿De dónde la tomas?", [
       { text: "Galería", onPress: () => pickPhoto("library") },
       { text: "Cámara", onPress: () => pickPhoto("camera") },
       { text: "Cancelar", style: "cancel" },

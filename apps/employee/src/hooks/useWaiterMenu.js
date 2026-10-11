@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import apiClient from '@syscor/shared/src/services/apiClient';
 import { createOrder, updateTableStatus } from '../services/waiterDashboardApi';
 import { HOUSE_DRINK_CATEGORY, isCustomizable } from '../utils/productOptions';
@@ -259,12 +259,12 @@ export default function useWaiterMenu(table) {
         // reintentarlo sin duplicar lo que ya se mandó.
         setLines((prev) => Object.fromEntries(Object.entries(prev).filter(([, l]) => l.course !== 1)));
         setSplitCourses(false);
-        Alert.alert(
+        AppAlert.alert(
           'Falta el 2º tiempo',
           `El 1er tiempo ya está en cocina, pero el 2º no se envió${data?.message ? `: ${data.message}` : '.'} En la orden quedó solo el 2º tiempo; envíalo de nuevo.`
         );
       } else {
-        Alert.alert(data?.title || 'No se envió la comanda', data?.message || 'Intenta de nuevo.');
+        AppAlert.alert(data?.title || 'No se envió la comanda', data?.message || 'Intenta de nuevo.');
       }
       return { ok: false };
     } finally {

@@ -7,7 +7,8 @@ import { navigate } from '../navigation/navigationRef';
 
 // Registra el teléfono para los avisos de pedidos mientras haya sesión y el
 // interruptor "Avisos de mi pedido" (Más) esté encendido. Al tocar un aviso
-// se abre "Mis pedidos". No dibuja nada.
+// se abre "Mis pedidos" (o el chat, si es un mensaje del repartidor). No
+// dibuja nada.
 const PushNotificationsManager = () => {
   const { user } = useAuth();
   const customerId = user?.id || user?._id;
@@ -24,6 +25,10 @@ const PushNotificationsManager = () => {
   // El de "entregado" abre además la hoja para calificarlo.
   useEffect(() => {
     const data = response?.notification?.request?.content?.data;
+    if (data?.type === 'order_chat' && data.orderId) {
+      navigate('OrderChat', { orderId: data.orderId });
+      return;
+    }
     if (data?.type !== 'order_status') return;
     navigate('CustomerTabs', {
       screen: 'Orders',

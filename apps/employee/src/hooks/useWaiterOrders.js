@@ -1,5 +1,7 @@
 import { useState, useCallback, useMemo, useRef } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useIsFocused } from "@react-navigation/native";
+import { useLiveRefresh } from "@syscor/shared/src/realtime/RealtimeProvider";
+import {  } from "@syscor/shared/src/realtime/events";
 import { useAuth } from "@syscor/shared/src/context/AuthContext";
 import { fetchWaiterDashboard } from "../services/waiterDashboardApi";
 import useOrderActions from "./useOrderActions";
@@ -33,6 +35,7 @@ export default function useWaiterOrders() {
   const [scope, setScope] = useState("all");
 
   const firstLoadRef = useRef(true);
+  const isFocused = useIsFocused();
 
   const loadOrders = useCallback(async ({ silent = false } = {}) => {
     try {
@@ -63,10 +66,15 @@ export default function useWaiterOrders() {
     useCallback(() => {
       loadOrders({ silent: !firstLoadRef.current });
       firstLoadRef.current = false;
-      const interval = setInterval(() => loadOrders({ silent: true }), POLL_INTERVAL_MS);
-      return () => clearInterval(interval);
     }, [loadOrders])
   );
+
+  // Tiempo real: el servidor avisa de comandas de cualquier mesero y cambios de mesa y se recarga al instante. Sin
+  // conexión, se vuelve a preguntar cada POLL_INTERVAL_MS como antes.
+  useLiveRefresh([...ORDER_EVENTS, ...TABLE_EVENTS], () => loadOrders({ silent: true }), {
+    enabled: isFocused,
+    offlineMs: POLL_INTERVAL_MS,
+  });
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

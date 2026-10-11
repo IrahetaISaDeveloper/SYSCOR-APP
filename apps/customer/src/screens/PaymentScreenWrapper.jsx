@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCart } from '../context/CartContext';
-import { Alert } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import PaymentScreen from './PaymentVerfication';
 
 export default function PaymentScreenWrapper({ navigation }) {
@@ -28,12 +28,12 @@ export default function PaymentScreenWrapper({ navigation }) {
         const code = addMode?.code;
         endAddMode();
         navigation.navigate('CustomerTabs', { screen: 'Orders' });
-        Alert.alert('¡Listo!', `Agregamos tus productos al pedido ${code}. Ya volvió a la cola de cocina.`);
+        AppAlert.alert('¡Listo!', `Agregamos tus productos al pedido ${code}. Ya volvió a la cola de cocina.`);
       }}
       onAddWindowClosed={(message) => {
         endAddMode();
         navigation.navigate('CustomerTabs', { screen: 'Orders' });
-        Alert.alert('Se acabó el tiempo', message);
+        AppAlert.alert('Se acabó el tiempo', message);
       }}
       // Comer en el local: ya pagado, Panchita le busca mesa. Se reemplaza la
       // pantalla de pago para que "atrás" no vuelva a ella.

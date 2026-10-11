@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import ProductDetails from './ProductDetails';
 
 // Detalle de producto para quien explora el menú sin cuenta. Muestra lo mismo
@@ -7,7 +7,7 @@ import ProductDetails from './ProductDetails';
 // aquí no existe CartProvider, así que no hay carrito al que agregar.
 export default function GuestProductDetailsScreen({ navigation, route }) {
   const promptSignIn = () => {
-    Alert.alert(
+    AppAlert.alert(
       'Necesitas una cuenta',
       'Para agregar productos a tu pedido, inicia sesión o crea una cuenta.',
       [

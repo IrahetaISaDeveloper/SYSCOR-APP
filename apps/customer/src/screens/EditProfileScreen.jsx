@@ -7,10 +7,10 @@ import {
   TextInput,
   Image,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   useColorScheme,
 } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons as Icon } from '@expo/vector-icons';
@@ -153,7 +153,7 @@ const EditProfileScreen = ({ navigation }) => {
       removePhone(phone.key);
       return;
     }
-    Alert.alert('Quitar teléfono', `¿Quitar el ${phone.number} de tu perfil?`, [
+    AppAlert.alert('Quitar teléfono', `¿Quitar el ${phone.number} de tu perfil?`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Quitar', style: 'destructive', onPress: () => removePhone(phone.key) },
     ]);
@@ -162,7 +162,7 @@ const EditProfileScreen = ({ navigation }) => {
   const pickPhoto = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Sin permiso', 'Permite el acceso a tus fotos para elegir una foto de perfil.');
+      AppAlert.alert('Sin permiso', 'Permite el acceso a tus fotos para elegir una foto de perfil.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -217,7 +217,7 @@ const EditProfileScreen = ({ navigation }) => {
       updateUser(nextUser);
       navigation.goBack();
     } catch (error) {
-      Alert.alert(
+      AppAlert.alert(
         'No se pudo guardar',
         error.response?.data?.message || error.message || 'Revisa tu conexión e inténtalo de nuevo.',
       );

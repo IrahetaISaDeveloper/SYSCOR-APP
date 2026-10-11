@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Alert,
   useColorScheme,
 } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -97,7 +97,7 @@ const OrdersScreen = ({ navigation, route }) => {
   // Cancelar un pedido en línea (antes de que entre a cocina). Qué pasa con el dinero lo
   // decide y lo explica el backend.
   const confirmCancel = (order) =>
-    Alert.alert(
+    AppAlert.alert(
       `¿Cancelar el pedido ${order.code}?`,
       'Lo que pagaste con saldo regresa a tu saldo al instante. Lo pagado con tarjeta te lo reembolsamos a la tarjeta (puede tardar unos días según tu banco).',
       [
@@ -111,7 +111,7 @@ const OrdersScreen = ({ navigation, route }) => {
             setCancellingId(null);
             refetch();
             panchita.refresh();
-            Alert.alert(res.title || (res.success ? 'Pedido cancelado' : 'No se pudo cancelar'), res.success ? res.message : res.error);
+            AppAlert.alert(res.title || (res.success ? 'Pedido cancelado' : 'No se pudo cancelar'), res.success ? res.message : res.error);
           },
         },
       ],
@@ -126,7 +126,7 @@ const OrdersScreen = ({ navigation, route }) => {
     navigation.navigate('Menu');
   };
   const confirmAddMore = (order) =>
-    Alert.alert(
+    AppAlert.alert(
       `¿Agregar productos a ${order.code}?`,
       'Tienes 10 minutos para elegir y pagar lo que quieras sumar. Mientras, cocina espera tu pedido. Si no pagas a tiempo, se quita lo agregado y tu pedido sigue como estaba. Solo se puede una vez por pedido.',
       [
@@ -139,7 +139,7 @@ const OrdersScreen = ({ navigation, route }) => {
             setHoldingId(null);
             refetch();
             if (!res.success) {
-              Alert.alert(res.title, res.error);
+              AppAlert.alert(res.title, res.error);
               return;
             }
             enterAddMode(order, res.hold?.until);
@@ -376,6 +376,14 @@ const OrdersScreen = ({ navigation, route }) => {
                       <CancelOrderButton
                         busy={cancellingId === order.id}
                         onPress={() => confirmCancel(order)}
+                        colors={c}
+                        ms={ms}
+                      />
+                    ) : null}
+                    {order.chat?.available ? (
+                      <DriverChatButton
+                        chat={order.chat}
+                        onPress={() => navigation.navigate('OrderChat', { orderId: order.id })}
                         colors={c}
                         ms={ms}
                       />
@@ -628,6 +636,41 @@ const HoldButton = ({ hold, busy, onHold, onResume, onExpire, colors: c, ms }) =
     </TouchableOpacity>
   );
 };
+
+// Chat directo con el repartidor (pedidos a domicilio). Antes de que haya
+// repartidor ya se puede escribir: lo lee quien tome el pedido.
+const DriverChatButton = ({ chat, onPress, colors: c, ms }) => (
+  <TouchableOpacity
+    onPress={onPress}
+    activeOpacity={0.85}
+    style={[
+      ordersStyles.outlineButton,
+      { backgroundColor: c.primary, borderColor: c.primary, borderRadius: ms(14), height: ms(44), gap: ms(8) },
+    ]}
+    accessibilityRole="button"
+    accessibilityLabel={chat.unread ? `Chat con tu repartidor, ${chat.unread} mensajes nuevos` : 'Chat con tu repartidor'}
+  >
+    <Icon name="chatbubble-ellipses-outline" size={ms(16)} color="#FFFFFF" />
+    <Text style={[textStyles.link, { color: '#FFFFFF', fontSize: ms(13.5) }]}>
+      {chat.hasDriver ? 'Chatear con tu repartidor' : 'Dejar indicaciones al repartidor'}
+    </Text>
+    {chat.unread ? (
+      <View
+        style={{
+          minWidth: ms(20),
+          height: ms(20),
+          borderRadius: ms(10),
+          paddingHorizontal: ms(5),
+          backgroundColor: '#FFFFFF',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Text style={[textStyles.link, { color: c.primary, fontSize: ms(11) }]}>{chat.unread}</Text>
+      </View>
+    ) : null}
+  </TouchableOpacity>
+);
 
 // Cancelar solo se puede mientras el pedido siga "Recibido". Cuando cocina
 // lo empieza, el backend deja de mandar canCancel y el botón desaparece.

@@ -1,5 +1,7 @@
 import { useState, useCallback, useMemo, useRef } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useIsFocused } from "@react-navigation/native";
+import { useLiveRefresh } from "@syscor/shared/src/realtime/RealtimeProvider";
+import { ORDER_EVENTS } from "@syscor/shared/src/realtime/events";
 import { useAuth } from "@syscor/shared/src/context/AuthContext";
 import { fetchApiOrders } from "../services/kitchenOrdersApi";
 
@@ -47,6 +49,7 @@ export default function useWaiterOrderHistory() {
   const [range, setRange] = useState("today");
 
   const firstLoadRef = useRef(true);
+  const isFocused = useIsFocused();
 
   const loadHistory = useCallback(
     async ({ silent = false } = {}) => {
@@ -74,10 +77,15 @@ export default function useWaiterOrderHistory() {
     useCallback(() => {
       loadHistory({ silent: !firstLoadRef.current });
       firstLoadRef.current = false;
-      const interval = setInterval(() => loadHistory({ silent: true }), POLL_INTERVAL_MS);
-      return () => clearInterval(interval);
     }, [loadHistory])
   );
+
+  // Tiempo real: el servidor avisa de comandas servidas o canceladas y se recarga al instante. Sin
+  // conexión, se vuelve a preguntar cada POLL_INTERVAL_MS como antes.
+  useLiveRefresh(ORDER_EVENTS, () => loadHistory({ silent: true }), {
+    enabled: isFocused,
+    offlineMs: POLL_INTERVAL_MS,
+  });
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Linking,
   useColorScheme,
 } from 'react-native';
+import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons as Icon } from '@expo/vector-icons';
@@ -122,7 +122,7 @@ const PanchitaScreen = ({ navigation, route }) => {
   };
 
   const confirmReset = () =>
-    Alert.alert('Nueva conversación', 'Panchita olvidará esta charla. Tus pedidos y reclamos no cambian.', [
+    AppAlert.alert('Nueva conversación', 'Panchita olvidará esta charla. Tus pedidos y reclamos no cambian.', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Empezar de nuevo', onPress: chat.reset },
     ]);
@@ -445,7 +445,7 @@ const ChatCard = ({ card, colors: c, ms, onAddUsual }) => {
         {options.map((option) => (
           <TouchableOpacity
             key={option.label}
-            onPress={() => Linking.openURL(option.url).catch(() => Alert.alert(option.label, option.detail))}
+            onPress={() => Linking.openURL(option.url).catch(() => AppAlert.alert(option.label, option.detail))}
             activeOpacity={0.85}
             style={[
               ordersStyles.row,

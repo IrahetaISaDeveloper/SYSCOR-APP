@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
+import { useLiveRefresh } from '@syscor/shared/src/realtime/RealtimeProvider';
+import { EVENTS } from '@syscor/shared/src/realtime/events';
 import { getMyOrders } from '../services/api';
 
 // Estados en los que el pedido todavía no termina.
@@ -7,14 +9,16 @@ const ACTIVE_STATUSES = ['pending', 'preparing', 'ready', 'atrasado'];
 
 // Pedidos del cliente para la pantalla "Mis pedidos".
 //
-// Se vuelve a consultar cada vez que la pestaña gana el foco: el estado de un
-// pedido cambia en cocina y el cliente espera verlo al entrar.
+// Se vuelve a consultar cada vez que la pestaña gana el foco y, mientras está
+// a la vista, en cuanto el servidor avisa que uno de sus pedidos cambió
+// (cocina, repartidor, mensajes del chat).
 const useMyOrders = () => {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const hasLoaded = useRef(false);
+  const isFocused = useIsFocused();
 
   // `indicator`: 'full' tapa la pantalla con el cargando (primera vez),
   // 'pull' muestra el de "jalar para refrescar" y 'none' actualiza en silencio.
@@ -40,6 +44,12 @@ const useMyOrders = () => {
       // Al volver a la pestaña no se tapa la lista con el indicador de carga.
       fetchOrders(hasLoaded.current ? 'none' : 'full');
     }, [fetchOrders]),
+  );
+
+  useLiveRefresh(
+    [EVENTS.ORDER_CHANGED, EVENTS.DELIVERY_ON_ROUTE, EVENTS.DELIVERY_DELIVERED, EVENTS.ORDER_CHAT_MESSAGE],
+    () => fetchOrders('none'),
+    { enabled: isFocused, offlineMs: 30000 },
   );
 
   const activeOrders = useMemo(() => orders.filter((o) => o.isActive), [orders]);
@@ -114,6 +124,8 @@ const normalizeOrder = (raw) => {
     // Hasta cuándo se puede cancelar desde la app (null = ya no se puede).
     // Se puede cancelar mientras siga "Recibido": en cuanto pasa a cocina, ya no.
     canCancel: !!raw.canCancel,
+    // Chat con el repartidor: { available, open, hasDriver, unread, lastMessage } o null.
+    chat: raw.chat || null,
     // "Agregar más productos": { active, until } y si todavía se puede.
     hold: {
       active: !!raw.hold?.active,

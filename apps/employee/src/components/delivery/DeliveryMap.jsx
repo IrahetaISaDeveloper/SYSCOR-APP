@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import Mapbox, { MapView, Camera, ShapeSource, LineLayer, MarkerView } from "@rnmapbox/maps";
-import { MAPBOX_TOKEN } from "../../config/mapbox";
+import { MAPBOX_TOKEN, hasMapboxToken } from "../../config/mapbox";
 import SymbolIcon from "../commons/SymbolIcon";
 import useDeliveryRouteScreenStyles from "../../styles/deliveryRouteScreenStyles";
 import { useTheme } from "../../theme/ThemeContext";
@@ -21,7 +21,7 @@ function Pin({ icon, background }) {
   );
 }
 
-export default function DeliveryMap({ origin, destination, coordinates, loading, error, onRetry }) {
+export default function DeliveryMap({ origin, destination, coordinates, loading, error, onRetry, onTouchingChange }) {
   const { p } = useTheme();
   const styles = useDeliveryRouteScreenStyles();
   const routeShape = useMemo(
@@ -46,10 +46,19 @@ export default function DeliveryMap({ origin, destination, coordinates, loading,
   }, [coordinates, origin, destination]);
 
   const center = destination || origin;
+  // Montar el MapView nativo sin token válido cierra la app en Android.
+  const canRenderMap = Boolean(center) && hasMapboxToken();
 
   return (
-    <View style={styles.mapCard}>
-      {center ? (
+    // Avisa al padre mientras hay un dedo sobre el mapa para que el ScrollView
+    // no le robe el gesto de arrastre.
+    <View
+      style={styles.mapCard}
+      onTouchStart={() => onTouchingChange?.(true)}
+      onTouchEnd={() => onTouchingChange?.(false)}
+      onTouchCancel={() => onTouchingChange?.(false)}
+    >
+      {canRenderMap ? (
         <MapView
           style={styles.map}
           styleURL={Mapbox.StyleURL.Street}
