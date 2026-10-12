@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import { useLiveRefresh } from "@syscor/shared/src/realtime/RealtimeProvider";
-import {  } from "@syscor/shared/src/realtime/events";
+import { ORDER_EVENTS, TABLE_EVENTS } from "@syscor/shared/src/realtime/events";
 import { useAuth } from "@syscor/shared/src/context/AuthContext";
 import { fetchWaiterDashboard } from "../services/waiterDashboardApi";
 import useOrderActions from "./useOrderActions";
