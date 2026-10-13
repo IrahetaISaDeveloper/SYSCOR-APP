@@ -29,11 +29,15 @@ export default function TableActionsSheet({
   const styles = useStyles();
   const { ms } = useAuthMetrics();
   const orders = table.activeOrders || [];
-  const total = useMemo(() => orders.reduce((sum, o) => sum + (o.total || 0), 0), [orders]);
+  const unpaidOrders = useMemo(() => orders.filter((order) => order.paymentStatus !== "paid"), [orders]);
+  const total = useMemo(() => unpaidOrders.reduce((sum, order) => sum + (order.total || 0), 0), [unpaidOrders]);
 
   // Comandas agrupadas por ronda (las viejas sin ronda cuentan en orden).
   const rounds = useMemo(() => {
-    const sorted = [...orders].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    const sorted = [...orders].sort(
+      (a, b) =>
+        new Date(a.tableAssignedAt || a.createdAt) - new Date(b.tableAssignedAt || b.createdAt)
+    );
     const groups = new Map();
     sorted.forEach((order, i) => {
       const round = order.round || i + 1;
@@ -58,7 +62,7 @@ export default function TableActionsSheet({
         table={table}
         info={info || "Mesa ocupada"}
         amount={formatMoney(total)}
-        amountLabel={pluralize(orders.length, "COMANDA").toUpperCase()}
+        amountLabel={pluralize(unpaidOrders.length, "COMANDA PENDIENTE", "COMANDAS PENDIENTES").toUpperCase()}
         ms={ms}
       />
 
@@ -82,7 +86,14 @@ export default function TableActionsSheet({
               </Text>
             </View>
             {roundOrders.map((order) => (
-              <OrderCard key={order._id} order={order} myId={myId} actions={orderActions} showTable={false} />
+              <View key={order._id} style={{ gap: ms(5) }}>
+                <OrderCard order={order} myId={myId} actions={orderActions} showTable={false} />
+                {order.channel === "counter" && order.paymentStatus === "paid" ? (
+                  <Text style={[textStyles.kicker, { color: c.success, fontSize: ms(9.5), textAlign: "right" }]}>
+                    PAGADA EN CAJA
+                  </Text>
+                ) : null}
+              </View>
             ))}
           </View>
         ))
@@ -98,7 +109,7 @@ export default function TableActionsSheet({
               label={table.billRequestedAt ? "Cuenta enviada a caja · reenviar" : "Enviar a caja"}
               color={c.textDark}
               onPress={onSendToCashier}
-              disabled={busy || orders.length === 0}
+              disabled={busy || unpaidOrders.length === 0}
               ms={ms}
             />
             <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(12), textAlign: "center" }]}>
@@ -112,7 +123,7 @@ export default function TableActionsSheet({
             label="Cobrar la cuenta"
             color={c.textDark}
             onPress={onCharge}
-            disabled={busy || orders.length === 0}
+            disabled={busy || unpaidOrders.length === 0}
             ms={ms}
           />
         )}

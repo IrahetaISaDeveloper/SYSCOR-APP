@@ -32,6 +32,17 @@ export const fetchWaiterDashboard = async () => {
   });
 };
 
+// Mostrador orders for dine-in that have not yet been assigned to a table.
+export const fetchUnassignedCounterOrders = async () => {
+  const { data } = await apiClient.get("/orders/waiter/unassigned-counter");
+  return Array.isArray(data) ? data : [];
+};
+
+export const assignCounterOrderToTable = async (orderId, tableId) => {
+  const { data } = await apiClient.put(`/orders/${orderId}/assign-table`, { tableId });
+  return data;
+};
+
 // Cambia el estado de una mesa; al ocuparla se pueden mandar cliente y personas
 export const updateTableStatus = async (tableId, status, occupation = {}) => {
   const { data } = await apiClient.put(`/tables/${tableId}`, { status, ...occupation });

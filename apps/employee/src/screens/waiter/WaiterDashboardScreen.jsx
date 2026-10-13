@@ -13,6 +13,9 @@ import WaiterSheet from "../../components/waiter/WaiterSheet";
 import WaiterFloorPlan from "../../components/waiterDashboard/WaiterFloorPlan";
 import TableListView from "../../components/waiterDashboard/TableListView";
 import TableActionsSheet from "../../components/waiterDashboard/TableActionsSheet";
+import TableOptionsSheet from "../../components/waiterDashboard/TableOptionsSheet";
+import TableStatusSheet from "../../components/waiterDashboard/TableStatusSheet";
+import TableAssignmentSheet from "../../components/waiterDashboard/TableAssignmentSheet";
 import ChargeTableSheet from "../../components/waiterDashboard/ChargeTableSheet";
 import NotificationBell from "../../components/commons/NotificationBell";
 import { TABLE_STATE, TABLE_STATE_ORDER, FLOORS, getTableStates } from "../../styles/waiterTheme";
@@ -55,6 +58,11 @@ export default function WaiterDashboardScreen({ navigation, route }) {
     closeSheet,
     openCharge,
     backToActions,
+    openTableStatus,
+    openTableAssignment,
+    openUnassignedOrders,
+    selectTableStatus,
+    assignCounterOrder,
     clientLeft,
     chargeTable,
     cashierOpen,
@@ -83,7 +91,7 @@ export default function WaiterDashboardScreen({ navigation, route }) {
     if (!table) return;
     openedFromNoticeRef.current = openAt;
     setFloor(table.floor || 1);
-    openTable(table);
+    openTable(table, "actions");
   }, [openAt, openTableId, tables, openTable]);
 
   const lastSheetRef = useRef(null);
@@ -118,14 +126,7 @@ export default function WaiterDashboardScreen({ navigation, route }) {
     [navigation]
   );
 
-  // Mesa libre o reservada: directo al menú. Ocupada: sus acciones.
-  const handleTablePress = useCallback(
-    (table) => {
-      if (table.status === "libre" || table.status === "reservada") goToNewOrder(table);
-      else openTable(table);
-    },
-    [goToNewOrder, openTable]
-  );
+  const handleTablePress = openTable;
 
   const handleOpenOrder = () => {
     if (!selectedTable) return;
@@ -141,17 +142,46 @@ export default function WaiterDashboardScreen({ navigation, route }) {
     if (sheetType === "charge") {
       return <ChargeTableSheet table={selectedTable} busy={busy} onBack={backToActions} onConfirm={chargeTable} />;
     }
+    if (sheetType === "status") {
+      return <TableStatusSheet table={selectedTable} busy={busy} onSelectStatus={selectTableStatus} />;
+    }
+    if (sheetType === "assignment" || sheetType === "unassigned") {
+      return (
+        <TableAssignmentSheet
+          table={selectedTable}
+          busy={busy}
+          showOrders={sheetType === "unassigned"}
+          onCreateOrder={() => {
+            closeSheet();
+            goToNewOrder(selectedTable);
+          }}
+          onShowOrders={openUnassignedOrders}
+          onBack={openTableAssignment}
+          onAssign={assignCounterOrder}
+        />
+      );
+    }
+    if (sheetType === "actions") {
+      return (
+        <TableActionsSheet
+          table={selectedTable}
+          busy={busy}
+          myId={myId}
+          orderActions={orderActions}
+          onAddProducts={handleOpenOrder}
+          onCharge={openCharge}
+          onClientLeft={clientLeft}
+          cashierOpen={cashierOpen}
+          onSendToCashier={sendToCashier}
+        />
+      );
+    }
     return (
-      <TableActionsSheet
+      <TableOptionsSheet
         table={selectedTable}
-        busy={busy}
-        myId={myId}
-        orderActions={orderActions}
-        onAddProducts={handleOpenOrder}
-        onCharge={openCharge}
-        onClientLeft={clientLeft}
-        cashierOpen={cashierOpen}
-        onSendToCashier={sendToCashier}
+        onChangeStatus={openTableStatus}
+        onAssignTable={openTableAssignment}
+        onViewAccount={() => openTable(selectedTable, "actions")}
       />
     );
   };

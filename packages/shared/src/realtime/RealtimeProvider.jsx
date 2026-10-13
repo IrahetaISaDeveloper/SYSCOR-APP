@@ -27,7 +27,8 @@ const fetchTicket = async () => {
   try {
     const { data } = await apiClient.get('/auth/socket-ticket');
     return data?.token || null;
-  } catch {
+  } catch (error) {
+    if (__DEV__) console.warn('No se pudo obtener el ticket de tiempo real:', error?.message);
     return null;
   }
 };
@@ -45,7 +46,10 @@ export function RealtimeProvider({ children }) {
     if (!isAuthenticated) return undefined;
 
     const socket = io(SOCKET_URL, {
-      transports: ['websocket'],
+      // Use the same fallback as the web clients when the network blocks the
+      // WebSocket upgrade (for example, restaurant Wi-Fi or a proxy).
+      transports: ['websocket', 'polling'],
+      tryAllTransports: true,
       withCredentials: true,
       // Se llama en cada intento de conexión: siempre con un ticket fresco.
       auth: (cb) => {

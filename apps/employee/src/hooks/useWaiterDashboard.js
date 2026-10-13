@@ -5,6 +5,7 @@ import { useLiveRefresh } from "@syscor/shared/src/realtime/RealtimeProvider";
 import { EVENTS, ORDER_EVENTS, TABLE_EVENTS } from "@syscor/shared/src/realtime/events";
 import {
   fetchWaiterDashboard,
+  assignCounterOrderToTable,
   updateTableStatus,
   checkoutTable,
   fetchCashierStatus,
@@ -89,14 +90,17 @@ export default function useWaiterDashboard() {
     if (activeSheet && selectedTableId && !selectedTable && !loading) setActiveSheet(null);
   }, [activeSheet, selectedTableId, selectedTable, loading]);
 
-  const openTable = useCallback((table) => {
+  const openTable = useCallback((table, sheet = "options") => {
     setSelectedTableId(table._id);
-    setActiveSheet("actions");
+    setActiveSheet(sheet);
   }, []);
 
   const closeSheet = useCallback(() => setActiveSheet(null), []);
   const openCharge = useCallback(() => setActiveSheet("charge"), []);
   const backToActions = useCallback(() => setActiveSheet("actions"), []);
+  const openTableStatus = useCallback(() => setActiveSheet("status"), []);
+  const openTableAssignment = useCallback(() => setActiveSheet("assignment"), []);
+  const openUnassignedOrders = useCallback(() => setActiveSheet("unassigned"), []);
 
   const changeTableStatus = useCallback(
     async (status, fallbackMessage) => {
@@ -116,9 +120,57 @@ export default function useWaiterDashboard() {
     [selectedTable, loadDashboard]
   );
 
+  const selectTableStatus = useCallback(
+    (status) => {
+      if (!selectedTable || selectedTable.status === status) return;
+      const activeOrders = selectedTable.activeOrders || [];
+      const unpaidServed = activeOrders.some(
+        (order) => order.status === "delivered" && order.paymentStatus !== "paid"
+      );
+
+      if (status === "reservada" && activeOrders.length > 0) {
+        AppAlert.alert("Comandas pendientes", "Atiende o cobra las comandas de la mesa antes de reservarla.");
+        return;
+      }
+      if (status === "libre" && unpaidServed) {
+        AppAlert.alert("Cuenta pendiente", "Cobra las comandas servidas antes de dejar la mesa disponible.");
+        return;
+      }
+
+      if (status === "libre" && activeOrders.some((order) => order.status !== "delivered")) {
+        AppAlert.alert(
+          "Dejar mesa disponible",
+          `Al liberar la Mesa ${selectedTable.number}, se cancelarán las comandas que siguen en cocina.`,
+          [
+            { text: "Cancelar", style: "cancel" },
+            {
+              text: "Dejar disponible",
+              style: "destructive",
+              onPress: () => changeTableStatus(status, "No se pudo liberar la mesa."),
+            },
+          ]
+        );
+        return;
+      }
+
+      changeTableStatus(
+        status,
+        status === "ocupada" ? "No se pudo ocupar la mesa." : "No se pudo cambiar el estado de la mesa."
+      );
+    },
+    [selectedTable, changeTableStatus]
+  );
+
   // El cliente se fue: la mesa queda Disponible de inmediato.
   const clientLeft = useCallback(() => {
     if (!selectedTable) return;
+    const unpaidServed = (selectedTable.activeOrders || []).some(
+      (order) => order.status === "delivered" && order.paymentStatus !== "paid"
+    );
+    if (unpaidServed) {
+      AppAlert.alert("Cuenta pendiente", "Cobra las comandas servidas antes de liberar la mesa.");
+      return;
+    }
     const pendingInKitchen = (selectedTable.activeOrders || []).some((o) => o.status !== "delivered");
     const message = pendingInKitchen
       ? `La Mesa ${selectedTable.number} tiene comandas sin cobrar. Si la liberas se cancelarán las que sigan en cocina.`
@@ -194,6 +246,27 @@ export default function useWaiterDashboard() {
     }
   }, [selectedTable, loadDashboard]);
 
+  const assignCounterOrder = useCallback(
+    async (orderId) => {
+      if (!selectedTable) return false;
+      setBusy(true);
+      try {
+        await assignCounterOrderToTable(orderId, selectedTable._id);
+        setActiveSheet(null);
+        await loadDashboard({ silent: true });
+        AppAlert.alert("Comanda asignada", `La comanda quedó asignada a la Mesa ${selectedTable.number}.`);
+        return true;
+      } catch (err) {
+        console.error("useWaiterDashboard.assignCounterOrder:", err);
+        AppAlert.alert("No se pudo asignar", errorMessage(err, "Actualiza la mesa e intenta de nuevo."));
+        return false;
+      } finally {
+        setBusy(false);
+      }
+    },
+    [selectedTable, loadDashboard]
+  );
+
   // Recarga sin indicador (después de servir, marchar o "yo la llevo").
   const reload = useCallback(() => loadDashboard({ silent: true }), [loadDashboard]);
 
@@ -214,6 +287,11 @@ export default function useWaiterDashboard() {
     closeSheet,
     openCharge,
     backToActions,
+    openTableStatus,
+    openTableAssignment,
+    openUnassignedOrders,
+    selectTableStatus,
+    assignCounterOrder,
 
     clientLeft,
     chargeTable,
