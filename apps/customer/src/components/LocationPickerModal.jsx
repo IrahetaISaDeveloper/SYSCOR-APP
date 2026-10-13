@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import Mapbox, { MapView, Camera } from '@rnmapbox/maps';
+import Mapbox, { MapView, Camera, MarkerView } from '@rnmapbox/maps';
 import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import { textStyles } from '@syscor/shared/src/styles/typography';
 import { useAuthMetrics } from '@syscor/shared/src/styles/authTheme';
@@ -82,6 +82,10 @@ const LocationPickerModal = ({ visible, initial, onClose, onConfirm }) => {
       setLocating(false);
     }
   }, []);
+
+  const goToBranch = () => {
+    flyTo({ latitude: BRANCH.latitude, longitude: BRANCH.longitude, zoom: 16 });
+  };
 
   // Cada vez que se abre arranca desde lo guardado; si no hay nada, desde la
   // ubicación del teléfono. `initial` se lee al abrir y no en cada render
@@ -199,6 +203,44 @@ const LocationPickerModal = ({ visible, initial, onClose, onConfirm }) => {
                   ref={cameraRef}
                   defaultSettings={{ centerCoordinate: toLngLat(start), zoomLevel: start.zoom || 17 }}
                 />
+                <MarkerView
+                  coordinate={toLngLat(BRANCH)}
+                  anchor={{ x: 0.5, y: 1 }}
+                  allowOverlap
+                  pointerEvents="none"
+                >
+                  <View style={{ alignItems: 'center' }}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: ms(5),
+                        paddingHorizontal: ms(10),
+                        paddingVertical: ms(6),
+                        borderRadius: ms(16),
+                        backgroundColor: c.surface,
+                        borderWidth: 1,
+                        borderColor: c.primary,
+                        elevation: 4,
+                      }}
+                    >
+                      <Icon name="storefront" size={ms(14)} color={c.primary} />
+                      <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(11) }]}>El Corral</Text>
+                    </View>
+                    <View
+                      style={{
+                        width: 0,
+                        height: 0,
+                        borderLeftWidth: ms(6),
+                        borderRightWidth: ms(6),
+                        borderTopWidth: ms(8),
+                        borderLeftColor: 'transparent',
+                        borderRightColor: 'transparent',
+                        borderTopColor: c.primary,
+                      }}
+                    />
+                  </View>
+                </MarkerView>
               </MapView>
 
               {/* Pin fijo: la punta queda justo en el centro del mapa. */}
@@ -232,6 +274,14 @@ const LocationPickerModal = ({ visible, initial, onClose, onConfirm }) => {
                 ) : (
                   <Icon name="locate" size={ms(20)} color={c.primary} />
                 )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={goToBranch}
+                style={[roundButton, { position: 'absolute', right: ms(16), bottom: ms(90) }]}
+                accessibilityRole="button"
+                accessibilityLabel="Ver ubicación del restaurante"
+              >
+                <Icon name="storefront" size={ms(20)} color={c.primary} />
               </TouchableOpacity>
             </View>
           ) : (
