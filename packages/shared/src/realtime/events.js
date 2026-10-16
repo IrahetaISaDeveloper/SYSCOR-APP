@@ -23,6 +23,7 @@ export const EVENTS = {
   // A los meseros: cambió una solicitud de la página de la mesa
   // (pedir la cuenta / llamar al mesero).
   TABLE_REQUEST_CHANGED: 'table_request:changed',
+  CASHIER_WAITER_CALL_CHANGED: 'cashier:waiter_call_changed',
 
   // Reparto
   DELIVERY_PACKAGE_ASSIGNED: 'delivery:package_assigned',

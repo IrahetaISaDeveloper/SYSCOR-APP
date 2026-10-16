@@ -122,7 +122,7 @@ export default function WaiterFloorPlan({ floor, tables, onTablePress }) {
         {/* ── MESAS ── */}
         {placed.map((table) => {
           const state = getTableState(table.status, isDark);
-          const ready = table.status === 'ocupada' && hasReadyOrder(table);
+          const ready = ['ocupada', 'reservada'].includes(table.status) && hasReadyOrder(table);
           return (
             <TouchableOpacity
               key={table._id}

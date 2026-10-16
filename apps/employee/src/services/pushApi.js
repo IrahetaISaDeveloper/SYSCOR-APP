@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { AppState, Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
@@ -17,14 +17,15 @@ let registeredToken = null;
 // Avisos que la app ya muestra por su cuenta cuando está abierta (diálogo de
 // useDelivery, aviso de mesas de TableRequestsOverlay): ahí el aviso del
 // sistema saldría repetido.
-const SHOWN_IN_APP = ["delivery_package", "order_chat", "table_request"];
+const SHOWN_IN_APP = ["delivery_package", "order_chat", "table_request", "cashier_waiter_call"];
 // Aunque se muestren en la app, estos suenan: el mesero puede no estar viendo.
-const ALWAYS_SOUND = ["table_request"];
+const ALWAYS_SOUND = ["table_request", "cashier_waiter_call"];
 
 Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
     const type = notification?.request?.content?.data?.type;
-    const showBanner = !SHOWN_IN_APP.includes(type);
+    const showBanner = !SHOWN_IN_APP.includes(type)
+      || (type === "cashier_waiter_call" && AppState.currentState !== "active");
     return {
       shouldShowBanner: showBanner,
       shouldShowList: true,

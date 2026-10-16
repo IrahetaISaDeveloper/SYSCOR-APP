@@ -47,7 +47,11 @@ export function EmployeeNotificationsProvider({ children }) {
 
   // Reconexión, primer plano y un respaldo espaciado. Cuando otro mesero toma
   // una solicitud de mesa, su aviso se borra de esta bandeja: se recarga.
-  useLiveRefresh([EVENTS.TABLE_REQUEST_CHANGED], refresh, { offlineMs: 30000, safetyMs: 120000 });
+  useLiveRefresh(
+    [EVENTS.TABLE_REQUEST_CHANGED, EVENTS.CASHIER_WAITER_CALL_CHANGED],
+    refresh,
+    { offlineMs: 30000, safetyMs: 120000 },
+  );
 
   useRealtimeEvent(EVENTS.EMPLOYEE_NOTIFICATION, (_event, payload) => {
     const incoming = payload?.notification;

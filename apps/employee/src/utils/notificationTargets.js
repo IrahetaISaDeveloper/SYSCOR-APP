@@ -7,6 +7,7 @@ export const NOTIFICATION_ICONS = {
   order_chat: "chatbubble-ellipses-outline",
   order_ready: "restaurant-outline",
   table_request: "hand-left-outline",
+  cashier_waiter_call: "people-outline",
 };
 
 export const iconForNotification = (type) => NOTIFICATION_ICONS[type] || "notifications-outline";
@@ -24,6 +25,7 @@ export const openNotificationTarget = (data, navigation) => {
     // pide la cuenta o lo llama; el "Voy" está en el aviso de arriba).
     case "order_ready":
     case "table_request":
+    case "cashier_waiter_call":
       navigation.navigate("WaiterTabs", {
         screen: "Dashboard",
         params: { openTableId: data.tableId || null, openAt: Date.now() },

@@ -7,6 +7,7 @@ import { useAuth } from "@syscor/shared/src/context/AuthContext";
 import { textStyles } from "@syscor/shared/src/styles/typography";
 import { useAuthMetrics } from "@syscor/shared/src/styles/authTheme";
 import useTableRequests from "../../hooks/useTableRequests";
+import useCashierWaiterCalls from "../../hooks/useCashierWaiterCalls";
 import { useTheme } from "../../theme/ThemeContext";
 
 // Cuántas tarjetas se ven a la vez; el resto se resume en "+N".
@@ -25,9 +26,11 @@ export default function TableRequestsOverlay() {
   const { user } = useAuth();
   const myId = String(user?.id || user?._id || "");
   const { requests, busyId, acknowledge, resolve } = useTableRequests();
+  const cashierCalls = useCashierWaiterCalls();
+  const calls = cashierCalls.calls;
 
-  // Reloj para la cuenta regresiva de "pasa a todos en 20 s".
-  const counting = requests.some((r) => r.status === "pending" && r.escalateAt);
+  // Reloj para los plazos de respuesta de los llamados y solicitudes.
+  const counting = calls.length > 0 || requests.some((r) => r.status === "pending" && r.escalateAt);
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     if (!counting) return undefined;
@@ -35,9 +38,9 @@ export default function TableRequestsOverlay() {
     return () => clearInterval(timer);
   }, [counting]);
 
-  if (requests.length === 0) return null;
+  if (requests.length === 0 && calls.length === 0) return null;
 
-  const visible = requests.slice(0, MAX_VISIBLE);
+  const visible = requests.slice(0, Math.max(0, MAX_VISIBLE - calls.length));
   const hidden = requests.length - visible.length;
 
   const openTable = (request) =>
@@ -51,6 +54,75 @@ export default function TableRequestsOverlay() {
       pointerEvents="box-none"
       style={{ position: "absolute", top: insets.top + ms(6), left: gutter, right: gutter, gap: ms(6) }}
     >
+      {calls.map((call) => {
+        const seconds = secondsUntil(call.respondBy, now);
+        const busy = cashierCalls.busyId === call._id;
+        return (
+          <View
+            key={call._id}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: ms(10),
+              padding: ms(10),
+              paddingLeft: ms(12),
+              borderRadius: ms(16),
+              borderWidth: 1,
+              borderColor: c.primary,
+              backgroundColor: c.surface,
+              shadowColor: "#000",
+              shadowOpacity: 0.2,
+              shadowRadius: 10,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 8,
+            }}
+          >
+            <View
+              style={{
+                width: ms(42),
+                height: ms(42),
+                borderRadius: ms(12),
+                backgroundColor: c.primary,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Icon name="people-outline" size={ms(20)} color={c.white} />
+            </View>
+            <View style={{ flex: 1, gap: ms(1) }}>
+              <Text style={[textStyles.title, { color: c.textDark, fontSize: ms(14) }]} numberOfLines={1}>
+                Te necesitan en caja
+              </Text>
+              <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(11.5) }]} numberOfLines={2}>
+                Hay personas esperando para comer. {seconds > 0 ? `Responde en ${seconds} s.` : "Avisaremos al siguiente mesero."}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => cashierCalls.acknowledge(call._id)}
+              disabled={busy || seconds === 0}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              style={{
+                minWidth: ms(72),
+                height: ms(40),
+                paddingHorizontal: ms(12),
+                borderRadius: ms(12),
+                backgroundColor: c.primary,
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: busy || seconds === 0 ? 0.6 : 1,
+              }}
+            >
+              {busy ? (
+                <ActivityIndicator size="small" color={c.white} />
+              ) : (
+                <Text style={[textStyles.title, { color: c.white, fontSize: ms(13.5) }]}>Voy</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        );
+      })}
+
       {visible.map((request) => {
         const mine = request.acknowledgedBy?.id === myId;
         const taken = request.status === "acknowledged";
