@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import Mapbox, { MapView, Camera, MarkerView } from '@rnmapbox/maps';
+import Mapbox, { MapView, Camera, MarkerView, ShapeSource, FillLayer, LineLayer } from '@rnmapbox/maps';
 import { AppAlert } from '@syscor/shared/src/components/commons/AppAlert';
 import { textStyles } from '@syscor/shared/src/styles/typography';
 import { useAuthMetrics } from '@syscor/shared/src/styles/authTheme';
@@ -20,6 +20,12 @@ import { getMenuColors } from '../styles/CustomerMenu';
 import { BRANCH } from '../constants/branch';
 import { MAPBOX_TOKEN, hasMapboxToken } from '@syscor/shared/src/config/mapbox';
 import { reverseGeocode, toPoint } from '../utils/geocode';
+import {
+  BRANCH_RADIUS_SHAPE,
+  CUSTOMER_LOCATION_RADIUS_METERS,
+  distanceToBranchMeters,
+  isWithinBranchRadius,
+} from '../utils/branchCoverage';
 
 Mapbox.setAccessToken(MAPBOX_TOKEN);
 
@@ -58,6 +64,9 @@ const LocationPickerModal = ({ visible, initial, onClose, onConfirm }) => {
   const [locating, setLocating] = useState(false);
 
   const canRenderMap = hasMapboxToken();
+  const withinBranchRadius = center ? isWithinBranchRadius(center) : false;
+  const distanceFromBranch = center ? distanceToBranchMeters(center) : null;
+  const branchRadiusKm = CUSTOMER_LOCATION_RADIUS_METERS / 1000;
 
   // Si el mapa todavía no se montó, el punto pasa a ser donde arranca.
   const flyTo = (point) => {
@@ -142,6 +151,13 @@ const LocationPickerModal = ({ visible, initial, onClose, onConfirm }) => {
         AppAlert.alert('Sin permiso', 'Activa la ubicación para marcar dónde estás.');
         return;
       }
+      if (!isWithinBranchRadius(point)) {
+        AppAlert.alert(
+          'Fuera del límite',
+          `La ubicación debe estar dentro de ${branchRadiusKm} km del local.`,
+        );
+        return;
+      }
       const found = await reverseGeocode(point).catch(() => null);
       onConfirm({ ...point, text: found?.text || '', place: found?.place || null });
     } catch {
@@ -152,7 +168,7 @@ const LocationPickerModal = ({ visible, initial, onClose, onConfirm }) => {
   };
 
   const confirm = () => {
-    if (!center) return;
+    if (!center || !isWithinBranchRadius(center)) return;
     onConfirm({ ...center, text: address?.text || '', place: address?.place || null });
   };
 
@@ -199,6 +215,16 @@ const LocationPickerModal = ({ visible, initial, onClose, onConfirm }) => {
                 onCameraChanged={onCameraChanged}
                 onMapIdle={onMapIdle}
               >
+                <ShapeSource id="branch-coverage-radius" shape={BRANCH_RADIUS_SHAPE}>
+                  <FillLayer
+                    id="branch-coverage-fill"
+                    style={{ fillColor: c.primaryTint, fillOpacity: 0.35 }}
+                  />
+                  <LineLayer
+                    id="branch-coverage-outline"
+                    style={{ lineColor: c.primary, lineWidth: 2, lineOpacity: 0.9 }}
+                  />
+                </ShapeSource>
                 <Camera
                   ref={cameraRef}
                   defaultSettings={{ centerCoordinate: toLngLat(start), zoomLevel: start.zoom || 17 }}
@@ -355,12 +381,32 @@ const LocationPickerModal = ({ visible, initial, onClose, onConfirm }) => {
                 <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(12), marginTop: ms(6) }]}>
                   Luego podrás agregar el número de casa y un punto de referencia.
                 </Text>
+                {distanceFromBranch !== null ? (
+                  <Text
+                    style={[
+                      textStyles.body,
+                      {
+                        color: withinBranchRadius ? c.textGray : c.error,
+                        fontSize: ms(12),
+                        marginTop: ms(6),
+                      },
+                    ]}
+                  >
+                    {withinBranchRadius
+                      ? `Dentro del límite de ${branchRadiusKm} km · A ${(distanceFromBranch / 1000).toFixed(1)} km del local`
+                      : `Fuera del límite: estás a ${(distanceFromBranch / 1000).toFixed(1)} km. El pin debe estar dentro de ${branchRadiusKm} km del local.`}
+                  </Text>
+                ) : (
+                  <Text style={[textStyles.body, { color: c.textGray, fontSize: ms(12), marginTop: ms(6) }]}>
+                    Solo puedes marcar el pin dentro de un radio de {branchRadiusKm} km desde el local.
+                  </Text>
+                )}
               </>
             ) : null}
 
             <TouchableOpacity
               onPress={canRenderMap ? confirm : confirmCurrentPosition}
-              disabled={canRenderMap ? !center || moving : locating}
+              disabled={canRenderMap ? !center || moving || !withinBranchRadius : locating}
               activeOpacity={0.9}
               style={{
                 backgroundColor: c.primary,
@@ -369,7 +415,7 @@ const LocationPickerModal = ({ visible, initial, onClose, onConfirm }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginTop: ms(16),
-                opacity: (canRenderMap ? !center || moving : locating) ? 0.5 : 1,
+                opacity: (canRenderMap ? !center || moving || !withinBranchRadius : locating) ? 0.5 : 1,
               }}
               accessibilityRole="button"
             >
